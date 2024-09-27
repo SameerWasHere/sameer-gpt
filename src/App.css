@@ -1,38 +1,255 @@
-.App {
-  text-align: center;
+/* App.css */
+
+/* Global box-sizing reset and margin/padding reset */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Remove default margins and paddings */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #ededed;
+  color-scheme: light;
+  overflow-x: hidden;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+/* Main container styling */
+.app-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+  padding-top: 150px; /* Adjusted for larger header height */
+  padding-bottom: 70px; /* Reserve space for the input area */
+  position: relative;
+  background-color: #ffffff;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+/* Header area styling fixed to the top */
+.header-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 150px; /* Increased height to accommodate larger GIF */
+  display: flex;
+  align-items: center; /* Center items vertically */
+  justify-content: space-between; /* Space between items */
+  padding: 0 20px; /* Horizontal padding */
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 101;
+}
+
+/* Styling for the header icons */
+.header-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* Adjust margins to move icons inward */
+.left-icon {
+  margin-left: 10px; /* Moves the mail icon inward */
+}
+
+.right-icon {
+  margin-right: 10px; /* Moves the LinkedIn icon inward */
+}
+
+.header-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Center area containing the GIF and title */
+.header-center {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+}
+
+/* Styling for the header GIF */
+.header-gif {
+  width: 88px; /* Increased size by 25% */
+  height: 88px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 5px; /* Space between GIF and text */
+}
+
+/* Styling for the title */
+.title {
+  margin: 0;
+  font-size: 1.5em;
+  line-height: 1;
+}
+
+/* Chat container styling */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 95%;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+/* Message styles */
+.message {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+
+.message.user {
+  align-self: flex-end;
+  background-color: rgb(35, 141, 254);
+  color: #fff;
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background-color: rgb(233, 233, 235);
+}
+
+/* Input area styling fixed to the bottom */
+.input-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px; /* Adjusted padding */
+  /* Removed max-width and margin to allow full width */
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.input-area input {
+  flex: 1;
+  padding: 15px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 5px 0 0 5px;
+  outline: none;
+}
+
+.input-area button {
+  padding: 15px 25px;
+  font-size: 1em;
+  border: none;
+  background-color: #007bff;
   color: white;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
+.input-area button:hover {
+  background-color: #0056b3;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .header-area {
+    height: 130px; /* Adjusted height for smaller screens */
+    padding: 0 15px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .header-gif {
+    width: 70px; /* Adjusted size for smaller screens */
+    height: 70px;
   }
+
+  .title {
+    font-size: 1.2em;
+  }
+
+  .header-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .app-container {
+    padding-top: 140px; /* Adjusted padding-top to match header height */
+    padding-bottom: 60px;
+  }
+
+  .input-area {
+    height: 60px;
+    padding: 10px 15px; /* Adjusted padding for smaller screens */
+  }
+
+  .input-area input,
+  .input-area button {
+    padding: 10px;
+  }
+
+  /* Password Panel Styling */
+.password-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+}
+
+.password-panel input {
+  padding: 10px;
+  font-size: 1em;
+  margin-right: 10px;
+}
+
+.password-panel button {
+  padding: 10px 20px;
+  font-size: 1em;
+}
+
+/* Context Editor Styling */
+.context-editor {
+  padding: 20px;
+}
+
+.context-editor textarea {
+  width: 100%;
+  height: 400px;
+  margin-bottom: 10px;
+  font-family: Arial, sans-serif;
+  font-size: 1em;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.context-editor button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.context-editor button:hover {
+  background-color: #0056b3;
+}
 }
