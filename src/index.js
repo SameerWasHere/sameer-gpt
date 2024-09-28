@@ -1,8 +1,8 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import App from './App.js'; // Added .js extension
+import reportWebVitals from './reportWebVitals.js'; // Added .js extension
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
