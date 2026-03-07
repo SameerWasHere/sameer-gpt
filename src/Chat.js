@@ -247,8 +247,6 @@ function Chat({ onEditRequest }) {
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
-    // Re-focus input to keep mobile keyboard open
-    requestAnimationFrame(() => inputRef.current?.focus());
     setIsLoading(true);
 
     try {
@@ -329,22 +327,29 @@ function Chat({ onEditRequest }) {
           <h2 className="landing-title">SameerGPT</h2>
           <p className="landing-subtitle">This is AI Sameer, ask me anything</p>
           <div className="landing-input-wrapper">
-            <div className="input-area">
+            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="input-area">
               <input
                 ref={inputRef}
                 type="text"
                 placeholder={input ? '' : placeholderText || 'Ask SameerGPT...'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
+                enterKeyHint="send"
+                autoComplete="off"
               />
-              <button onClick={() => sendMessage()} disabled={!input.trim()}>
+              <button
+                type="button"
+                onClick={() => sendMessage()}
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                disabled={!input.trim()}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>
               </button>
-            </div>
+            </form>
           </div>
           <div
             className="ticker-container"
@@ -460,23 +465,30 @@ function Chat({ onEditRequest }) {
             )}
           </div>
         )}
-        <div className="input-area">
+        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="input-area">
           <input
             ref={inputRef}
             type={getInputType()}
             placeholder={getPlaceholder()}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
+            enterKeyHint="send"
+            autoComplete="off"
             disabled={isLoading || updateMode === 'updating' || updateMode === 'summary'}
           />
-          <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || updateMode === 'summary' || !input.trim()}>
+          <button
+            type="button"
+            onClick={() => sendMessage()}
+            onMouseDown={(e) => e.preventDefault()}
+            onTouchStart={(e) => e.preventDefault()}
+            disabled={isLoading || updateMode === 'updating' || updateMode === 'summary' || !input.trim()}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

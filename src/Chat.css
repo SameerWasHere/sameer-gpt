@@ -402,6 +402,8 @@
   flex-shrink: 0;
 }
 
+form.input-area,
+div.input-area,
 .input-area {
   display: flex;
   align-items: center;
@@ -411,6 +413,7 @@
   padding: 4px 4px 4px 20px;
   box-shadow: 0 2px 12px var(--shadow);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  margin: 0;
 }
 
 .input-area:focus-within {
