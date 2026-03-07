@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import Markdown from 'react-markdown';
 import './Chat.css';
 
 const EXAMPLE_QUESTIONS = [
@@ -32,8 +33,9 @@ function Chat({ onEditRequest }) {
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderText, setPlaceholderText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
-  const [updateMode, setUpdateMode] = useState(null); // null | 'password' | 'summary' | 'instruction' | 'updating'
+  const [updateMode, setUpdateMode] = useState(null);
   const [updatePassword, setUpdatePassword] = useState('');
+  const [streamingContent, setStreamingContent] = useState('');
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
   const inputRef = useRef(null);
@@ -49,7 +51,6 @@ function Chat({ onEditRequest }) {
 
     const type = () => {
       const currentQuestion = EXAMPLE_QUESTIONS[questionIndex];
-
       if (!isDeleting) {
         setPlaceholderText(currentQuestion.substring(0, charIndex + 1));
         charIndex++;
@@ -80,6 +81,16 @@ function Chat({ onEditRequest }) {
     setMessages(prev => [...prev, { role: 'system-display', content }]);
   };
 
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setHasStarted(false);
+    setInput('');
+    setIsLoading(false);
+    setUpdateMode(null);
+    setUpdatePassword('');
+    setStreamingContent('');
+  }, []);
+
   const fetchAndShowSummary = async (pwd) => {
     addSystemMessage("Fetching conversation history...");
     try {
@@ -87,7 +98,7 @@ function Chat({ onEditRequest }) {
       const { count, conversations } = response.data;
 
       if (count === 0) {
-        addSystemMessage("No conversations recorded yet. You can still type an update instruction, or type /delete to clear history, or Cancel to exit.");
+        addSystemMessage("No conversations recorded yet. Type an update instruction, /delete to clear history, or Cancel to exit.");
       } else {
         let summary = `${count} conversation${count !== 1 ? 's' : ''} recorded:\n\n`;
         conversations.forEach((c, i) => {
@@ -130,7 +141,6 @@ function Chat({ onEditRequest }) {
         password: updatePassword,
         instruction: instruction,
       });
-
       if (response.data.message) {
         addSystemMessage(`Done! Updated: "${instruction}"`);
       }
@@ -174,13 +184,11 @@ function Chat({ onEditRequest }) {
     }
 
     if (updateMode === 'instruction') {
-      // Check for /delete command
       if (messageText.trim() === '/delete') {
         setInput('');
         await handleDeleteConversations();
         return;
       }
-
       const newMessage = { role: 'user', content: messageText };
       setMessages(prev => [...prev, newMessage]);
       setInput('');
@@ -188,44 +196,78 @@ function Chat({ onEditRequest }) {
       return;
     }
 
-    // Normal chat flow
+    // Normal chat flow with streaming
     if (!hasStarted) setHasStarted(true);
 
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
     setIsLoading(true);
+    setStreamingContent('');
 
     try {
       const chatMessages = [...messages, newMessage].filter(m => m.role === 'user' || m.role === 'assistant');
-      const response = await axios.post('/api/chat', {
-        messages: chatMessages,
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatMessages, stream: true }),
       });
 
-      if (response.data && response.data.choices && response.data.choices.length > 0) {
-        const assistantMessage = response.data.choices[0].message;
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: "Hmm, something went wrong. Try again?" }]);
+      if (!response.ok) throw new Error('Stream failed');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(l => l.trim());
+
+        for (const line of lines) {
+          if (line === 'data: [DONE]') {
+            // Finalize the message
+            setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
+            setStreamingContent('');
+            setIsLoading(false);
+            return;
+          }
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                accumulated += data.content;
+                setStreamingContent(accumulated);
+              }
+            } catch (e) {
+              // Skip
+            }
+          }
+        }
+      }
+
+      // If we get here without [DONE], finalize anyway
+      if (accumulated) {
+        setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
+        setStreamingContent('');
       }
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Oops, hit a snag. Mind trying that again?" }]);
     } finally {
       setIsLoading(false);
+      setStreamingContent('');
     }
   };
 
   // Auto-scroll
   useEffect(() => {
-    if (messages.length > 0 && lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => {
-        if (chatWindowRef.current) {
-          chatWindowRef.current.scrollTop += 50;
-        }
-      }, 200);
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   const getPlaceholder = () => {
     if (updateMode === 'password') return 'Enter password...';
@@ -255,9 +297,7 @@ function Chat({ onEditRequest }) {
                 placeholder={input ? '' : placeholderText || 'Ask SameerGPT...'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') sendMessage();
-                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
               />
               <button onClick={() => sendMessage()} disabled={!input.trim()}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -313,6 +353,15 @@ function Chat({ onEditRequest }) {
   // Chat state
   return (
     <div className="chat-container">
+      <div className="chat-header">
+        <button className="new-chat-btn" onClick={handleNewChat} title="New chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+          </svg>
+          New Chat
+        </button>
+      </div>
       <div className="chat-window" ref={chatWindowRef}>
         {messages.map((msg, index) => (
           <div
@@ -328,11 +377,27 @@ function Chat({ onEditRequest }) {
             {msg.role === 'system-display' ? (
               <div className="system-message">{msg.content}</div>
             ) : (
-              <div className="message-content">{msg.content}</div>
+              <div className="message-content">
+                {msg.role === 'assistant' ? (
+                  <Markdown>{msg.content}</Markdown>
+                ) : (
+                  msg.content
+                )}
+              </div>
             )}
           </div>
         ))}
-        {isLoading && (
+        {streamingContent && (
+          <div className="message assistant">
+            <div className="avatar-bubble">
+              <img src="/header.gif" alt="Sameer" className="message-avatar" />
+            </div>
+            <div className="message-content">
+              <Markdown>{streamingContent}</Markdown>
+            </div>
+          </div>
+        )}
+        {isLoading && !streamingContent && (
           <div className="message assistant">
             <div className="avatar-bubble">
               <img src="/header.gif" alt="Sameer" className="message-avatar" />
@@ -363,9 +428,7 @@ function Chat({ onEditRequest }) {
             placeholder={getPlaceholder()}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') sendMessage();
-            }}
+            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
             disabled={isLoading || updateMode === 'updating' || updateMode === 'summary'}
           />
           <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || updateMode === 'summary' || !input.trim()}>
