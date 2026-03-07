@@ -75,15 +75,6 @@ function Chat({ onEditRequest }) {
     setMessages(prev => [...prev, { role: 'system-display', content }]);
   };
 
-  const handleUpdatePassword = async () => {
-    if (!updatePassword.trim()) return;
-    // We'll verify the password server-side, but store it for the next step
-    setUpdateMode('instruction');
-    addSystemMessage("Password accepted. What would you like to update? (e.g., \"Add that I just got a dog named Bruno\" or \"Change my favorite restaurant to Nobu\")");
-    setUpdatePassword(updatePassword);
-    setInput('');
-  };
-
   const handleUpdateInstruction = async (instruction) => {
     setUpdateMode('updating');
     addSystemMessage("Updating your prompt...");
