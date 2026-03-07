@@ -199,11 +199,16 @@ function Chat({ onEditRequest }) {
     // Normal chat flow with streaming
     if (!hasStarted) setHasStarted(true);
 
+    // Commit any previous streaming content to messages before starting new one
+    if (streamingContent) {
+      setMessages(prev => [...prev, { role: 'assistant', content: streamingContent }]);
+      setStreamingContent('');
+    }
+
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
     setIsLoading(true);
-    setStreamingContent('');
 
     try {
       const chatMessages = [...messages, newMessage].filter(m => m.role === 'user' || m.role === 'assistant');
@@ -229,9 +234,6 @@ function Chat({ onEditRequest }) {
 
         for (const line of lines) {
           if (line === 'data: [DONE]') {
-            // Finalize the message
-            setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-            setStreamingContent('');
             setIsLoading(false);
             return;
           }
@@ -248,17 +250,11 @@ function Chat({ onEditRequest }) {
           }
         }
       }
-
-      // If we get here without [DONE], finalize anyway
-      if (accumulated) {
-        setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
-        setStreamingContent('');
-      }
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Oops, hit a snag. Mind trying that again?" }]);
+      setStreamingContent('');
     } finally {
       setIsLoading(false);
-      setStreamingContent('');
     }
   };
 
