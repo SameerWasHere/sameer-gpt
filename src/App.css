@@ -3,35 +3,32 @@
   box-sizing: border-box;
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
+html {
   height: 100%;
-  background-color: var(--bg, #ffffff);
-  color: var(--text-primary, #1f2937);
-  overflow: hidden;
-  position: fixed;
 }
 
 body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--bg, #ffffff);
+  color: var(--text-primary, #1f2937);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
 }
 
 /* Main container */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: var(--app-height, 100vh);
-  max-height: var(--app-height, 100vh);
+  height: 100%;
   overflow: hidden;
   background: var(--bg, #ffffff);
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
 }
 
 /* Password overlay */
@@ -109,7 +106,7 @@ body {
 .context-editor {
   display: flex;
   flex-direction: column;
-  height: var(--app-height, 100vh);
+  height: 100%;
   max-width: 780px;
   margin: 0 auto;
   width: 100%;

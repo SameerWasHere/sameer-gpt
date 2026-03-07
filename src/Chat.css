@@ -5,6 +5,8 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   opacity: 0;
   transform: translateY(12px);
   transition: opacity 0.5s ease, transform 0.5s ease;
@@ -93,7 +95,8 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  flex: 1;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   padding: 0 16px;
 }
@@ -131,7 +134,9 @@
 
 .chat-window {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 8px 0 20px;
   display: flex;
   flex-direction: column;
@@ -392,6 +397,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .input-area {
@@ -511,14 +517,6 @@
 
 /* ============ RESPONSIVE / MOBILE ============ */
 @media (max-width: 600px) {
-  .landing-container {
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    align-items: flex-start;
-    padding-top: 15vh;
-  }
-
   .landing-title {
     font-size: 26px;
   }
@@ -548,7 +546,6 @@
 
   .input-wrapper {
     padding-bottom: max(12px, env(safe-area-inset-bottom));
-    flex-shrink: 0;
   }
 
   .chat-window {

@@ -50,32 +50,11 @@ function Chat({ onEditRequest }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mobile keyboard: scroll chat to bottom when keyboard opens/closes
-  useEffect(() => {
-    const scrollChatToBottom = () => {
-      if (chatWindowRef.current) {
-        requestAnimationFrame(() => {
-          if (chatWindowRef.current) {
-            chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
-          }
-        });
-      }
-    };
-
-    const handleViewportResize = () => {
-      // Scroll chat to bottom after keyboard opens so latest messages are visible
-      scrollChatToBottom();
-    };
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportResize);
+  // Blur input on send to dismiss mobile keyboard
+  const blurOnMobile = useCallback(() => {
+    if (window.innerWidth <= 600 && inputRef.current) {
+      inputRef.current.blur();
     }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportResize);
-      }
-    };
   }, []);
 
   // Typing animation for placeholder
@@ -251,6 +230,7 @@ function Chat({ onEditRequest }) {
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
+    blurOnMobile();
     setIsLoading(true);
 
     try {
