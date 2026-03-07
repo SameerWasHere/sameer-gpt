@@ -290,6 +290,51 @@
   cursor: not-allowed;
 }
 
+/* ============ SYSTEM MESSAGES ============ */
+.message.system-display {
+  justify-content: center;
+}
+
+.system-message {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  text-align: center;
+  max-width: 90%;
+}
+
+/* ============ UPDATE BANNER ============ */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.update-cancel {
+  background: none;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 12px;
+  color: #1e40af;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.update-cancel:hover {
+  background: #dbeafe;
+}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 600px) {
   .landing-title {

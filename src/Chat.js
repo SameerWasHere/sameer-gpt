@@ -28,6 +28,9 @@ function Chat({ onEditRequest }) {
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderText, setPlaceholderText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
+  // Update flow state
+  const [updateMode, setUpdateMode] = useState(null); // null | 'password' | 'instruction' | 'updating'
+  const [updatePassword, setUpdatePassword] = useState('');
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
   const inputRef = useRef(null);
@@ -68,38 +71,103 @@ function Chat({ onEditRequest }) {
     return () => clearTimeout(timeout);
   }, []);
 
+  const addSystemMessage = (content) => {
+    setMessages(prev => [...prev, { role: 'system-display', content }]);
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!updatePassword.trim()) return;
+    // We'll verify the password server-side, but store it for the next step
+    setUpdateMode('instruction');
+    addSystemMessage("Password accepted. What would you like to update? (e.g., \"Add that I just got a dog named Bruno\" or \"Change my favorite restaurant to Nobu\")");
+    setUpdatePassword(updatePassword);
+    setInput('');
+  };
+
+  const handleUpdateInstruction = async (instruction) => {
+    setUpdateMode('updating');
+    addSystemMessage("Updating your prompt...");
+    setInput('');
+
+    try {
+      const response = await axios.post('/api/updatePrompt', {
+        password: updatePassword,
+        instruction: instruction,
+      });
+
+      if (response.data.message) {
+        addSystemMessage(`Done! I've updated your prompt: "${instruction}"`);
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        addSystemMessage("Wrong password. Update cancelled.");
+      } else {
+        addSystemMessage("Something went wrong updating the prompt. Try again.");
+      }
+    } finally {
+      setUpdateMode(null);
+      setUpdatePassword('');
+    }
+  };
+
   const sendMessage = async (text) => {
     const messageText = text || input;
     if (messageText.trim() === '') return;
 
-    // Secret command to open editor
+    // Secret commands
     if (messageText.trim() === '/edit') {
       setInput('');
       onEditRequest();
       return;
     }
 
+    if (messageText.trim() === '/update') {
+      if (!hasStarted) setHasStarted(true);
+      setInput('');
+      setUpdateMode('password');
+      addSystemMessage("Enter your admin password to update the prompt:");
+      return;
+    }
+
+    // Handle update flow
+    if (updateMode === 'password') {
+      setUpdatePassword(messageText);
+      setUpdateMode('instruction');
+      setInput('');
+      addSystemMessage("What would you like to update? Just describe the change naturally.");
+      return;
+    }
+
+    if (updateMode === 'instruction') {
+      const newMessage = { role: 'user', content: messageText };
+      setMessages(prev => [...prev, newMessage]);
+      await handleUpdateInstruction(messageText);
+      return;
+    }
+
+    // Normal chat flow
     if (!hasStarted) setHasStarted(true);
 
     const newMessage = { role: 'user', content: messageText };
-    const updatedMessages = [...messages, newMessage];
-    setMessages(updatedMessages);
+    const updatedMessages = [...messages.filter(m => m.role !== 'system-display'), newMessage];
+    setMessages(prev => [...prev, newMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
+      const chatMessages = updatedMessages.filter(m => m.role === 'user' || m.role === 'assistant');
       const response = await axios.post('/api/chat', {
-        messages: updatedMessages,
+        messages: chatMessages,
       });
 
       if (response.data && response.data.choices && response.data.choices.length > 0) {
         const assistantMessage = response.data.choices[0].message;
-        setMessages([...updatedMessages, assistantMessage]);
+        setMessages(prev => [...prev, assistantMessage]);
       } else {
-        setMessages([...updatedMessages, { role: 'assistant', content: "Hmm, something went wrong. Try again?" }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: "Hmm, something went wrong. Try again?" }]);
       }
     } catch (error) {
-      setMessages([...updatedMessages, { role: 'assistant', content: "Oops, hit a snag. Mind trying that again?" }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Oops, hit a snag. Mind trying that again?" }]);
     } finally {
       setIsLoading(false);
     }
@@ -116,6 +184,18 @@ function Chat({ onEditRequest }) {
       }, 200);
     }
   }, [messages]);
+
+  const getPlaceholder = () => {
+    if (updateMode === 'password') return 'Enter password...';
+    if (updateMode === 'instruction') return 'Describe what to update...';
+    if (updateMode === 'updating') return 'Updating...';
+    return input ? '' : placeholderText || 'Ask SameerGPT...';
+  };
+
+  const getInputType = () => {
+    if (updateMode === 'password') return 'password';
+    return 'text';
+  };
 
   // Landing state
   if (!hasStarted) {
@@ -182,7 +262,11 @@ function Chat({ onEditRequest }) {
                 <img src="/header.gif" alt="Sameer" className="message-avatar" />
               </div>
             )}
-            <div className="message-content">{msg.content}</div>
+            {msg.role === 'system-display' ? (
+              <div className="system-message">{msg.content}</div>
+            ) : (
+              <div className="message-content">{msg.content}</div>
+            )}
           </div>
         ))}
         {isLoading && (
@@ -198,19 +282,29 @@ function Chat({ onEditRequest }) {
       </div>
 
       <div className="input-wrapper">
+        {updateMode && (
+          <div className="update-banner">
+            {updateMode === 'password' && 'Enter your password'}
+            {updateMode === 'instruction' && 'Describe your update'}
+            {updateMode === 'updating' && 'Updating prompt...'}
+            {updateMode !== 'updating' && (
+              <button className="update-cancel" onClick={() => { setUpdateMode(null); setUpdatePassword(''); }}>Cancel</button>
+            )}
+          </div>
+        )}
         <div className="input-area">
           <input
             ref={inputRef}
-            type="text"
-            placeholder={input ? '' : placeholderText || 'Ask SameerGPT...'}
+            type={getInputType()}
+            placeholder={getPlaceholder()}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') sendMessage();
             }}
-            disabled={isLoading}
+            disabled={isLoading || updateMode === 'updating'}
           />
-          <button onClick={() => sendMessage()} disabled={isLoading || !input.trim()}>
+          <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || !input.trim()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
