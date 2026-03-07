@@ -117,6 +117,9 @@ function Chat({ onEditRequest }) {
     setMessages([]);
     setHasStarted(false);
     setInput('');
+    if (inputRef.current?.getAttribute('contenteditable')) {
+      inputRef.current.textContent = '';
+    }
     setIsLoading(false);
     setUpdateMode(null);
     setUpdatePassword('');
@@ -195,20 +198,35 @@ function Chat({ onEditRequest }) {
     }
   };
 
+  // Get text from contenteditable or input state
+  const getInputText = () => {
+    if (hasStarted && !updateMode && inputRef.current?.getAttribute('contenteditable')) {
+      return inputRef.current.textContent || '';
+    }
+    return input;
+  };
+
+  const clearInput = () => {
+    if (hasStarted && !updateMode && inputRef.current?.getAttribute('contenteditable')) {
+      inputRef.current.textContent = '';
+    }
+    setInput('');
+  };
+
   const sendMessage = async (text) => {
-    const messageText = text || input;
+    const messageText = text || getInputText();
     if (messageText.trim() === '') return;
 
     // Secret commands
     if (messageText.trim() === '/edit') {
-      setInput('');
+      clearInput();
       onEditRequest();
       return;
     }
 
     if (messageText.trim() === '/update') {
       if (!hasStarted) setHasStarted(true);
-      setInput('');
+      clearInput();
       setUpdateMode('password');
       addSystemMessage("Enter your admin password:");
       return;
@@ -217,20 +235,20 @@ function Chat({ onEditRequest }) {
     // Handle update flow
     if (updateMode === 'password') {
       setUpdatePassword(messageText);
-      setInput('');
+      clearInput();
       await fetchAndShowSummary(messageText);
       return;
     }
 
     if (updateMode === 'instruction') {
       if (messageText.trim() === '/delete') {
-        setInput('');
+        clearInput();
         await handleDeleteConversations();
         return;
       }
       const newMessage = { role: 'user', content: messageText };
       setMessages(prev => [...prev, newMessage]);
-      setInput('');
+      clearInput();
       await handleUpdateInstruction(messageText);
       return;
     }
@@ -246,7 +264,7 @@ function Chat({ onEditRequest }) {
 
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
-    setInput('');
+    clearInput();
     setIsLoading(true);
 
     try {
@@ -465,17 +483,39 @@ function Chat({ onEditRequest }) {
             )}
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="input-area">
-          <input
-            ref={inputRef}
-            type={getInputType()}
-            placeholder={getPlaceholder()}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            enterKeyHint="send"
-            autoComplete="off"
-            disabled={isLoading || updateMode === 'updating' || updateMode === 'summary'}
-          />
+        <div className="input-area">
+          {updateMode === 'password' ? (
+            <input
+              ref={inputRef}
+              type="password"
+              placeholder="Enter password..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
+            />
+          ) : (
+            <div
+              ref={inputRef}
+              className="chat-input"
+              contentEditable={!(isLoading || updateMode === 'updating' || updateMode === 'summary')}
+              role="textbox"
+              enterKeyHint="send"
+              data-placeholder={getPlaceholder()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              onInput={() => setInput(inputRef.current?.textContent || '')}
+              onPaste={(e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text/plain');
+                document.execCommand('insertText', false, text);
+              }}
+              suppressContentEditableWarning
+            />
+          )}
           <button
             type="button"
             onClick={() => sendMessage()}
@@ -488,7 +528,7 @@ function Chat({ onEditRequest }) {
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
             </svg>
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );

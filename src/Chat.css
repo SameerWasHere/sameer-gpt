@@ -440,6 +440,34 @@ div.input-area,
   opacity: 0.6;
 }
 
+/* Contenteditable chat input */
+.chat-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  padding: 10px 0;
+  line-height: 1.4;
+  max-height: 120px;
+  overflow-y: auto;
+  word-break: break-word;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.chat-input:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.chat-input[contenteditable="false"] {
+  opacity: 0.6;
+}
+
 .input-area button {
   width: 40px;
   height: 40px;
