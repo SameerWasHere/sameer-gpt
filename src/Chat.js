@@ -20,6 +20,10 @@ const PRESET_QUESTIONS = [
   "Where did you go to school?",
   "What's your favorite restaurant?",
   "Tell me about a project you're proud of",
+  "What music do you listen to?",
+  "What sports teams do you follow?",
+  "Do you have any hidden talents?",
+  "What's your favorite movie?",
 ];
 
 function Chat({ onEditRequest }) {
@@ -260,9 +264,11 @@ function Chat({ onEditRequest }) {
                 </svg>
               </button>
             </div>
-            <div className="preset-questions">
-              {PRESET_QUESTIONS.map((q, i) => (
-                <button key={i} className="preset-btn" onClick={() => sendMessage(q)}>
+          </div>
+          <div className="ticker-container">
+            <div className="ticker-track">
+              {[...PRESET_QUESTIONS, ...PRESET_QUESTIONS].map((q, i) => (
+                <button key={i} className="ticker-btn" onClick={() => sendMessage(q)}>
                   {q}
                 </button>
               ))}

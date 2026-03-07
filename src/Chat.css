@@ -193,33 +193,54 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ============ PRESET QUESTIONS ============ */
-.preset-questions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  animation: fadeIn 0.5s ease;
+/* ============ TICKER ============ */
+.ticker-container {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 80px, black calc(100% - 80px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 80px, black calc(100% - 80px), transparent);
+  margin-top: 24px;
 }
 
-.preset-btn {
+.ticker-track {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  animation: ticker 40s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+.ticker-btn {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 20px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   font-size: 13px;
   color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.preset-btn:hover {
+.ticker-btn:hover {
   background: #f9fafb;
   border-color: #2563eb;
   color: #2563eb;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 /* ============ INPUT AREA ============ */
@@ -371,12 +392,8 @@
     font-size: 14px;
   }
 
-  .preset-questions {
-    gap: 6px;
-  }
-
-  .preset-btn {
+  .ticker-btn {
     font-size: 12px;
-    padding: 6px 12px;
+    padding: 6px 14px;
   }
 }
