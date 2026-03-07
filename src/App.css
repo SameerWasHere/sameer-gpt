@@ -1,255 +1,202 @@
-/* App.css */
-
-/* Global box-sizing reset and margin/padding reset */
+/* Global reset */
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* Remove default margins and paddings */
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: #ededed;
-  color-scheme: light;
+  background-color: #ffffff;
   overflow-x: hidden;
 }
 
-/* Main container styling */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Main container */
 .app-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  padding-top: 150px; /* Adjusted for larger header height */
-  padding-bottom: 70px; /* Reserve space for the input area */
-  position: relative;
-  background-color: #ffffff;
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
-  font-family: Arial, sans-serif;
+  background: #ffffff;
 }
 
-/* Header area styling fixed to the top */
+/* Header */
 .header-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.header-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.header-icon:hover {
+  background: #f3f4f6;
+}
+
+.left-icon {
+  margin-left: 0;
+}
+
+.right-icon {
+  margin-right: 0;
+}
+
+.header-icon img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-gif {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* Password Panel */
+.password-panel {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 150px; /* Increased height to accommodate larger GIF */
-  display: flex;
-  align-items: center; /* Center items vertically */
-  justify-content: space-between; /* Space between items */
-  padding: 0 20px; /* Horizontal padding */
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 101;
-}
-
-/* Styling for the header icons */
-.header-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-}
-
-/* Adjust margins to move icons inward */
-.left-icon {
-  margin-left: 10px; /* Moves the mail icon inward */
-}
-
-.right-icon {
-  margin-right: 10px; /* Moves the LinkedIn icon inward */
-}
-
-.header-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-/* Center area containing the GIF and title */
-.header-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Styling for the header GIF */
-.header-gif {
-  width: 88px; /* Increased size by 25% */
-  height: 88px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-bottom: 5px; /* Space between GIF and text */
-}
-
-/* Styling for the title */
-.title {
-  margin: 0;
-  font-size: 1.5em;
-  line-height: 1;
-}
-
-/* Chat container styling */
-.chat-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 95%;
-  max-width: 900px;
-  margin: 0 auto;
-  overflow-y: auto;
-}
-
-/* Message styles */
-.message {
-  margin: 10px 0;
-  padding: 8px 12px;
-  border-radius: 5px;
-}
-
-.message.user {
-  align-self: flex-end;
-  background-color: rgb(35, 141, 254);
-  color: #fff;
-}
-
-.message.assistant {
-  align-self: flex-start;
-  background-color: rgb(233, 233, 235);
-}
-
-/* Input area styling fixed to the bottom */
-.input-area {
-  position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 70px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
-  padding: 10px 20px; /* Adjusted padding */
-  /* Removed max-width and margin to allow full width */
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 15px;
-  font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 5px 0 0 5px;
-  outline: none;
-}
-
-.input-area button {
-  padding: 15px 25px;
-  font-size: 1em;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 0 5px 5px 0;
-  cursor: pointer;
-}
-
-.input-area button:hover {
-  background-color: #0056b3;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .header-area {
-    height: 130px; /* Adjusted height for smaller screens */
-    padding: 0 15px;
-  }
-
-  .header-gif {
-    width: 70px; /* Adjusted size for smaller screens */
-    height: 70px;
-  }
-
-  .title {
-    font-size: 1.2em;
-  }
-
-  .header-icon {
-    width: 30px;
-    height: 30px;
-  }
-
-  .app-container {
-    padding-top: 140px; /* Adjusted padding-top to match header height */
-    padding-bottom: 60px;
-  }
-
-  .input-area {
-    height: 60px;
-    padding: 10px 15px; /* Adjusted padding for smaller screens */
-  }
-
-  .input-area input,
-  .input-area button {
-    padding: 10px;
-  }
-
-  /* Password Panel Styling */
-.password-panel {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  justify-content: center;
   z-index: 200;
 }
 
+.password-panel form {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 8px;
+}
+
 .password-panel input {
-  padding: 10px;
-  font-size: 1em;
-  margin-right: 10px;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  outline: none;
+  font-family: inherit;
+}
+
+.password-panel input:focus {
+  border-color: #2563eb;
 }
 
 .password-panel button {
-  padding: 10px 20px;
-  font-size: 1em;
+  padding: 12px 24px;
+  font-size: 15px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
 }
 
-/* Context Editor Styling */
+.password-panel button:hover {
+  background: #1d4ed8;
+}
+
+/* Context Editor */
 .context-editor {
-  padding: 20px;
+  padding: 24px;
+  max-width: 780px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .context-editor textarea {
   width: 100%;
   height: 400px;
-  margin-bottom: 10px;
-  font-family: Arial, sans-serif;
-  font-size: 1em;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  margin-bottom: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  outline: none;
+  resize: vertical;
+}
+
+.context-editor textarea:focus {
+  border-color: #2563eb;
 }
 
 .context-editor button {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: #007bff;
+  padding: 12px 24px;
+  font-size: 15px;
+  background: #2563eb;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .context-editor button:hover {
-  background-color: #0056b3;
+  background: #1d4ed8;
 }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .header-area {
+    padding: 10px 16px;
+  }
+
+  .header-gif {
+    width: 36px;
+    height: 36px;
+  }
+
+  .title {
+    font-size: 1em;
+  }
+
+  .header-icon img {
+    width: 22px;
+    height: 22px;
+  }
 }

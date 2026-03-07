@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-4o-mini',
+          model: 'gpt-4o',
           messages: fullMessages, // Use fullMessages with the fetched context
         },
         {
