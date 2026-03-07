@@ -108,7 +108,7 @@ function Chat({ onEditRequest }) {
           const numQ = c.exchanges?.length || 0;
           summary += `--- Conversation ${i + 1} (${numQ} Q&A${numQ !== 1 ? 's' : ''})${date ? ` — ${date}` : ''} ---\n`;
           (c.exchanges || []).forEach((ex) => {
-            const shortA = ex.answer && ex.answer.length > 100 ? ex.answer.substring(0, 100) + '...' : ex.answer;
+            const shortA = ex.answer;
             summary += `  Q: "${ex.question}"\n  A: "${shortA}"\n`;
           });
           summary += '\n';
