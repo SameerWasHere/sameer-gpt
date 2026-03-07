@@ -247,6 +247,8 @@ function Chat({ onEditRequest }) {
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
+    // Re-focus input to keep mobile keyboard open
+    requestAnimationFrame(() => inputRef.current?.focus());
     setIsLoading(true);
 
     try {
@@ -334,7 +336,7 @@ function Chat({ onEditRequest }) {
                 placeholder={input ? '' : placeholderText || 'Ask SameerGPT...'}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
               />
               <button onClick={() => sendMessage()} disabled={!input.trim()}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -465,7 +467,7 @@ function Chat({ onEditRequest }) {
             placeholder={getPlaceholder()}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') sendMessage(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } }}
             disabled={isLoading || updateMode === 'updating' || updateMode === 'summary'}
           />
           <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || updateMode === 'summary' || !input.trim()}>
