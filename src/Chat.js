@@ -246,7 +246,7 @@ function Chat({ onEditRequest }) {
         <div className="landing-content">
           <img src="/header.gif" alt="Sameer" className="landing-avatar" />
           <h2 className="landing-title">SameerGPT</h2>
-          <p className="landing-subtitle">Ask me anything about Sameer — his work, interests, background, and more.</p>
+          <p className="landing-subtitle">This is AI Sameer, ask me anything</p>
           <div className="landing-input-wrapper">
             <div className="input-area">
               <input
