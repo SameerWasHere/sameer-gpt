@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Chat from './Chat.js';
 import './App.css';
 import ContextEditor from './ContextEditor.js';
@@ -7,6 +7,28 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordPanel, setShowPasswordPanel] = useState(false);
   const [password, setPassword] = useState('');
+  const containerRef = useRef(null);
+
+  // Track visualViewport to resize container when iOS keyboard opens/closes
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const updateLayout = () => {
+      if (!containerRef.current) return;
+      containerRef.current.style.height = `${vv.height}px`;
+      containerRef.current.style.top = `${vv.offsetTop}px`;
+    };
+
+    updateLayout();
+    vv.addEventListener('resize', updateLayout);
+    vv.addEventListener('scroll', updateLayout);
+
+    return () => {
+      vv.removeEventListener('resize', updateLayout);
+      vv.removeEventListener('scroll', updateLayout);
+    };
+  }, []);
 
   const handleEditRequest = () => {
     setShowPasswordPanel(true);
@@ -28,7 +50,7 @@ function App() {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container" ref={containerRef}>
       {showPasswordPanel && (
         <div className="password-overlay" onClick={() => setShowPasswordPanel(false)}>
           <div className="password-panel" onClick={(e) => e.stopPropagation()}>

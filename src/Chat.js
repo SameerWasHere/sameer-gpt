@@ -50,16 +50,17 @@ function Chat({ onEditRequest }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mobile keyboard handling
+  // Scroll chat to bottom when keyboard opens (container resizes)
   useEffect(() => {
-    if (!window.visualViewport) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
 
-    let prevHeight = window.visualViewport.height;
+    let prevHeight = vv.height;
 
-    const onViewportResize = () => {
-      const currentHeight = window.visualViewport.height;
-      if (currentHeight < prevHeight && chatWindowRef.current) {
-        // Keyboard opened — scroll chat to bottom
+    const onResize = () => {
+      const currentHeight = vv.height;
+      // Keyboard opened or closed — scroll to bottom after layout settles
+      if (currentHeight !== prevHeight && chatWindowRef.current) {
         requestAnimationFrame(() => {
           if (chatWindowRef.current) {
             chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
@@ -69,28 +70,8 @@ function Chat({ onEditRequest }) {
       prevHeight = currentHeight;
     };
 
-    window.visualViewport.addEventListener('resize', onViewportResize);
-    return () => window.visualViewport.removeEventListener('resize', onViewportResize);
-  }, []);
-
-  // iOS fix: force layout recalc after keyboard dismiss to fix stuck viewport
-  useEffect(() => {
-    const onBlur = () => {
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 100);
-    };
-
-    const input = inputRef.current;
-    input?.addEventListener('blur', onBlur);
-    return () => input?.removeEventListener('blur', onBlur);
-  }, []);
-
-  // Blur input on send to dismiss mobile keyboard
-  const blurOnMobile = useCallback(() => {
-    if (window.innerWidth <= 600 && inputRef.current) {
-      inputRef.current.blur();
-    }
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
   }, []);
 
   // Typing animation for placeholder
@@ -266,7 +247,6 @@ function Chat({ onEditRequest }) {
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     setInput('');
-    blurOnMobile();
     setIsLoading(true);
 
     try {
