@@ -19,7 +19,6 @@ export default async function handler(req, res) {
 
   const { password, instruction } = req.body;
 
-  // Verify password
   if (password !== process.env.REACT_APP_PASSWORD) {
     res.status(401).json({ error: 'Invalid password.' });
     return;
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch current prompt from KV
     const currentPrompt = await kv.get('sameer_context');
     if (!currentPrompt) {
       res.status(500).json({ error: 'Could not fetch current prompt.' });
@@ -44,7 +42,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Use GPT-4o-mini to update the prompt
+    // Ask GPT to return a JSON edit operation instead of the full prompt
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -52,34 +50,69 @@ export default async function handler(req, res) {
         messages: [
           {
             role: 'system',
-            content: `You are a prompt editor. You will receive a current prompt/context document and an instruction from the user about what to change. Your job is to return the FULL updated prompt with the changes applied. Rules:
-- Keep the same tone, structure, and formatting as the original
-- Only modify what the instruction asks for
-- If adding new info, place it in the most logical section
-- If removing info, cleanly remove it without leaving gaps
-- Return ONLY the updated prompt text, nothing else — no explanations, no markdown code blocks, no "here's the updated version"
-- Preserve all existing content that isn't being changed`
+            content: `You edit a prompt document. Given the current prompt and an instruction, return a JSON object with the edit to apply. Use one of these formats:
+
+For replacing text: {"action":"replace","find":"exact text to find","replace":"new text"}
+For appending to a section: {"action":"append","after":"exact line to insert after","text":"new text to add"}
+For removing text: {"action":"replace","find":"exact text to remove","replace":""}
+
+Rules:
+- The "find" value must be an EXACT substring from the current prompt
+- Keep the same casual tone as the existing prompt
+- Return ONLY the JSON object, nothing else
+- For multi-line edits, use \\n for newlines`
           },
           {
             role: 'user',
             content: `CURRENT PROMPT:\n\n${currentPrompt}\n\n---\n\nINSTRUCTION: ${instruction}`
           }
         ],
-        temperature: 0.3,
-        max_tokens: 4000,
+        temperature: 0.2,
+        max_tokens: 500,
       },
       {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
-        timeout: 25000,
+        timeout: 20000,
       }
     );
 
-    const updatedPrompt = response.data.choices[0].message.content;
+    const gptResponse = response.data.choices[0].message.content.trim();
 
-    // Save updated prompt to KV
+    // Parse the JSON edit operation
+    let edit;
+    try {
+      // Strip markdown code blocks if GPT wraps it
+      const cleaned = gptResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      edit = JSON.parse(cleaned);
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to parse edit instruction from AI.' });
+      return;
+    }
+
+    let updatedPrompt = currentPrompt;
+
+    if (edit.action === 'replace' && edit.find) {
+      if (updatedPrompt.includes(edit.find)) {
+        updatedPrompt = updatedPrompt.replace(edit.find, edit.replace || '');
+      } else {
+        res.status(500).json({ error: 'Could not find the text to edit. Try rephrasing your update.' });
+        return;
+      }
+    } else if (edit.action === 'append' && edit.after && edit.text) {
+      if (updatedPrompt.includes(edit.after)) {
+        updatedPrompt = updatedPrompt.replace(edit.after, edit.after + '\n' + edit.text);
+      } else {
+        // Fallback: append to the end
+        updatedPrompt = updatedPrompt + '\n' + edit.text;
+      }
+    } else {
+      res.status(500).json({ error: 'Invalid edit format from AI. Try rephrasing.' });
+      return;
+    }
+
     await kv.set('sameer_context', updatedPrompt);
 
     res.status(200).json({
