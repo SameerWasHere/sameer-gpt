@@ -37,11 +37,44 @@ function Chat({ onEditRequest }) {
   const [updatePassword, setUpdatePassword] = useState('');
   const [streamingContent, setStreamingContent] = useState('');
   const [conversationId] = useState(() => Date.now().toString());
+  const [isPageReady, setIsPageReady] = useState(false);
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
   const inputRef = useRef(null);
   const tickerRef = useRef(null);
   const touchStartRef = useRef({ x: 0, scrollLeft: 0 });
+
+  // Page ready fade-in
+  useEffect(() => {
+    const timer = setTimeout(() => setIsPageReady(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Mobile keyboard: keep input visible by scrolling it into view
+  useEffect(() => {
+    const handleResize = () => {
+      if (inputRef.current && document.activeElement === inputRef.current) {
+        setTimeout(() => {
+          inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+        }, 100);
+      }
+    };
+
+    const handleFocusIn = () => {
+      setTimeout(() => {
+        inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      }, 300);
+    };
+
+    window.visualViewport?.addEventListener('resize', handleResize);
+    inputRef.current?.addEventListener('focus', handleFocusIn);
+    const inputEl = inputRef.current;
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      inputEl?.removeEventListener('focus', handleFocusIn);
+    };
+  }, []);
 
   // Typing animation for placeholder
   useEffect(() => {
@@ -288,7 +321,7 @@ function Chat({ onEditRequest }) {
   // Landing state
   if (!hasStarted) {
     return (
-      <div className="landing-container">
+      <div className={`landing-container ${isPageReady ? 'ready' : ''}`}>
         <div className="landing-content">
           <img src="/header.gif" alt="Sameer" className="landing-avatar" />
           <h2 className="landing-title">SameerGPT</h2>

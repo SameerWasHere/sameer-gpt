@@ -5,6 +5,14 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.landing-container.ready {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .landing-content {
@@ -498,6 +506,24 @@
 
   .message-content pre {
     background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* ============ MOBILE KEYBOARD HANDLING ============ */
+@media (max-width: 600px) {
+  .chat-container {
+    height: 100%;
+  }
+
+  .input-wrapper {
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+    flex-shrink: 0;
+  }
+
+  .landing-container {
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
