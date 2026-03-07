@@ -50,6 +50,42 @@ function Chat({ onEditRequest }) {
     return () => clearTimeout(timer);
   }, []);
 
+  // Mobile keyboard handling
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    let prevHeight = window.visualViewport.height;
+
+    const onViewportResize = () => {
+      const currentHeight = window.visualViewport.height;
+      if (currentHeight < prevHeight && chatWindowRef.current) {
+        // Keyboard opened — scroll chat to bottom
+        requestAnimationFrame(() => {
+          if (chatWindowRef.current) {
+            chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+          }
+        });
+      }
+      prevHeight = currentHeight;
+    };
+
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    return () => window.visualViewport.removeEventListener('resize', onViewportResize);
+  }, []);
+
+  // iOS fix: force layout recalc after keyboard dismiss to fix stuck viewport
+  useEffect(() => {
+    const onBlur = () => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    };
+
+    const input = inputRef.current;
+    input?.addEventListener('blur', onBlur);
+    return () => input?.removeEventListener('blur', onBlur);
+  }, []);
+
   // Blur input on send to dismiss mobile keyboard
   const blurOnMobile = useCallback(() => {
     if (window.innerWidth <= 600 && inputRef.current) {
