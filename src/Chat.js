@@ -9,6 +9,8 @@ const EXAMPLE_QUESTIONS = [
   "Tell me about the PowerPod Case",
   "What's Sameer's favorite movie?",
   "What sports teams does Sameer follow?",
+  "What's Sameer's go-to food order?",
+  "Does Sameer have any hidden talents?",
 ];
 
 const PRESET_QUESTIONS = [
@@ -16,9 +18,11 @@ const PRESET_QUESTIONS = [
   "Tell me something fun about yourself",
   "What are your hobbies?",
   "Where did you go to school?",
+  "What's your favorite restaurant?",
+  "Tell me about a project you're proud of",
 ];
 
-function Chat() {
+function Chat({ onEditRequest }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +72,13 @@ function Chat() {
     const messageText = text || input;
     if (messageText.trim() === '') return;
 
+    // Secret command to open editor
+    if (messageText.trim() === '/edit') {
+      setInput('');
+      onEditRequest();
+      return;
+    }
+
     if (!hasStarted) setHasStarted(true);
 
     const newMessage = { role: 'user', content: messageText };
@@ -106,22 +117,15 @@ function Chat() {
     }
   }, [messages]);
 
-  // Landing state - centered input
+  // Landing state
   if (!hasStarted) {
     return (
       <div className="landing-container">
         <div className="landing-content">
           <img src="/header.gif" alt="Sameer" className="landing-avatar" />
-          <h2 className="landing-title">Ask me anything</h2>
-          <p className="landing-subtitle">Learn about Sameer's work, interests, and background</p>
+          <h2 className="landing-title">SameerGPT</h2>
+          <p className="landing-subtitle">Ask me anything about Sameer — his work, interests, background, and more.</p>
           <div className="landing-input-wrapper">
-            <div className="preset-questions">
-              {PRESET_QUESTIONS.map((q, i) => (
-                <button key={i} className="preset-btn" onClick={() => sendMessage(q)}>
-                  {q}
-                </button>
-              ))}
-            </div>
             <div className="input-area">
               <input
                 ref={inputRef}
@@ -140,13 +144,30 @@ function Chat() {
                 </svg>
               </button>
             </div>
+            <div className="preset-questions">
+              {PRESET_QUESTIONS.map((q, i) => (
+                <button key={i} className="preset-btn" onClick={() => sendMessage(q)}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="landing-links">
+            <a href="mailto:sbhutani95@gmail.com" className="landing-link" aria-label="Email">
+              <img src="/mail.png" alt="Email" />
+              <span>Email</span>
+            </a>
+            <a href="https://www.linkedin.com/in/sbhutani/" target="_blank" rel="noopener noreferrer" className="landing-link" aria-label="LinkedIn">
+              <img src="/linkedin.png" alt="LinkedIn" />
+              <span>LinkedIn</span>
+            </a>
           </div>
         </div>
       </div>
     );
   }
 
-  // Chat state - input at bottom
+  // Chat state
   return (
     <div className="chat-container">
       <div className="chat-window" ref={chatWindowRef}>

@@ -1,17 +1,15 @@
-// ContextEditor.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-function ContextEditor() {
+function ContextEditor({ onExit }) {
   const [context, setContext] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch the current context from the database when the component mounts
   useEffect(() => {
     const fetchContext = async () => {
       try {
-        const response = await axios.get('/api/getContext'); // Create this endpoint
+        const response = await axios.get('/api/getContext');
         setContext(response.data.context);
         setLoading(false);
       } catch (err) {
@@ -19,11 +17,9 @@ function ContextEditor() {
         setLoading(false);
       }
     };
-
     fetchContext();
   }, []);
 
-  // Handle context update
   const handleUpdateContext = async () => {
     try {
       await axios.post('/api/updateContext', { context });
@@ -33,19 +29,22 @@ function ContextEditor() {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <div className="context-editor"><p>Loading...</p></div>;
+  if (error) return <div className="context-editor"><p>{error}</p></div>;
 
   return (
     <div className="context-editor">
-      <h2>Edit Context</h2>
+      <div className="context-editor-header">
+        <h2>Edit Prompt</h2>
+      </div>
       <textarea
         value={context}
         onChange={(e) => setContext(e.target.value)}
-        rows="20"
-        cols="80"
       />
-      <button onClick={handleUpdateContext}>Update Context</button>
+      <div className="context-editor-actions">
+        <button onClick={handleUpdateContext}>Save Changes</button>
+        <button className="secondary" onClick={onExit}>Back to Chat</button>
+      </div>
     </div>
   );
 }
