@@ -37,6 +37,8 @@ function Chat({ onEditRequest }) {
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
   const inputRef = useRef(null);
+  const tickerRef = useRef(null);
+  const touchStartRef = useRef({ x: 0, scrollLeft: 0 });
 
   // Typing animation for placeholder
   useEffect(() => {
@@ -265,7 +267,26 @@ function Chat({ onEditRequest }) {
               </button>
             </div>
           </div>
-          <div className="ticker-container">
+          <div
+            className="ticker-container"
+            ref={tickerRef}
+            onTouchStart={(e) => {
+              const container = tickerRef.current;
+              if (!container) return;
+              touchStartRef.current = { x: e.touches[0].clientX, scrollLeft: container.scrollLeft };
+              container.classList.add('ticker-dragging');
+            }}
+            onTouchMove={(e) => {
+              const container = tickerRef.current;
+              if (!container) return;
+              const dx = e.touches[0].clientX - touchStartRef.current.x;
+              container.scrollLeft = touchStartRef.current.scrollLeft - dx;
+            }}
+            onTouchEnd={() => {
+              const container = tickerRef.current;
+              if (container) container.classList.remove('ticker-dragging');
+            }}
+          >
             <div className="ticker-track">
               {[...PRESET_QUESTIONS, ...PRESET_QUESTIONS].map((q, i) => (
                 <button key={i} className="ticker-btn" onClick={() => sendMessage(q)}>

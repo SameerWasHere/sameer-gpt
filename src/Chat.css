@@ -201,6 +201,7 @@
   mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%);
   margin-top: 24px;
+  padding: 6px 0;
 }
 
 .ticker-track {
@@ -211,6 +212,20 @@
 }
 
 .ticker-track:hover {
+  animation-play-state: paused;
+}
+
+.ticker-dragging {
+  overflow-x: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ticker-dragging::-webkit-scrollbar {
+  display: none;
+}
+
+.ticker-dragging .ticker-track {
   animation-play-state: paused;
 }
 
@@ -232,8 +247,11 @@
   background: #f9fafb;
   border-color: #2563eb;
   color: #2563eb;
-  transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.ticker-btn:active {
+  transform: scale(0.97);
 }
 
 @keyframes ticker {
