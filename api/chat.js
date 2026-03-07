@@ -51,13 +51,15 @@ export default async function handler(req, res) {
         'https://api.openai.com/v1/chat/completions',
         {
           model: 'gpt-4o',
-          messages: fullMessages, // Use fullMessages with the fetched context
+          messages: fullMessages,
+          max_tokens: 1000,
         },
         {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
           },
+          timeout: 25000,
         }
       );
 

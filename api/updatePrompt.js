@@ -66,12 +66,14 @@ export default async function handler(req, res) {
           }
         ],
         temperature: 0.3,
+        max_tokens: 4000,
       },
       {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
+        timeout: 25000,
       }
     );
 
