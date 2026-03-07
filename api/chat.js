@@ -63,6 +63,21 @@ export default async function handler(req, res) {
         }
       );
 
+      // Log the conversation to KV
+      const lastUserMsg = messages[messages.length - 1];
+      const assistantMsg = response.data.choices[0]?.message;
+      if (lastUserMsg && assistantMsg) {
+        try {
+          await kv.lpush('conversation_log', JSON.stringify({
+            question: lastUserMsg.content,
+            answer: assistantMsg.content,
+            timestamp: new Date().toISOString(),
+          }));
+        } catch (logErr) {
+          console.error('Failed to log conversation:', logErr.message);
+        }
+      }
+
       res.status(200).json(response.data);
     } catch (error) {
       console.error('Error details:', {

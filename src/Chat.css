@@ -298,11 +298,13 @@
 .system-message {
   background: #fef3c7;
   color: #92400e;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-radius: 12px;
   font-size: 13px;
-  text-align: center;
+  text-align: left;
   max-width: 90%;
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 
 /* ============ UPDATE BANNER ============ */

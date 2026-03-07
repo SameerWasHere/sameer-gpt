@@ -28,8 +28,7 @@ function Chat({ onEditRequest }) {
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderText, setPlaceholderText] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
-  // Update flow state
-  const [updateMode, setUpdateMode] = useState(null); // null | 'password' | 'instruction' | 'updating'
+  const [updateMode, setUpdateMode] = useState(null); // null | 'password' | 'summary' | 'instruction' | 'updating'
   const [updatePassword, setUpdatePassword] = useState('');
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
@@ -75,6 +74,46 @@ function Chat({ onEditRequest }) {
     setMessages(prev => [...prev, { role: 'system-display', content }]);
   };
 
+  const fetchAndShowSummary = async (pwd) => {
+    addSystemMessage("Fetching conversation history...");
+    try {
+      const response = await axios.post('/api/getConversations', { password: pwd });
+      const { count, conversations } = response.data;
+
+      if (count === 0) {
+        addSystemMessage("No conversations recorded yet. You can still type an update instruction, or type /delete to clear history, or Cancel to exit.");
+      } else {
+        let summary = `${count} conversation${count !== 1 ? 's' : ''} recorded:\n\n`;
+        conversations.forEach((c, i) => {
+          const date = c.timestamp ? new Date(c.timestamp).toLocaleDateString() : '';
+          summary += `${i + 1}. Q: "${c.question}"\n   A: "${c.answer && c.answer.length > 120 ? c.answer.substring(0, 120) + '...' : c.answer}"${date ? ` (${date})` : ''}\n\n`;
+        });
+        summary += "Now you can:\n• Type an update instruction to improve the prompt\n• Type /delete to clear conversation history\n• Cancel to exit";
+        addSystemMessage(summary);
+      }
+      setUpdateMode('instruction');
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        addSystemMessage("Wrong password. Update cancelled.");
+        setUpdateMode(null);
+        setUpdatePassword('');
+      } else {
+        addSystemMessage("Couldn't fetch conversation history. You can still type an update instruction.");
+        setUpdateMode('instruction');
+      }
+    }
+  };
+
+  const handleDeleteConversations = async () => {
+    addSystemMessage("Clearing conversation history...");
+    try {
+      await axios.post('/api/deleteConversations', { password: updatePassword });
+      addSystemMessage("Conversation history cleared! Type an update instruction or Cancel to exit.");
+    } catch (error) {
+      addSystemMessage("Failed to clear history. Try again.");
+    }
+  };
+
   const handleUpdateInstruction = async (instruction) => {
     setUpdateMode('updating');
     addSystemMessage("Updating your prompt...");
@@ -87,7 +126,7 @@ function Chat({ onEditRequest }) {
       });
 
       if (response.data.message) {
-        addSystemMessage(`Done! I've updated your prompt: "${instruction}"`);
+        addSystemMessage(`Done! Updated: "${instruction}"`);
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
@@ -116,22 +155,29 @@ function Chat({ onEditRequest }) {
       if (!hasStarted) setHasStarted(true);
       setInput('');
       setUpdateMode('password');
-      addSystemMessage("Enter your admin password to update the prompt:");
+      addSystemMessage("Enter your admin password:");
       return;
     }
 
     // Handle update flow
     if (updateMode === 'password') {
       setUpdatePassword(messageText);
-      setUpdateMode('instruction');
       setInput('');
-      addSystemMessage("What would you like to update? Just describe the change naturally.");
+      await fetchAndShowSummary(messageText);
       return;
     }
 
     if (updateMode === 'instruction') {
+      // Check for /delete command
+      if (messageText.trim() === '/delete') {
+        setInput('');
+        await handleDeleteConversations();
+        return;
+      }
+
       const newMessage = { role: 'user', content: messageText };
       setMessages(prev => [...prev, newMessage]);
+      setInput('');
       await handleUpdateInstruction(messageText);
       return;
     }
@@ -140,13 +186,12 @@ function Chat({ onEditRequest }) {
     if (!hasStarted) setHasStarted(true);
 
     const newMessage = { role: 'user', content: messageText };
-    const updatedMessages = [...messages.filter(m => m.role !== 'system-display'), newMessage];
     setMessages(prev => [...prev, newMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const chatMessages = updatedMessages.filter(m => m.role === 'user' || m.role === 'assistant');
+      const chatMessages = [...messages, newMessage].filter(m => m.role === 'user' || m.role === 'assistant');
       const response = await axios.post('/api/chat', {
         messages: chatMessages,
       });
@@ -178,7 +223,7 @@ function Chat({ onEditRequest }) {
 
   const getPlaceholder = () => {
     if (updateMode === 'password') return 'Enter password...';
-    if (updateMode === 'instruction') return 'Describe what to update...';
+    if (updateMode === 'instruction') return 'Describe update or type /delete...';
     if (updateMode === 'updating') return 'Updating...';
     return input ? '' : placeholderText || 'Ask SameerGPT...';
   };
@@ -276,9 +321,10 @@ function Chat({ onEditRequest }) {
         {updateMode && (
           <div className="update-banner">
             {updateMode === 'password' && 'Enter your password'}
-            {updateMode === 'instruction' && 'Describe your update'}
+            {updateMode === 'summary' && 'Loading conversations...'}
+            {updateMode === 'instruction' && 'Type update or /delete'}
             {updateMode === 'updating' && 'Updating prompt...'}
-            {updateMode !== 'updating' && (
+            {updateMode !== 'updating' && updateMode !== 'summary' && (
               <button className="update-cancel" onClick={() => { setUpdateMode(null); setUpdatePassword(''); }}>Cancel</button>
             )}
           </div>
@@ -293,9 +339,9 @@ function Chat({ onEditRequest }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter') sendMessage();
             }}
-            disabled={isLoading || updateMode === 'updating'}
+            disabled={isLoading || updateMode === 'updating' || updateMode === 'summary'}
           />
-          <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || !input.trim()}>
+          <button onClick={() => sendMessage()} disabled={isLoading || updateMode === 'updating' || updateMode === 'summary' || !input.trim()}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
               <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
