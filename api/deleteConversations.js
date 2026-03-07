@@ -24,6 +24,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    await kv.del('conversations');
     await kv.del('conversation_log');
     res.status(200).json({ message: 'Conversation history cleared.' });
   } catch (error) {

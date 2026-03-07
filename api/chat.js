@@ -10,6 +10,21 @@ const getContext = async () => {
   }
 };
 
+const logConversation = async (conversationId, question, answer) => {
+  try {
+    // Try to get existing conversation
+    const existing = await kv.hget('conversations', conversationId);
+    const convo = existing || { exchanges: [], startedAt: new Date().toISOString() };
+
+    convo.exchanges.push({ question, answer, timestamp: new Date().toISOString() });
+    convo.lastUpdated = new Date().toISOString();
+
+    await kv.hset('conversations', { [conversationId]: convo });
+  } catch (err) {
+    console.error('Failed to log conversation:', err.message);
+  }
+};
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -22,7 +37,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { messages, stream } = req.body;
+      const { messages, stream, conversationId } = req.body;
 
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
@@ -37,7 +52,6 @@ export default async function handler(req, res) {
       ];
 
       if (stream) {
-        // Streaming response
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
@@ -75,18 +89,9 @@ export default async function handler(req, res) {
 
           for (const line of lines) {
             if (line === 'data: [DONE]') {
-              // Log the conversation
               const lastUserMsg = messages[messages.length - 1];
-              if (lastUserMsg && fullContent) {
-                try {
-                  await kv.lpush('conversation_log', JSON.stringify({
-                    question: lastUserMsg.content,
-                    answer: fullContent,
-                    timestamp: new Date().toISOString(),
-                  }));
-                } catch (logErr) {
-                  console.error('Failed to log conversation:', logErr.message);
-                }
+              if (lastUserMsg && fullContent && conversationId) {
+                await logConversation(conversationId, lastUserMsg.content, fullContent);
               }
               res.write('data: [DONE]\n\n');
               res.end();
@@ -110,7 +115,6 @@ export default async function handler(req, res) {
 
         res.end();
       } else {
-        // Non-streaming fallback
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -126,19 +130,10 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // Log the conversation
         const lastUserMsg = messages[messages.length - 1];
         const assistantMsg = data.choices?.[0]?.message;
-        if (lastUserMsg && assistantMsg) {
-          try {
-            await kv.lpush('conversation_log', JSON.stringify({
-              question: lastUserMsg.content,
-              answer: assistantMsg.content,
-              timestamp: new Date().toISOString(),
-            }));
-          } catch (logErr) {
-            console.error('Failed to log conversation:', logErr.message);
-          }
+        if (lastUserMsg && assistantMsg && conversationId) {
+          await logConversation(conversationId, lastUserMsg.content, assistantMsg.content);
         }
 
         res.status(200).json(data);

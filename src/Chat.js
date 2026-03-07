@@ -36,6 +36,7 @@ function Chat({ onEditRequest }) {
   const [updateMode, setUpdateMode] = useState(null);
   const [updatePassword, setUpdatePassword] = useState('');
   const [streamingContent, setStreamingContent] = useState('');
+  const [conversationId] = useState(() => Date.now().toString());
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
   const inputRef = useRef(null);
@@ -100,10 +101,17 @@ function Chat({ onEditRequest }) {
       if (count === 0) {
         addSystemMessage("No conversations recorded yet. Type an update instruction, /delete to clear history, or Cancel to exit.");
       } else {
-        let summary = `${count} conversation${count !== 1 ? 's' : ''} recorded:\n\n`;
+        const totalExchanges = conversations.reduce((sum, c) => sum + (c.exchanges?.length || 0), 0);
+        let summary = `${count} conversation${count !== 1 ? 's' : ''} (${totalExchanges} total Q&As):\n\n`;
         conversations.forEach((c, i) => {
-          const date = c.timestamp ? new Date(c.timestamp).toLocaleDateString() : '';
-          summary += `${i + 1}. Q: "${c.question}"\n   A: "${c.answer && c.answer.length > 120 ? c.answer.substring(0, 120) + '...' : c.answer}"${date ? ` (${date})` : ''}\n\n`;
+          const date = c.startedAt ? new Date(c.startedAt).toLocaleDateString() : '';
+          const numQ = c.exchanges?.length || 0;
+          summary += `--- Conversation ${i + 1} (${numQ} Q&A${numQ !== 1 ? 's' : ''})${date ? ` — ${date}` : ''} ---\n`;
+          (c.exchanges || []).forEach((ex) => {
+            const shortA = ex.answer && ex.answer.length > 100 ? ex.answer.substring(0, 100) + '...' : ex.answer;
+            summary += `  Q: "${ex.question}"\n  A: "${shortA}"\n`;
+          });
+          summary += '\n';
         });
         summary += "Now you can:\n• Type an update instruction to improve the prompt\n• Type /delete to clear conversation history\n• Cancel to exit";
         addSystemMessage(summary);
@@ -216,7 +224,7 @@ function Chat({ onEditRequest }) {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatMessages, stream: true }),
+        body: JSON.stringify({ messages: chatMessages, stream: true, conversationId }),
       });
 
       if (!response.ok) throw new Error('Stream failed');

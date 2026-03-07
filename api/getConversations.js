@@ -24,13 +24,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const logs = await kv.lrange('conversation_log', 0, -1);
-    const conversations = logs.map(entry => {
-      if (typeof entry === 'string') {
-        try { return JSON.parse(entry); } catch { return entry; }
-      }
-      return entry;
-    });
+    const allConvos = await kv.hgetall('conversations');
+
+    if (!allConvos || Object.keys(allConvos).length === 0) {
+      return res.status(200).json({ count: 0, conversations: [] });
+    }
+
+    const conversations = Object.values(allConvos)
+      .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
 
     res.status(200).json({
       count: conversations.length,
