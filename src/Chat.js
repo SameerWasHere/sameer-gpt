@@ -50,29 +50,31 @@ function Chat({ onEditRequest }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Mobile keyboard: keep input visible by scrolling it into view
+  // Mobile keyboard: scroll chat to bottom when keyboard opens/closes
   useEffect(() => {
-    const handleResize = () => {
-      if (inputRef.current && document.activeElement === inputRef.current) {
-        setTimeout(() => {
-          inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
-        }, 100);
+    const scrollChatToBottom = () => {
+      if (chatWindowRef.current) {
+        requestAnimationFrame(() => {
+          if (chatWindowRef.current) {
+            chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+          }
+        });
       }
     };
 
-    const handleFocusIn = () => {
-      setTimeout(() => {
-        inputRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
-      }, 300);
+    const handleViewportResize = () => {
+      // Scroll chat to bottom after keyboard opens so latest messages are visible
+      scrollChatToBottom();
     };
 
-    window.visualViewport?.addEventListener('resize', handleResize);
-    inputRef.current?.addEventListener('focus', handleFocusIn);
-    const inputEl = inputRef.current;
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+    }
 
     return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      inputEl?.removeEventListener('focus', handleFocusIn);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+      }
     };
   }, []);
 
@@ -299,11 +301,13 @@ function Chat({ onEditRequest }) {
     }
   };
 
-  // Auto-scroll
+  // Auto-scroll — use rAF to ensure it fires after layout
   useEffect(() => {
-    if (chatWindowRef.current) {
-      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
-    }
+    requestAnimationFrame(() => {
+      if (chatWindowRef.current) {
+        chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+      }
+    });
   }, [messages, streamingContent]);
 
   const getPlaceholder = () => {

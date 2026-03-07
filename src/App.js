@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Chat from './Chat.js';
 import './App.css';
 import ContextEditor from './ContextEditor.js';
@@ -7,6 +7,32 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPasswordPanel, setShowPasswordPanel] = useState(false);
   const [password, setPassword] = useState('');
+
+  // Set --app-height from visualViewport for iOS keyboard handling
+  useEffect(() => {
+    const setAppHeight = () => {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${vh}px`);
+    };
+
+    setAppHeight();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setAppHeight);
+      window.visualViewport.addEventListener('scroll', setAppHeight);
+    } else {
+      window.addEventListener('resize', setAppHeight);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', setAppHeight);
+        window.visualViewport.removeEventListener('scroll', setAppHeight);
+      } else {
+        window.removeEventListener('resize', setAppHeight);
+      }
+    };
+  }, []);
 
   const handleEditRequest = () => {
     setShowPasswordPanel(true);

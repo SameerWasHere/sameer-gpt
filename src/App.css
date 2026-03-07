@@ -10,7 +10,8 @@ html, body {
   height: 100%;
   background-color: var(--bg, #ffffff);
   color: var(--text-primary, #1f2937);
-  overflow-x: hidden;
+  overflow: hidden;
+  position: fixed;
 }
 
 body {
@@ -23,17 +24,14 @@ body {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  max-height: 100dvh;
+  height: var(--app-height, 100vh);
+  max-height: var(--app-height, 100vh);
   overflow: hidden;
   background: var(--bg, #ffffff);
-}
-
-@supports not (height: 100dvh) {
-  .app-container {
-    height: 100vh;
-    max-height: 100vh;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 /* Password overlay */
@@ -111,7 +109,7 @@ body {
 .context-editor {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-height, 100vh);
   max-width: 780px;
   margin: 0 auto;
   width: 100%;
