@@ -66,14 +66,17 @@ export default async function handler(req, res) {
       // Track active sessions for Telegram tap-in
       const sessionLabel = conversationId ? conversationId.slice(-4) : '';
       if (conversationId) {
-        const sessions = await kv.get('telegram:sessions') || {};
-        sessions[conversationId] = Date.now();
-        // Clean out sessions older than 1 hour
-        const cutoff = Date.now() - 3600000;
-        for (const id of Object.keys(sessions)) {
-          if (sessions[id] < cutoff) delete sessions[id];
+        try {
+          const sessions = await kv.get('telegram:active_sessions') || {};
+          sessions[conversationId] = Date.now();
+          const cutoff = Date.now() - 3600000;
+          for (const id of Object.keys(sessions)) {
+            if (sessions[id] < cutoff) delete sessions[id];
+          }
+          await kv.set('telegram:active_sessions', sessions);
+        } catch (e) {
+          console.error('Session tracking error:', e.message);
         }
-        await kv.set('telegram:sessions', sessions);
       }
 
       // Check if Sameer is tapped in for this session

@@ -16,7 +16,7 @@ async function sendTelegram(chatId, text) {
 
 async function getSessions() {
   // Returns { sessionId: timestamp, ... } sorted by most recent
-  const sessions = await kv.get('telegram:sessions') || {};
+  const sessions = await kv.get('telegram:active_sessions') || {};
   // Clean out old ones (1 hour)
   const cutoff = Date.now() - 3600000;
   for (const id of Object.keys(sessions)) {
