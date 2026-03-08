@@ -102,7 +102,7 @@ export default async function handler(req, res) {
 
   // Only owner can use commands
   const ownerId = await kv.get('telegram:owner_chat_id');
-  if (chatId.toString() !== ownerId) {
+  if (String(chatId) !== String(ownerId)) {
     return res.status(200).json({ ok: true });
   }
 
