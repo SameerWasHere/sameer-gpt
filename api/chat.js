@@ -81,7 +81,7 @@ export default async function handler(req, res) {
 
       // Check if Sameer is tapped in for this session
       const tappedIn = await kv.get('telegram:tapped_in');
-      if (tappedIn === conversationId) {
+      if (tappedIn && String(tappedIn) === String(conversationId)) {
         const lastMsg = messages[messages.length - 1];
         await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
         // Save full conversation so coach mode has context
