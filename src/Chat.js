@@ -297,6 +297,29 @@ function Chat({ onEditRequest }) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
+              if (data.waitingForHuman) {
+                // Sameer is tapped in — poll for his response
+                const pollForResponse = async () => {
+                  for (let i = 0; i < 150; i++) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    try {
+                      const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
+                      const result = await resp.json();
+                      if (result.response) {
+                        setMessages(prev => [...prev, { role: 'assistant', content: result.response }]);
+                        setIsLoading(false);
+                        return;
+                      }
+                    } catch (e) {
+                      // Keep polling
+                    }
+                  }
+                  setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, got distracted. Ask me again?" }]);
+                  setIsLoading(false);
+                };
+                pollForResponse();
+                return;
+              }
               if (data.content) {
                 accumulated += data.content;
                 setStreamingContent(accumulated);

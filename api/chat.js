@@ -1,5 +1,21 @@
 import { kv } from '@vercel/kv';
 
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+const notifyTelegram = async (text) => {
+  try {
+    const chatId = await kv.get('telegram:owner_chat_id');
+    if (!chatId || !BOT_TOKEN) return;
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    });
+  } catch (e) {
+    console.error('Telegram notify error:', e.message);
+  }
+};
+
 const getContext = async () => {
   try {
     const context = await kv.get('sameer_context');
@@ -46,10 +62,44 @@ export default async function handler(req, res) {
       }
 
       const context = await getContext();
+
+      // Track active session for Telegram tap-in
+      if (conversationId) {
+        await kv.set('telegram:active_session', conversationId, { ex: 3600 });
+      }
+
+      // Check if Sameer is tapped in for this session
+      const tappedIn = await kv.get('telegram:tapped_in');
+      if (tappedIn === conversationId) {
+        const lastMsg = messages[messages.length - 1];
+        await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
+        await notifyTelegram(`User: ${lastMsg.content}`);
+
+        if (stream) {
+          res.setHeader('Content-Type', 'text/event-stream');
+          res.setHeader('Cache-Control', 'no-cache');
+          res.setHeader('Connection', 'keep-alive');
+          res.write(`data: ${JSON.stringify({ waitingForHuman: true })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          res.end();
+        } else {
+          res.status(200).json({ waitingForHuman: true });
+        }
+        return;
+      }
+
+      // Build messages with system context
+      const isFirstMessage = messages.length === 1;
       const fullMessages = [
         { role: 'system', content: context },
-        ...messages,
       ];
+      if (isFirstMessage) {
+        fullMessages.push({
+          role: 'system',
+          content: 'This is the first message from someone new. Before diving into their question, casually ask who they are — like you got a text from an unknown number. Keep it friendly and natural, like "Hey! Who\'s this?" Then briefly address what they asked.',
+        });
+      }
+      fullMessages.push(...messages);
 
       if (stream) {
         res.setHeader('Content-Type', 'text/event-stream');
@@ -93,6 +143,11 @@ export default async function handler(req, res) {
               if (lastUserMsg && fullContent && conversationId) {
                 await logConversation(conversationId, lastUserMsg.content, fullContent);
               }
+              // Notify Telegram
+              if (lastUserMsg && fullContent) {
+                const prefix = isFirstMessage ? '--- New chat on sameer.us ---\n\n' : '';
+                notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`);
+              }
               res.write('data: [DONE]\n\n');
               res.end();
               return;
@@ -134,6 +189,11 @@ export default async function handler(req, res) {
         const assistantMsg = data.choices?.[0]?.message;
         if (lastUserMsg && assistantMsg && conversationId) {
           await logConversation(conversationId, lastUserMsg.content, assistantMsg.content);
+        }
+        // Notify Telegram
+        if (lastUserMsg && assistantMsg) {
+          const prefix = isFirstMessage ? '--- New chat on sameer.us ---\n\n' : '';
+          notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`);
         }
 
         res.status(200).json(data);
