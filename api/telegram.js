@@ -149,7 +149,39 @@ export default async function handler(req, res) {
     await kv.del('telegram:tapped_in');
     await kv.del('telegram:tap_mode');
     if (was) {
-      await sendTelegram(chatId, 'You\'re OUT. AI is back in control.');
+      // Check if the user sent a message that hasn't been answered
+      const pendingMsg = await kv.get(`telegram:pending:${was}`);
+      if (pendingMsg) {
+        await sendTelegram(chatId, 'You\'re OUT. User has an unanswered message — AI is responding now.');
+        // Generate AI response for the pending message
+        const apiKey = process.env.OPENAI_API_KEY;
+        const context = await kv.get('sameer_context') || 'Default context';
+        const conversationMessages = await kv.get(`telegram:messages:${was}`) || [];
+        const fullMessages = [
+          { role: 'system', content: context },
+          ...conversationMessages,
+        ];
+        const aiResp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: fullMessages,
+            max_tokens: 1000,
+          }),
+        });
+        const data = await aiResp.json();
+        const aiResponse = data.choices?.[0]?.message?.content;
+        if (aiResponse) {
+          await kv.set(`telegram:response:${was}`, aiResponse, { ex: 300 });
+          await kv.del(`telegram:pending:${was}`);
+        }
+      } else {
+        await sendTelegram(chatId, 'You\'re OUT. AI is back in control.');
+      }
     } else {
       await sendTelegram(chatId, 'You weren\'t tapped in.');
     }
