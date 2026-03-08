@@ -73,6 +73,8 @@ export default async function handler(req, res) {
       if (tappedIn === conversationId) {
         const lastMsg = messages[messages.length - 1];
         await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
+        // Save full conversation so coach mode has context
+        await kv.set(`telegram:messages:${conversationId}`, messages, { ex: 3600 });
         await notifyTelegram(`User: ${lastMsg.content}`);
 
         if (stream) {

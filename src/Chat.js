@@ -298,7 +298,7 @@ function Chat({ onEditRequest }) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.waitingForHuman) {
-                // Sameer is tapped in — poll for his response
+                // Poll for response, then simulate streaming so it looks identical to AI
                 const pollForResponse = async () => {
                   for (let i = 0; i < 150; i++) {
                     await new Promise(r => setTimeout(r, 2000));
@@ -306,8 +306,22 @@ function Chat({ onEditRequest }) {
                       const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
                       const result = await resp.json();
                       if (result.response) {
-                        setMessages(prev => [...prev, { role: 'assistant', content: result.response }]);
-                        setIsLoading(false);
+                        // Simulate streaming character by character
+                        const text = result.response;
+                        let pos = 0;
+                        const simulateStream = () => {
+                          const chunkSize = Math.floor(Math.random() * 3) + 1;
+                          pos = Math.min(pos + chunkSize, text.length);
+                          setStreamingContent(text.substring(0, pos));
+                          if (pos < text.length) {
+                            setTimeout(simulateStream, 15 + Math.random() * 20);
+                          } else {
+                            setStreamingContent('');
+                            setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+                            setIsLoading(false);
+                          }
+                        };
+                        simulateStream();
                         return;
                       }
                     } catch (e) {
