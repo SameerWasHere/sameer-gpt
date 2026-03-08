@@ -322,12 +322,6 @@ function Chat({ onEditRequest }) {
     // Normal chat flow with streaming
     if (!hasStarted) setHasStarted(true);
 
-    // Commit any previous streaming content to messages before starting new one
-    if (streamingContent) {
-      setMessages(prev => [...prev, { role: 'assistant', content: streamingContent }]);
-      setStreamingContent('');
-    }
-
     const newMessage = { role: 'user', content: messageText };
     setMessages(prev => [...prev, newMessage]);
     clearInput();
@@ -358,6 +352,10 @@ function Chat({ onEditRequest }) {
 
         for (const line of lines) {
           if (line === 'data: [DONE]') {
+            if (accumulated) {
+              setStreamingContent('');
+              setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
+            }
             setIsLoading(false);
             return;
           }
