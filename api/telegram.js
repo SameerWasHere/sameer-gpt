@@ -107,6 +107,89 @@ async function coachResponse(instruction, sessionId) {
   return data.choices?.[0]?.message?.content || null;
 }
 
+async function logIntervention(sessionId, type, userMessage, response, coachInstruction) {
+  try {
+    const key = `telegram:interventions:${sessionId}`;
+    const interventions = await kv.get(key) || [];
+    interventions.push({
+      type,
+      userMessage,
+      response,
+      coachInstruction: coachInstruction || null,
+      timestamp: new Date().toISOString(),
+    });
+    await kv.set(key, interventions, { ex: 86400 }); // 24 hours
+  } catch (e) {
+    console.error('Log intervention error:', e.message);
+  }
+}
+
+async function learnFromSession(sessionId) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const interventions = await kv.get(`telegram:interventions:${sessionId}`);
+  if (!interventions || interventions.length === 0) return null;
+
+  const currentPrompt = await kv.get('sameer_context') || '';
+  const conversation = await kv.get(`telegram:messages:${sessionId}`) || [];
+
+  // Build a summary of what happened
+  const convoSummary = conversation.map(m =>
+    `${m.role === 'user' ? 'Visitor' : 'AI'}: ${m.content}`
+  ).join('\n\n');
+
+  const interventionSummary = interventions.map(i => {
+    if (i.type === 'direct') {
+      return `When the visitor said: "${i.userMessage}"\nSameer responded directly: "${i.response}"`;
+    } else {
+      return `When the visitor said: "${i.userMessage}"\nSameer coached the AI: "${i.coachInstruction}"\nAI generated: "${i.response}"`;
+    }
+  }).join('\n\n---\n\n');
+
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are helping improve an AI chatbot's system prompt. The chatbot represents a real person named Sameer. Sameer has been watching conversations and sometimes intervenes — either by responding directly or by coaching the AI on what to say.
+
+Your job: analyze Sameer's interventions to understand HOW he talks, WHAT he emphasizes, and WHERE the AI fell short. Then generate specific, concise additions to the system prompt that will help the AI sound more like Sameer in future conversations.
+
+Rules:
+- Output ONLY the new text to ADD to the prompt. Do not repeat existing prompt content.
+- Be specific — include actual phrases, tone preferences, topics, and facts Sameer shared.
+- Focus on patterns: how does Sameer phrase things? What does he emphasize? What tone does he use?
+- If Sameer shared factual info about himself, include it.
+- Keep it concise — bullet points or short paragraphs.
+- Do not add generic instructions. Only add things clearly demonstrated by Sameer's actual messages.`,
+        },
+        {
+          role: 'user',
+          content: `CURRENT SYSTEM PROMPT:\n${currentPrompt}\n\n---\n\nCONVERSATION:\n${convoSummary}\n\n---\n\nSAMEER'S INTERVENTIONS:\n${interventionSummary}\n\n---\n\nBased on Sameer's interventions above, what should be ADDED to the system prompt to make the AI sound more like Sameer?`,
+        },
+      ],
+      max_tokens: 1000,
+    }),
+  });
+
+  const data = await resp.json();
+  const learnings = data.choices?.[0]?.message?.content;
+  if (!learnings) return null;
+
+  // Append learnings to the prompt
+  const updatedPrompt = currentPrompt + '\n\n--- Learned from conversations ---\n' + learnings;
+  await kv.set('sameer_context', updatedPrompt);
+
+  return learnings;
+}
+
 async function generateAiResponse(sessionId) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -189,9 +272,11 @@ export default async function handler(req, res) {
       const instruction = text.slice(7).trim();
       if (instruction) {
         await sendInTopic(sid, '(generating coached response...)');
+        const pendingUserMsg = await kv.get(`telegram:pending:${sid}`) || '';
         const aiResponse = await coachResponse(instruction, sid);
         if (aiResponse) {
           await kv.set(`telegram:response:${sid}`, aiResponse, { ex: 300 });
+          await logIntervention(sid, 'coach', pendingUserMsg, aiResponse, instruction);
           await sendInTopic(sid, `Sent to user:\n\n${aiResponse}`);
         } else {
           await sendInTopic(sid, 'Failed to generate response.');
@@ -222,6 +307,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    if (text === '/learn') {
+      await sendInTopic(sid, '(analyzing your interventions in this chat...)');
+      const learnings = await learnFromSession(sid);
+      if (learnings) {
+        await sendInTopic(sid, `Prompt updated. Learned:\n\n${learnings}`);
+      } else {
+        await sendInTopic(sid, 'Nothing to learn — no interventions found in this session.');
+      }
+      return res.status(200).json({ ok: true });
+    }
+
     // Plain text — send to user
     if (text.startsWith('/')) {
       return res.status(200).json({ ok: true });
@@ -231,22 +327,26 @@ export default async function handler(req, res) {
     const tapMode = await kv.get('telegram:tap_mode');
 
     if (tappedIn && String(tappedIn) === sid) {
+      const pendingUserMsg = await kv.get(`telegram:pending:${sid}`) || '';
       if (tapMode === 'coach') {
         await sendInTopic(sid, '(generating coached response...)');
         const aiResponse = await coachResponse(text, sid);
         if (aiResponse) {
           await kv.set(`telegram:response:${sid}`, aiResponse, { ex: 300 });
+          await logIntervention(sid, 'coach', pendingUserMsg, aiResponse, text);
           await sendInTopic(sid, `Sent:\n\n${aiResponse}`);
         } else {
           await sendInTopic(sid, 'Failed to generate. Try again.');
         }
       } else {
         await kv.set(`telegram:response:${sid}`, text, { ex: 300 });
+        await logIntervention(sid, 'direct', pendingUserMsg, text);
         await sendInTopic(sid, '(sent)');
       }
     } else {
       // Not tapped in — send as proactive push
       await kv.set(`telegram:response:${sid}`, text, { ex: 300 });
+      await logIntervention(sid, 'direct', '', text);
       await sendInTopic(sid, '(sent as push message)');
     }
 
