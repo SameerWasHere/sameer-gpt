@@ -14,21 +14,29 @@ async function sendTelegram(chatId, text) {
   }
 }
 
-async function getAllSessions() {
-  // Get all sessions, most recent last
-  const sessions = await kv.zrange('telegram:sessions', 0, -1);
-  return sessions || [];
+async function getSessions() {
+  // Returns { sessionId: timestamp, ... } sorted by most recent
+  const sessions = await kv.get('telegram:sessions') || {};
+  // Clean out old ones (1 hour)
+  const cutoff = Date.now() - 3600000;
+  for (const id of Object.keys(sessions)) {
+    if (sessions[id] < cutoff) delete sessions[id];
+  }
+  return sessions;
 }
 
 async function getRecentSession() {
-  const sessions = await getAllSessions();
-  return sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  const sessions = await getSessions();
+  const entries = Object.entries(sessions);
+  if (entries.length === 0) return null;
+  // Sort by timestamp descending, return most recent
+  entries.sort((a, b) => b[1] - a[1]);
+  return entries[0][0];
 }
 
 async function findSessionByLabel(label) {
-  const sessions = await getAllSessions();
-  if (sessions.length === 0) return null;
-  return sessions.find(s => s.endsWith(label)) || null;
+  const sessions = await getSessions();
+  return Object.keys(sessions).find(id => id.endsWith(label)) || null;
 }
 
 async function coachResponse(instruction, sessionId) {
@@ -103,10 +111,11 @@ export default async function handler(req, res) {
     const label = text.slice(3).trim();
     const session = label ? await findSessionByLabel(label) : await getRecentSession();
     if (!session) {
-      const allSessions = await getAllSessions();
+      const allSessions = await getSessions();
+      const count = Object.keys(allSessions).length;
       const debugMsg = label
-        ? `No session matching "${label}". Active sessions: ${allSessions.length}`
-        : `No active sessions found. (${allSessions.length} in set)`;
+        ? `No session matching "${label}". Active sessions: ${count}`
+        : `No active sessions found. (${count} tracked)`;
       await sendTelegram(chatId, debugMsg);
       return res.status(200).json({ ok: true });
     }
@@ -121,10 +130,11 @@ export default async function handler(req, res) {
     const label = text.slice(6).trim();
     const session = label ? await findSessionByLabel(label) : await getRecentSession();
     if (!session) {
-      const allSessions = await getAllSessions();
+      const allSessions = await getSessions();
+      const count = Object.keys(allSessions).length;
       const debugMsg = label
-        ? `No session matching "${label}". Active sessions: ${allSessions.length}`
-        : `No active sessions found. (${allSessions.length} in set)`;
+        ? `No session matching "${label}". Active sessions: ${count}`
+        : `No active sessions found. (${count} tracked)`;
       await sendTelegram(chatId, debugMsg);
       return res.status(200).json({ ok: true });
     }
@@ -147,15 +157,16 @@ export default async function handler(req, res) {
   }
 
   if (text === '/sessions') {
-    const sessions = await getAllSessions();
-    if (sessions.length === 0) {
+    const sessions = await getSessions();
+    const entries = Object.entries(sessions);
+    if (entries.length === 0) {
       await sendTelegram(chatId, 'No active sessions.');
       return res.status(200).json({ ok: true });
     }
-    const lines = sessions.map(id => {
-      // Session ID is a timestamp, so we can calc how long ago
-      const ago = Math.round((Date.now() - parseInt(id)) / 60000);
-      return `[${id.slice(-4)}] — ${isNaN(ago) ? '?' : ago}m ago`;
+    entries.sort((a, b) => b[1] - a[1]);
+    const lines = entries.map(([id, ts]) => {
+      const ago = Math.round((Date.now() - ts) / 60000);
+      return `[${id.slice(-4)}] — ${ago}m ago`;
     });
     const tappedIn = await kv.get('telegram:tapped_in');
     let status = `Active sessions:\n\n${lines.join('\n')}`;

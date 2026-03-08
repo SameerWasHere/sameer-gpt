@@ -66,11 +66,14 @@ export default async function handler(req, res) {
       // Track active sessions for Telegram tap-in
       const sessionLabel = conversationId ? conversationId.slice(-4) : '';
       if (conversationId) {
-        // Add to active sessions set (scored by timestamp for ordering)
-        await kv.zadd('telegram:sessions', { score: Date.now(), member: conversationId });
-        // Expire old sessions (older than 1 hour)
+        const sessions = await kv.get('telegram:sessions') || {};
+        sessions[conversationId] = Date.now();
+        // Clean out sessions older than 1 hour
         const cutoff = Date.now() - 3600000;
-        await kv.zremrangebyscore('telegram:sessions', 0, cutoff);
+        for (const id of Object.keys(sessions)) {
+          if (sessions[id] < cutoff) delete sessions[id];
+        }
+        await kv.set('telegram:sessions', sessions);
       }
 
       // Check if Sameer is tapped in for this session
