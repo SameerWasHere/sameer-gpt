@@ -2,15 +2,40 @@ import { kv } from '@vercel/kv';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-const notifyTelegram = async (text) => {
+const notifyTelegram = async (text, sessionId) => {
   try {
     const chatId = await kv.get('telegram:owner_chat_id');
     if (!chatId || !BOT_TOKEN) return;
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+
+    // Get or create thread anchor for this session
+    let anchorId = sessionId ? await kv.get(`telegram:thread:${sessionId}`) : null;
+    if (!anchorId && sessionId) {
+      const label = String(sessionId).slice(-4);
+      const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: `--- New chat [${label}] ---` }),
+      });
+      const data = await resp.json();
+      anchorId = data.result?.message_id;
+      if (anchorId) {
+        await kv.set(`telegram:thread:${sessionId}`, anchorId, { ex: 7200 });
+        await kv.set(`telegram:msg_session:${anchorId}`, sessionId, { ex: 7200 });
+      }
+    }
+
+    const body = { chat_id: chatId, text };
+    if (anchorId) body.reply_to_message_id = anchorId;
+    const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text }),
+      body: JSON.stringify(body),
     });
+    const msgData = await resp.json();
+    const msgId = msgData.result?.message_id;
+    if (msgId && sessionId) {
+      await kv.set(`telegram:msg_session:${msgId}`, sessionId, { ex: 7200 });
+    }
   } catch (e) {
     console.error('Telegram notify error:', e.message);
   }
@@ -86,7 +111,7 @@ export default async function handler(req, res) {
         await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
         // Save full conversation so coach mode has context
         await kv.set(`telegram:messages:${conversationId}`, messages, { ex: 3600 });
-        await notifyTelegram(`[${sessionLabel}] User: ${lastMsg.content}`);
+        await notifyTelegram(`User: ${lastMsg.content}`, conversationId);
 
         if (stream) {
           res.setHeader('Content-Type', 'text/event-stream');
@@ -158,8 +183,7 @@ export default async function handler(req, res) {
               }
               // Notify Telegram (must await or Vercel kills the process)
               if (lastUserMsg && fullContent) {
-                const prefix = isFirstMessage ? `--- New chat [${sessionLabel}] ---\n\n` : `[${sessionLabel}] `;
-                await notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`);
+                await notifyTelegram(`User: ${lastUserMsg.content}\n\nAI: ${fullContent}`, conversationId);
               }
               res.write('data: [DONE]\n\n');
               res.end();
@@ -205,8 +229,7 @@ export default async function handler(req, res) {
         }
         // Notify Telegram (must await or Vercel kills the process)
         if (lastUserMsg && assistantMsg) {
-          const prefix = isFirstMessage ? `--- New chat [${sessionLabel}] ---\n\n` : `[${sessionLabel}] `;
-          await notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`);
+          await notifyTelegram(`User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`, conversationId);
         }
 
         res.status(200).json(data);
