@@ -2,40 +2,42 @@ import { kv } from '@vercel/kv';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
+const FORUM_CHAT_ID = '-1003840040892';
+
 const notifyTelegram = async (text, sessionId) => {
   try {
-    const chatId = await kv.get('telegram:owner_chat_id');
-    if (!chatId || !BOT_TOKEN) return;
+    if (!BOT_TOKEN) return;
 
-    // Get or create thread anchor for this session
-    let anchorId = sessionId ? await kv.get(`telegram:thread:${sessionId}`) : null;
-    if (!anchorId && sessionId) {
+    // Get or create forum topic for this session
+    let threadId = sessionId ? await kv.get(`telegram:topic:${sessionId}`) : null;
+    if (!threadId && sessionId) {
+      // Create a new forum topic
       const label = String(sessionId).slice(-4);
-      const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createForumTopic`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, text: `--- New chat [${label}] ---` }),
+        body: JSON.stringify({
+          chat_id: FORUM_CHAT_ID,
+          name: `Chat ${label} — ${time}`,
+        }),
       });
       const data = await resp.json();
-      anchorId = data.result?.message_id;
-      if (anchorId) {
-        await kv.set(`telegram:thread:${sessionId}`, anchorId, { ex: 7200 });
-        await kv.set(`telegram:msg_session:${anchorId}`, sessionId, { ex: 7200 });
+      threadId = data.result?.message_thread_id;
+      if (threadId) {
+        await kv.set(`telegram:topic:${sessionId}`, threadId, { ex: 7200 });
+        await kv.set(`telegram:topic_session:${threadId}`, sessionId, { ex: 7200 });
       }
     }
 
-    const body = { chat_id: chatId, text };
-    if (anchorId) body.reply_to_message_id = anchorId;
-    const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const body = { chat_id: FORUM_CHAT_ID, text };
+    if (threadId) body.message_thread_id = threadId;
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const msgData = await resp.json();
-    const msgId = msgData.result?.message_id;
-    if (msgId && sessionId) {
-      await kv.set(`telegram:msg_session:${msgId}`, sessionId, { ex: 7200 });
-    }
   } catch (e) {
     console.error('Telegram notify error:', e.message);
   }

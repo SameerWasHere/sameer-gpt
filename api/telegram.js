@@ -1,11 +1,12 @@
 import { kv } from '@vercel/kv';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const FORUM_CHAT_ID = '-1003840040892';
 
-async function sendTelegram(chatId, text, replyToMessageId) {
+async function sendTelegram(chatId, text, threadId) {
   try {
     const body = { chat_id: chatId, text };
-    if (replyToMessageId) body.reply_to_message_id = replyToMessageId;
+    if (threadId) body.message_thread_id = threadId;
     const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -19,27 +20,41 @@ async function sendTelegram(chatId, text, replyToMessageId) {
   }
 }
 
-// Send a message in a session's thread. Creates anchor if first message.
-async function sendInThread(chatId, sessionId, text) {
-  const threadKey = `telegram:thread:${sessionId}`;
-  let anchorId = await kv.get(threadKey);
-
-  if (!anchorId) {
-    // First message for this session — create anchor
+async function createTopic(sessionId) {
+  try {
     const label = String(sessionId).slice(-4);
-    anchorId = await sendTelegram(chatId, `--- New chat [${label}] ---`);
-    if (anchorId) {
-      await kv.set(threadKey, anchorId, { ex: 7200 });
-      await kv.set(`telegram:msg_session:${anchorId}`, sessionId, { ex: 7200 });
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const resp = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createForumTopic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: FORUM_CHAT_ID,
+        name: `Chat ${label} — ${time}`,
+      }),
+    });
+    const data = await resp.json();
+    const threadId = data.result?.message_thread_id;
+    if (threadId) {
+      await kv.set(`telegram:topic:${sessionId}`, threadId, { ex: 7200 });
+      await kv.set(`telegram:topic_session:${threadId}`, sessionId, { ex: 7200 });
     }
+    return threadId;
+  } catch (e) {
+    console.error('Create topic error:', e.message);
+    return null;
   }
+}
 
-  // Send as reply to anchor
-  const msgId = await sendTelegram(chatId, text, anchorId);
-  if (msgId) {
-    await kv.set(`telegram:msg_session:${msgId}`, sessionId, { ex: 7200 });
+// Send a message in a session's topic. Creates topic if first message.
+async function sendInTopic(sessionId, text) {
+  let threadId = await kv.get(`telegram:topic:${sessionId}`);
+  if (!threadId) {
+    threadId = await createTopic(sessionId);
   }
-  return msgId;
+  if (threadId) {
+    await sendTelegram(FORUM_CHAT_ID, text, threadId);
+  }
 }
 
 async function getSessions() {
@@ -113,14 +128,6 @@ async function generateAiResponse(sessionId) {
   return data.choices?.[0]?.message?.content || null;
 }
 
-// Find session from a replied-to message
-async function getSessionFromReply(message) {
-  const replyMsgId = message.reply_to_message?.message_id;
-  if (!replyMsgId) return null;
-  const sessionId = await kv.get(`telegram:msg_session:${replyMsgId}`);
-  return sessionId ? String(sessionId) : null;
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).json({ ok: true });
 
@@ -129,226 +136,157 @@ export default async function handler(req, res) {
 
   const chatId = message.chat.id;
   const text = message.text.trim().replace(/@\w+/g, '');
+  const messageThreadId = message.message_thread_id;
 
-  // Register owner on /start
-  if (text === '/start') {
+  // Only respond in the forum group or DM with owner
+  const ownerId = await kv.get('telegram:owner_chat_id');
+  const isForumGroup = String(chatId) === FORUM_CHAT_ID;
+  const isOwnerDM = String(chatId) === String(ownerId);
+
+  // /start in DM
+  if (text === '/start' && !isForumGroup) {
     await kv.set('telegram:owner_chat_id', chatId.toString());
     await sendTelegram(chatId,
       'Connected to SameerGPT!\n\n' +
-      'Each chat session gets its own thread.\n\n' +
-      'Reply to any thread to interact:\n' +
-      '- Reply with text = send directly to user\n' +
-      '- Reply /coach [advice] = AI responds with your guidance\n' +
-      '- Reply /in = intercept (AI stops, you respond)\n' +
-      '- Reply /out = hand back to AI\n\n' +
-      'Or use without reply:\n' +
-      '/in, /out, /sessions, /status'
+      'Session chats will appear as topics in your SameerUs group.\n\n' +
+      'In each topic, just type to interact:\n' +
+      '- Type a message = send directly to user\n' +
+      '- /coach [advice] = AI responds with your guidance\n' +
+      '- /in = intercept (AI stops, you respond)\n' +
+      '- /out = hand back to AI'
     );
     return res.status(200).json({ ok: true });
   }
 
-  const ownerId = await kv.get('telegram:owner_chat_id');
-  if (String(chatId) !== String(ownerId)) {
+  if (!isForumGroup && !isOwnerDM) {
     return res.status(200).json({ ok: true });
   }
 
-  // Check if this is a reply to a session thread
-  const replySessionId = await getSessionFromReply(message);
+  // Messages in forum topics — find which session this topic belongs to
+  if (isForumGroup && messageThreadId) {
+    const sessionId = await kv.get(`telegram:topic_session:${messageThreadId}`);
+    if (!sessionId) {
+      return res.status(200).json({ ok: true });
+    }
 
-  // --- Reply-based commands (session-aware) ---
+    const sid = String(sessionId);
 
-  if (replySessionId) {
-    // Reply /in to a thread → tap into that session
     if (text === '/in') {
-      await kv.set('telegram:tapped_in', replySessionId);
+      await kv.set('telegram:tapped_in', sid);
       await kv.set('telegram:tap_mode', 'direct');
-      await sendInThread(chatId, replySessionId, `DIRECT mode. You ARE the AI for this chat.\nType /out to hand back.`);
+      await sendInTopic(sid, 'DIRECT mode. You ARE the AI.\nJust type your messages. /out to hand back.');
       return res.status(200).json({ ok: true });
     }
 
-    // Reply /coach to a thread → coach mode for that session
     if (text === '/coach') {
-      await kv.set('telegram:tapped_in', replySessionId);
+      await kv.set('telegram:tapped_in', sid);
       await kv.set('telegram:tap_mode', 'coach');
-      await sendInThread(chatId, replySessionId, `COACH mode. Tell the AI what to say.\nType /out to hand back.`);
+      await sendInTopic(sid, 'COACH mode. Tell the AI what to say.\n/out to hand back.');
       return res.status(200).json({ ok: true });
     }
 
-    // Reply /coach [instruction] → one-off coach response without tapping in
     if (text.startsWith('/coach ')) {
       const instruction = text.slice(7).trim();
       if (instruction) {
-        await sendInThread(chatId, replySessionId, '(generating coached response...)');
-        const aiResponse = await coachResponse(instruction, replySessionId);
+        await sendInTopic(sid, '(generating coached response...)');
+        const aiResponse = await coachResponse(instruction, sid);
         if (aiResponse) {
-          await kv.set(`telegram:response:${replySessionId}`, aiResponse, { ex: 300 });
-          await sendInThread(chatId, replySessionId, `Sent to user:\n\n${aiResponse}`);
+          await kv.set(`telegram:response:${sid}`, aiResponse, { ex: 300 });
+          await sendInTopic(sid, `Sent to user:\n\n${aiResponse}`);
         } else {
-          await sendInThread(chatId, replySessionId, 'Failed to generate response.');
+          await sendInTopic(sid, 'Failed to generate response.');
         }
         return res.status(200).json({ ok: true });
       }
     }
 
-    // Reply /out → release that session
     if (text === '/out') {
       const tappedIn = await kv.get('telegram:tapped_in');
-      if (tappedIn && String(tappedIn) === String(replySessionId)) {
+      if (tappedIn && String(tappedIn) === sid) {
         await kv.del('telegram:tapped_in');
         await kv.del('telegram:tap_mode');
-        // Check for unanswered message
-        const pendingMsg = await kv.get(`telegram:pending:${replySessionId}`);
+        const pendingMsg = await kv.get(`telegram:pending:${sid}`);
         if (pendingMsg) {
-          await sendInThread(chatId, replySessionId, 'You\'re OUT. AI is responding to the pending message.');
-          const aiResponse = await generateAiResponse(replySessionId);
+          await sendInTopic(sid, 'You\'re OUT. AI is responding to the pending message.');
+          const aiResponse = await generateAiResponse(sid);
           if (aiResponse) {
-            await kv.set(`telegram:response:${replySessionId}`, aiResponse, { ex: 300 });
-            await kv.del(`telegram:pending:${replySessionId}`);
+            await kv.set(`telegram:response:${sid}`, aiResponse, { ex: 300 });
+            await kv.del(`telegram:pending:${sid}`);
           }
         } else {
-          await sendInThread(chatId, replySessionId, 'You\'re OUT. AI is back in control.');
+          await sendInTopic(sid, 'You\'re OUT. AI is back in control.');
         }
       } else {
-        await sendInThread(chatId, replySessionId, 'You weren\'t tapped into this session.');
+        await sendInTopic(sid, 'You\'re not tapped into this session.');
       }
       return res.status(200).json({ ok: true });
     }
 
-    // Reply with plain text → send to user
+    // Plain text — send to user
+    if (text.startsWith('/')) {
+      return res.status(200).json({ ok: true });
+    }
+
     const tappedIn = await kv.get('telegram:tapped_in');
     const tapMode = await kv.get('telegram:tap_mode');
 
-    // If tapped into THIS session, send response
-    if (tappedIn && String(tappedIn) === String(replySessionId)) {
+    if (tappedIn && String(tappedIn) === sid) {
       if (tapMode === 'coach') {
-        await sendInThread(chatId, replySessionId, '(generating coached response...)');
-        const aiResponse = await coachResponse(text, replySessionId);
+        await sendInTopic(sid, '(generating coached response...)');
+        const aiResponse = await coachResponse(text, sid);
         if (aiResponse) {
-          await kv.set(`telegram:response:${replySessionId}`, aiResponse, { ex: 300 });
-          await sendInThread(chatId, replySessionId, `Sent:\n\n${aiResponse}`);
+          await kv.set(`telegram:response:${sid}`, aiResponse, { ex: 300 });
+          await sendInTopic(sid, `Sent:\n\n${aiResponse}`);
         } else {
-          await sendInThread(chatId, replySessionId, 'Failed to generate. Try again.');
+          await sendInTopic(sid, 'Failed to generate. Try again.');
         }
       } else {
-        await kv.set(`telegram:response:${replySessionId}`, text, { ex: 300 });
-        await sendInThread(chatId, replySessionId, '(sent)');
+        await kv.set(`telegram:response:${sid}`, text, { ex: 300 });
+        await sendInTopic(sid, '(sent)');
       }
     } else {
       // Not tapped in — send as proactive push
-      await kv.set(`telegram:response:${replySessionId}`, text, { ex: 300 });
-      await sendInThread(chatId, replySessionId, '(sent as push message)');
+      await kv.set(`telegram:response:${sid}`, text, { ex: 300 });
+      await sendInTopic(sid, '(sent as push message)');
     }
+
     return res.status(200).json({ ok: true });
   }
 
-  // --- Non-reply commands (global) ---
-
-  if (text === '/in' || text.startsWith('/in ')) {
-    const label = text.slice(3).trim();
-    const session = label ? null : await getRecentSession();
-    const targetSession = label
-      ? Object.keys(await getSessions()).find(id => id.endsWith(label)) || null
-      : session;
-    if (!targetSession) {
-      await sendTelegram(chatId, label ? `No session matching "${label}".` : 'No active sessions.');
-      return res.status(200).json({ ok: true });
-    }
-    await kv.set('telegram:tapped_in', targetSession);
-    await kv.set('telegram:tap_mode', 'direct');
-    await sendInThread(chatId, targetSession, 'DIRECT mode. You ARE the AI.\nReply to this thread to respond. Type /out to hand back.');
-    return res.status(200).json({ ok: true });
-  }
-
-  if (text === '/coach' || text.startsWith('/coach ')) {
-    const label = text.slice(6).trim();
-    const session = label ? null : await getRecentSession();
-    const targetSession = label
-      ? Object.keys(await getSessions()).find(id => id.endsWith(label)) || null
-      : session;
-    if (!targetSession) {
-      await sendTelegram(chatId, label ? `No session matching "${label}".` : 'No active sessions.');
-      return res.status(200).json({ ok: true });
-    }
-    await kv.set('telegram:tapped_in', targetSession);
-    await kv.set('telegram:tap_mode', 'coach');
-    await sendInThread(chatId, targetSession, 'COACH mode. Tell the AI what to say.\nReply to this thread. Type /out to hand back.');
-    return res.status(200).json({ ok: true });
-  }
-
-  if (text === '/out') {
-    const was = await kv.get('telegram:tapped_in');
-    await kv.del('telegram:tapped_in');
-    await kv.del('telegram:tap_mode');
-    if (was) {
-      const pendingMsg = await kv.get(`telegram:pending:${was}`);
-      if (pendingMsg) {
-        await sendInThread(chatId, was, 'You\'re OUT. AI is responding to the pending message.');
-        const aiResponse = await generateAiResponse(was);
-        if (aiResponse) {
-          await kv.set(`telegram:response:${was}`, aiResponse, { ex: 300 });
-          await kv.del(`telegram:pending:${was}`);
-        }
-      } else {
-        await sendTelegram(chatId, 'You\'re OUT. AI is back in control.');
+  // DM commands (fallback)
+  if (isOwnerDM) {
+    if (text === '/sessions') {
+      const sessions = await getSessions();
+      const entries = Object.entries(sessions);
+      if (entries.length === 0) {
+        await sendTelegram(chatId, 'No active sessions.');
+        return res.status(200).json({ ok: true });
       }
-    } else {
-      await sendTelegram(chatId, 'You weren\'t tapped in.');
-    }
-    return res.status(200).json({ ok: true });
-  }
-
-  if (text === '/sessions') {
-    const sessions = await getSessions();
-    const entries = Object.entries(sessions);
-    if (entries.length === 0) {
-      await sendTelegram(chatId, 'No active sessions.');
+      entries.sort((a, b) => b[1] - a[1]);
+      const lines = entries.map(([id, ts]) => {
+        const ago = Math.round((Date.now() - ts) / 60000);
+        return `[${id.slice(-4)}] — ${ago}m ago`;
+      });
+      const tappedIn = await kv.get('telegram:tapped_in');
+      let status = `Active sessions:\n\n${lines.join('\n')}`;
+      if (tappedIn) {
+        const mode = await kv.get('telegram:tap_mode');
+        status += `\n\nTapped into [${String(tappedIn).slice(-4)}] (${mode || 'direct'})`;
+      }
+      await sendTelegram(chatId, status);
       return res.status(200).json({ ok: true });
     }
-    entries.sort((a, b) => b[1] - a[1]);
-    const lines = entries.map(([id, ts]) => {
-      const ago = Math.round((Date.now() - ts) / 60000);
-      return `[${id.slice(-4)}] — ${ago}m ago`;
-    });
-    const tappedIn = await kv.get('telegram:tapped_in');
-    let status = `Active sessions:\n\n${lines.join('\n')}`;
-    if (tappedIn) {
-      const mode = await kv.get('telegram:tap_mode');
-      status += `\n\nTapped into [${String(tappedIn).slice(-4)}] (${mode || 'direct'})`;
-    }
-    await sendTelegram(chatId, status);
-    return res.status(200).json({ ok: true });
-  }
 
-  if (text === '/status') {
-    const tappedIn = await kv.get('telegram:tapped_in');
-    const tapMode = await kv.get('telegram:tap_mode');
-    if (tappedIn) {
-      await sendTelegram(chatId, `Tapped into [${String(tappedIn).slice(-4)}] (${tapMode === 'coach' ? 'COACH' : 'DIRECT'})`);
-    } else {
-      await sendTelegram(chatId, 'AI is handling all sessions.');
-    }
-    return res.status(200).json({ ok: true });
-  }
-
-  // Unrecognized message and not a reply
-  const tappedIn = await kv.get('telegram:tapped_in');
-  if (tappedIn) {
-    const tapMode = await kv.get('telegram:tap_mode');
-    if (tapMode === 'coach') {
-      await sendInThread(chatId, String(tappedIn), '(generating coached response...)');
-      const aiResponse = await coachResponse(text, String(tappedIn));
-      if (aiResponse) {
-        await kv.set(`telegram:response:${tappedIn}`, aiResponse, { ex: 300 });
-        await sendInThread(chatId, String(tappedIn), `Sent:\n\n${aiResponse}`);
+    if (text === '/status') {
+      const tappedIn = await kv.get('telegram:tapped_in');
+      const tapMode = await kv.get('telegram:tap_mode');
+      if (tappedIn) {
+        await sendTelegram(chatId, `Tapped into [${String(tappedIn).slice(-4)}] (${tapMode === 'coach' ? 'COACH' : 'DIRECT'})`);
       } else {
-        await sendInThread(chatId, String(tappedIn), 'Failed to generate. Try again.');
+        await sendTelegram(chatId, 'AI is handling all sessions.');
       }
-    } else {
-      await kv.set(`telegram:response:${tappedIn}`, text, { ex: 300 });
-      await sendInThread(chatId, String(tappedIn), '(sent)');
+      return res.status(200).json({ ok: true });
     }
-  } else {
-    await sendTelegram(chatId, 'No active session. Reply to a thread or use /in first.');
   }
 
   return res.status(200).json({ ok: true });
