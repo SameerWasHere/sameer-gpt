@@ -28,15 +28,26 @@ const PRESET_QUESTIONS = [
 ];
 
 function Chat({ onEditRequest }) {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sameer_messages');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [placeholderText, setPlaceholderText] = useState('');
-  const [hasStarted, setHasStarted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(() => {
+    try {
+      return !!localStorage.getItem('sameer_messages') && JSON.parse(localStorage.getItem('sameer_messages')).length > 0;
+    } catch { return false; }
+  });
   const [updateMode, setUpdateMode] = useState(null);
   const [updatePassword, setUpdatePassword] = useState('');
   const [streamingContent, setStreamingContent] = useState('');
-  const [conversationId] = useState(() => Date.now().toString());
+  const [conversationId, setConversationId] = useState(() => {
+    return localStorage.getItem('sameer_conversation_id') || Date.now().toString();
+  });
   const [isPageReady, setIsPageReady] = useState(false);
   const chatWindowRef = useRef(null);
   const lastMessageRef = useRef(null);
@@ -46,6 +57,18 @@ function Chat({ onEditRequest }) {
 
   const isLoadingRef = useRef(false);
   useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+
+  // Persist messages and conversationId to localStorage
+  useEffect(() => {
+    try {
+      const chatMessages = messages.filter(m => m.role === 'user' || m.role === 'assistant');
+      localStorage.setItem('sameer_messages', JSON.stringify(chatMessages));
+    } catch {}
+  }, [messages]);
+
+  useEffect(() => {
+    try { localStorage.setItem('sameer_conversation_id', conversationId); } catch {}
+  }, [conversationId]);
 
   // Page ready fade-in
   useEffect(() => {
@@ -162,6 +185,11 @@ function Chat({ onEditRequest }) {
     setUpdateMode(null);
     setUpdatePassword('');
     setStreamingContent('');
+    setConversationId(Date.now().toString());
+    try {
+      localStorage.removeItem('sameer_messages');
+      localStorage.removeItem('sameer_conversation_id');
+    } catch {}
   }, []);
 
   const fetchAndShowSummary = async (pwd) => {
