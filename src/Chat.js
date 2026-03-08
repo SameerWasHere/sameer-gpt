@@ -44,11 +44,45 @@ function Chat({ onEditRequest }) {
   const tickerRef = useRef(null);
   const touchStartRef = useRef({ x: 0, scrollLeft: 0 });
 
+  const isLoadingRef = useRef(false);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+
   // Page ready fade-in
   useEffect(() => {
     const timer = setTimeout(() => setIsPageReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Background poll for proactive messages from Sameer
+  useEffect(() => {
+    if (!hasStarted) return;
+    const interval = setInterval(async () => {
+      if (isLoadingRef.current) return;
+      try {
+        const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
+        const result = await resp.json();
+        if (result.response) {
+          const text = result.response;
+          let pos = 0;
+          const simulateStream = () => {
+            const chunkSize = Math.floor(Math.random() * 3) + 1;
+            pos = Math.min(pos + chunkSize, text.length);
+            setStreamingContent(text.substring(0, pos));
+            if (pos < text.length) {
+              setTimeout(simulateStream, 15 + Math.random() * 20);
+            } else {
+              setStreamingContent('');
+              setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+            }
+          };
+          simulateStream();
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [hasStarted, conversationId]);
 
   // Scroll chat to bottom when keyboard opens (container resizes)
   useEffect(() => {

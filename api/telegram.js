@@ -121,7 +121,7 @@ export default async function handler(req, res) {
     }
     await kv.set('telegram:tapped_in', session);
     await kv.set('telegram:tap_mode', 'direct');
-    await sendTelegram(chatId, `DIRECT mode for session [${session.slice(-4)}]. You ARE the AI.\n\nType /out when done.`);
+    await sendTelegram(chatId, `DIRECT mode [${session.slice(-4)}]. You ARE the AI.\n\nJust type a message and it'll appear on their screen. Type /out when done.`);
     return res.status(200).json({ ok: true });
   }
 
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
     }
     await kv.set('telegram:tapped_in', session);
     await kv.set('telegram:tap_mode', 'coach');
-    await sendTelegram(chatId, `COACH mode for session [${session.slice(-4)}]. Tell the AI how to respond.\n\nType /out when done.`);
+    await sendTelegram(chatId, `COACH mode [${session.slice(-4)}]. Tell the AI what to say and it\'ll write it.\n\nType /out when done.`);
     return res.status(200).json({ ok: true });
   }
 
