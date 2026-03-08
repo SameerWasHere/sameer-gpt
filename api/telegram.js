@@ -14,16 +14,20 @@ async function sendTelegram(chatId, text) {
   }
 }
 
+async function getAllSessions() {
+  // Get all sessions, most recent last
+  const sessions = await kv.zrange('telegram:sessions', 0, -1);
+  return sessions || [];
+}
+
 async function getRecentSession() {
-  // Get the most recent active session from sorted set
-  const sessions = await kv.zrange('telegram:sessions', -1, -1);
-  return sessions?.[0] || null;
+  const sessions = await getAllSessions();
+  return sessions.length > 0 ? sessions[sessions.length - 1] : null;
 }
 
 async function findSessionByLabel(label) {
-  // Get all active sessions, find one ending with the label
-  const sessions = await kv.zrange('telegram:sessions', 0, -1);
-  if (!sessions || sessions.length === 0) return null;
+  const sessions = await getAllSessions();
+  if (sessions.length === 0) return null;
   return sessions.find(s => s.endsWith(label)) || null;
 }
 
@@ -67,7 +71,8 @@ export default async function handler(req, res) {
   if (!message?.text) return res.status(200).json({ ok: true });
 
   const chatId = message.chat.id;
-  const text = message.text.trim();
+  // Strip @botname suffix that Telegram sometimes appends to commands
+  const text = message.text.trim().replace(/@\w+/g, '');
 
   // Register owner on /start
   if (text === '/start') {
@@ -98,7 +103,11 @@ export default async function handler(req, res) {
     const label = text.slice(3).trim();
     const session = label ? await findSessionByLabel(label) : await getRecentSession();
     if (!session) {
-      await sendTelegram(chatId, label ? `No session found matching "${label}".` : 'No active session right now.');
+      const allSessions = await getAllSessions();
+      const debugMsg = label
+        ? `No session matching "${label}". Active sessions: ${allSessions.length}`
+        : `No active sessions found. (${allSessions.length} in set)`;
+      await sendTelegram(chatId, debugMsg);
       return res.status(200).json({ ok: true });
     }
     await kv.set('telegram:tapped_in', session);
@@ -112,7 +121,11 @@ export default async function handler(req, res) {
     const label = text.slice(6).trim();
     const session = label ? await findSessionByLabel(label) : await getRecentSession();
     if (!session) {
-      await sendTelegram(chatId, label ? `No session found matching "${label}".` : 'No active session right now.');
+      const allSessions = await getAllSessions();
+      const debugMsg = label
+        ? `No session matching "${label}". Active sessions: ${allSessions.length}`
+        : `No active sessions found. (${allSessions.length} in set)`;
+      await sendTelegram(chatId, debugMsg);
       return res.status(200).json({ ok: true });
     }
     await kv.set('telegram:tapped_in', session);
@@ -134,19 +147,16 @@ export default async function handler(req, res) {
   }
 
   if (text === '/sessions') {
-    const sessions = await kv.zrange('telegram:sessions', 0, -1, { withScores: true });
-    if (!sessions || sessions.length === 0) {
+    const sessions = await getAllSessions();
+    if (sessions.length === 0) {
       await sendTelegram(chatId, 'No active sessions.');
       return res.status(200).json({ ok: true });
     }
-    // sessions comes back as [member, score, member, score, ...]
-    const lines = [];
-    for (let i = 0; i < sessions.length; i += 2) {
-      const id = sessions[i];
-      const score = sessions[i + 1];
-      const ago = Math.round((Date.now() - score) / 60000);
-      lines.push(`[${id.slice(-4)}] — ${ago}m ago`);
-    }
+    const lines = sessions.map(id => {
+      // Session ID is a timestamp, so we can calc how long ago
+      const ago = Math.round((Date.now() - parseInt(id)) / 60000);
+      return `[${id.slice(-4)}] — ${isNaN(ago) ? '?' : ago}m ago`;
+    });
     const tappedIn = await kv.get('telegram:tapped_in');
     let status = `Active sessions:\n\n${lines.join('\n')}`;
     if (tappedIn) {
