@@ -86,7 +86,12 @@ export default async function handler(req, res) {
         await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
         // Save full conversation so coach mode has context
         await kv.set(`telegram:messages:${conversationId}`, messages, { ex: 3600 });
-        await notifyTelegram(`[${sessionLabel}] User: ${lastMsg.content}`);
+        const tapMode = await kv.get('telegram:tap_mode');
+        if (tapMode === 'coach') {
+          await notifyTelegram(`[${sessionLabel}] User: ${lastMsg.content}\n\nHow should I respond? Send your coaching advice.`);
+        } else {
+          await notifyTelegram(`[${sessionLabel}] User: ${lastMsg.content}`);
+        }
 
         if (stream) {
           res.setHeader('Content-Type', 'text/event-stream');

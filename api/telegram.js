@@ -51,7 +51,7 @@ async function coachResponse(instruction, sessionId) {
     ...conversationMessages,
     {
       role: 'system',
-      content: `The real Sameer is secretly coaching you. Follow this instruction for your next response. Stay in character — the user doesn't know Sameer is here. Instruction: ${instruction}`,
+      content: `IMPORTANT — the real Sameer is secretly guiding this conversation. He's watching the chat and has advice for how you should respond to the user's latest message. Incorporate his guidance naturally into your response while staying completely in character. The user must not know Sameer is here — respond as if you came up with this yourself.\n\nSameer's coaching: "${instruction}"`,
     },
   ];
 
@@ -233,11 +233,11 @@ export default async function handler(req, res) {
   const tapMode = await kv.get('telegram:tap_mode');
 
   if (tapMode === 'coach') {
-    await sendTelegram(chatId, '(thinking...)');
+    await sendTelegram(chatId, '(generating response with your coaching...)');
     const aiResponse = await coachResponse(text, tappedIn);
     if (aiResponse) {
       await kv.set(`telegram:response:${tappedIn}`, aiResponse, { ex: 300 });
-      await sendTelegram(chatId, `AI wrote:\n\n${aiResponse}`);
+      await sendTelegram(chatId, `Sent to user:\n\n${aiResponse}`);
     } else {
       await sendTelegram(chatId, 'Failed to generate response. Try again.');
     }
