@@ -14,6 +14,19 @@ async function sendTelegram(chatId, text) {
   }
 }
 
+async function getRecentSession() {
+  // Get the most recent active session from sorted set
+  const sessions = await kv.zrange('telegram:sessions', -1, -1);
+  return sessions?.[0] || null;
+}
+
+async function findSessionByLabel(label) {
+  // Get all active sessions, find one ending with the label
+  const sessions = await kv.zrange('telegram:sessions', 0, -1);
+  if (!sessions || sessions.length === 0) return null;
+  return sessions.find(s => s.endsWith(label)) || null;
+}
+
 async function coachResponse(instruction, sessionId) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -63,9 +76,12 @@ export default async function handler(req, res) {
       'Connected to SameerGPT!\n\n' +
       'You\'ll get notified when someone chats on sameer.us.\n\n' +
       'Commands:\n' +
-      '/in - Take over (you ARE the AI)\n' +
-      '/coach - Coach mode (you instruct, AI writes)\n' +
+      '/in - Take over most recent session (you ARE the AI)\n' +
+      '/in XXXX - Take over session by ID\n' +
+      '/coach - Coach most recent session (you instruct, AI writes)\n' +
+      '/coach XXXX - Coach a specific session\n' +
       '/out - Hand back to AI\n' +
+      '/sessions - See active sessions\n' +
       '/status - Check current state'
     );
     return res.status(200).json({ ok: true });
@@ -77,27 +93,31 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
-  if (text === '/in') {
-    const activeSession = await kv.get('telegram:active_session');
-    if (!activeSession) {
-      await sendTelegram(chatId, 'No active session right now.');
+  // /in or /in XXXX
+  if (text === '/in' || text.startsWith('/in ')) {
+    const label = text.slice(3).trim();
+    const session = label ? await findSessionByLabel(label) : await getRecentSession();
+    if (!session) {
+      await sendTelegram(chatId, label ? `No session found matching "${label}".` : 'No active session right now.');
       return res.status(200).json({ ok: true });
     }
-    await kv.set('telegram:tapped_in', activeSession);
+    await kv.set('telegram:tapped_in', session);
     await kv.set('telegram:tap_mode', 'direct');
-    await sendTelegram(chatId, 'DIRECT mode. You ARE the AI — your messages go straight to the user.\n\nType /out when done.');
+    await sendTelegram(chatId, `DIRECT mode for session [${session.slice(-4)}]. You ARE the AI.\n\nType /out when done.`);
     return res.status(200).json({ ok: true });
   }
 
-  if (text === '/coach') {
-    const activeSession = await kv.get('telegram:active_session');
-    if (!activeSession) {
-      await sendTelegram(chatId, 'No active session right now.');
+  // /coach or /coach XXXX
+  if (text === '/coach' || text.startsWith('/coach ')) {
+    const label = text.slice(6).trim();
+    const session = label ? await findSessionByLabel(label) : await getRecentSession();
+    if (!session) {
+      await sendTelegram(chatId, label ? `No session found matching "${label}".` : 'No active session right now.');
       return res.status(200).json({ ok: true });
     }
-    await kv.set('telegram:tapped_in', activeSession);
+    await kv.set('telegram:tapped_in', session);
     await kv.set('telegram:tap_mode', 'coach');
-    await sendTelegram(chatId, 'COACH mode. Tell the AI how to respond — it\'ll write the message.\n\nType /out when done.');
+    await sendTelegram(chatId, `COACH mode for session [${session.slice(-4)}]. Tell the AI how to respond.\n\nType /out when done.`);
     return res.status(200).json({ ok: true });
   }
 
@@ -113,17 +133,39 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   }
 
+  if (text === '/sessions') {
+    const sessions = await kv.zrange('telegram:sessions', 0, -1, { withScores: true });
+    if (!sessions || sessions.length === 0) {
+      await sendTelegram(chatId, 'No active sessions.');
+      return res.status(200).json({ ok: true });
+    }
+    // sessions comes back as [member, score, member, score, ...]
+    const lines = [];
+    for (let i = 0; i < sessions.length; i += 2) {
+      const id = sessions[i];
+      const score = sessions[i + 1];
+      const ago = Math.round((Date.now() - score) / 60000);
+      lines.push(`[${id.slice(-4)}] — ${ago}m ago`);
+    }
+    const tappedIn = await kv.get('telegram:tapped_in');
+    let status = `Active sessions:\n\n${lines.join('\n')}`;
+    if (tappedIn) {
+      const mode = await kv.get('telegram:tap_mode');
+      status += `\n\nCurrently tapped into [${tappedIn.slice(-4)}] (${mode || 'direct'})`;
+    }
+    await sendTelegram(chatId, status);
+    return res.status(200).json({ ok: true });
+  }
+
   if (text === '/status') {
-    const activeSession = await kv.get('telegram:active_session');
     const tappedIn = await kv.get('telegram:tapped_in');
     const tapMode = await kv.get('telegram:tap_mode');
     const parts = [];
     if (tappedIn) {
-      parts.push(`Mode: TAPPED IN (${tapMode === 'coach' ? 'COACH — you instruct AI' : 'DIRECT — you are the AI'})`);
+      parts.push(`Mode: TAPPED IN to [${tappedIn.slice(-4)}] (${tapMode === 'coach' ? 'COACH' : 'DIRECT'})`);
     } else {
       parts.push('Mode: AI is handling it');
     }
-    parts.push(activeSession ? `Active session: ...${activeSession.slice(-6)}` : 'No active sessions');
     await sendTelegram(chatId, parts.join('\n'));
     return res.status(200).json({ ok: true });
   }
@@ -138,7 +180,6 @@ export default async function handler(req, res) {
   const tapMode = await kv.get('telegram:tap_mode');
 
   if (tapMode === 'coach') {
-    // Coach mode: send instruction to AI, get response
     await sendTelegram(chatId, '(thinking...)');
     const aiResponse = await coachResponse(text, tappedIn);
     if (aiResponse) {
@@ -148,7 +189,6 @@ export default async function handler(req, res) {
       await sendTelegram(chatId, 'Failed to generate response. Try again.');
     }
   } else {
-    // Direct mode: send message as-is
     await kv.set(`telegram:response:${tappedIn}`, text, { ex: 300 });
     await sendTelegram(chatId, '(sent)');
   }

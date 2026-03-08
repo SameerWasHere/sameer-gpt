@@ -63,9 +63,14 @@ export default async function handler(req, res) {
 
       const context = await getContext();
 
-      // Track active session for Telegram tap-in
+      // Track active sessions for Telegram tap-in
+      const sessionLabel = conversationId ? conversationId.slice(-4) : '';
       if (conversationId) {
-        await kv.set('telegram:active_session', conversationId, { ex: 3600 });
+        // Add to active sessions set (scored by timestamp for ordering)
+        await kv.zadd('telegram:sessions', { score: Date.now(), member: conversationId });
+        // Expire old sessions (older than 1 hour)
+        const cutoff = Date.now() - 3600000;
+        await kv.zremrangebyscore('telegram:sessions', 0, cutoff);
       }
 
       // Check if Sameer is tapped in for this session
@@ -75,7 +80,7 @@ export default async function handler(req, res) {
         await kv.set(`telegram:pending:${conversationId}`, lastMsg.content, { ex: 300 });
         // Save full conversation so coach mode has context
         await kv.set(`telegram:messages:${conversationId}`, messages, { ex: 3600 });
-        await notifyTelegram(`User: ${lastMsg.content}`);
+        await notifyTelegram(`[${sessionLabel}] User: ${lastMsg.content}`);
 
         if (stream) {
           res.setHeader('Content-Type', 'text/event-stream');
@@ -145,10 +150,10 @@ export default async function handler(req, res) {
               if (lastUserMsg && fullContent && conversationId) {
                 await logConversation(conversationId, lastUserMsg.content, fullContent);
               }
-              // Notify Telegram
+              // Notify Telegram (must await or Vercel kills the process)
               if (lastUserMsg && fullContent) {
-                const prefix = isFirstMessage ? '--- New chat on sameer.us ---\n\n' : '';
-                notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`);
+                const prefix = isFirstMessage ? `--- New chat [${sessionLabel}] ---\n\n` : `[${sessionLabel}] `;
+                await notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`);
               }
               res.write('data: [DONE]\n\n');
               res.end();
@@ -192,10 +197,10 @@ export default async function handler(req, res) {
         if (lastUserMsg && assistantMsg && conversationId) {
           await logConversation(conversationId, lastUserMsg.content, assistantMsg.content);
         }
-        // Notify Telegram
+        // Notify Telegram (must await or Vercel kills the process)
         if (lastUserMsg && assistantMsg) {
-          const prefix = isFirstMessage ? '--- New chat on sameer.us ---\n\n' : '';
-          notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`);
+          const prefix = isFirstMessage ? `--- New chat [${sessionLabel}] ---\n\n` : `[${sessionLabel}] `;
+          await notifyTelegram(`${prefix}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`);
         }
 
         res.status(200).json(data);
