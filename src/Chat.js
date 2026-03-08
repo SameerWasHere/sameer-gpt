@@ -62,6 +62,10 @@ function Chat({ onEditRequest }) {
         const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
         const result = await resp.json();
         if (result.response) {
+          // Brief typing indicator then stream
+          setIsLoading(true);
+          await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+          setIsLoading(false);
           const text = result.response;
           let pos = 0;
           const simulateStream = () => {
@@ -332,7 +336,8 @@ function Chat({ onEditRequest }) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.waitingForHuman) {
-                // Poll for response, then simulate streaming so it looks identical to AI
+                // No typing indicator while waiting — Sameer hasn't started typing yet
+                setIsLoading(false);
                 const pollForResponse = async () => {
                   for (let i = 0; i < 150; i++) {
                     await new Promise(r => setTimeout(r, 2000));
@@ -340,6 +345,10 @@ function Chat({ onEditRequest }) {
                       const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
                       const result = await resp.json();
                       if (result.response) {
+                        // Brief typing indicator before streaming
+                        setIsLoading(true);
+                        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+                        setIsLoading(false);
                         // Simulate streaming character by character
                         const text = result.response;
                         let pos = 0;
@@ -352,7 +361,6 @@ function Chat({ onEditRequest }) {
                           } else {
                             setStreamingContent('');
                             setMessages(prev => [...prev, { role: 'assistant', content: text }]);
-                            setIsLoading(false);
                           }
                         };
                         simulateStream();
@@ -363,7 +371,6 @@ function Chat({ onEditRequest }) {
                     }
                   }
                   setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, got distracted. Ask me again?" }]);
-                  setIsLoading(false);
                 };
                 pollForResponse();
                 return;
