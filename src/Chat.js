@@ -304,6 +304,7 @@ function Chat({ onEditRequest }) {
     setMessages(prev => [...prev, newMessage]);
     clearInput();
     setIsLoading(true);
+    let keepLoading = false;
 
     try {
       const chatMessages = [...messages, newMessage].filter(m => m.role === 'user' || m.role === 'assistant');
@@ -336,8 +337,8 @@ function Chat({ onEditRequest }) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.waitingForHuman) {
-                // No typing indicator while waiting — Sameer hasn't started typing yet
-                setIsLoading(false);
+                // Keep typing indicator showing until response arrives
+                keepLoading = true;
                 const pollForResponse = async () => {
                   for (let i = 0; i < 150; i++) {
                     await new Promise(r => setTimeout(r, 2000));
@@ -345,11 +346,8 @@ function Chat({ onEditRequest }) {
                       const resp = await fetch(`/api/check-response?conversationId=${conversationId}`);
                       const result = await resp.json();
                       if (result.response) {
-                        // Brief typing indicator before streaming
-                        setIsLoading(true);
-                        await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+                        // Go straight to streaming — typing indicator was already showing
                         setIsLoading(false);
-                        // Simulate streaming character by character
                         const text = result.response;
                         let pos = 0;
                         const simulateStream = () => {
@@ -371,6 +369,7 @@ function Chat({ onEditRequest }) {
                     }
                   }
                   setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, got distracted. Ask me again?" }]);
+                  setIsLoading(false);
                 };
                 pollForResponse();
                 return;
@@ -389,7 +388,7 @@ function Chat({ onEditRequest }) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Oops, hit a snag. Mind trying that again?" }]);
       setStreamingContent('');
     } finally {
-      setIsLoading(false);
+      if (!keepLoading) setIsLoading(false);
     }
   };
 
