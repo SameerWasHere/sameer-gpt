@@ -66,11 +66,13 @@
       color: #57534e; margin-bottom: 6px;
     }
     input[type="text"], input[type="date"], input[type="number"] {
-      width: 100%; background: rgba(245,235,220,0.3);
+      width: 100%; max-width: 100%; background: rgba(245,235,220,0.3);
       border: 1px solid rgba(217,189,160,0.35);
-      border-radius: 12px; padding: 10px 14px; font-size: 14px;
+      border-radius: 12px; padding: 10px 14px; font-size: 16px;
       outline: none; transition: all 0.2s;
       font-family: inherit; color: #2d2a26;
+      -webkit-appearance: none; appearance: none;
+      box-sizing: border-box;
     }
     input:focus {
       border-color: transparent;
