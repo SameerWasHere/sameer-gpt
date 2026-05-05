@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { action, id, password } = req.body;
+  const { action, id, password, updates } = req.body;
 
   if (password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Wrong password.' });
@@ -22,6 +22,12 @@ export default async function handler(req, res) {
 
   if (action === 'togglePaid') {
     const updated = { ...entries[idx], paid: !entries[idx].paid };
+    await kv.lset(ENTRIES_KEY, idx, updated);
+    return res.json({ success: true });
+  }
+
+  if (action === 'update') {
+    const updated = { ...entries[idx], ...updates };
     await kv.lset(ENTRIES_KEY, idx, updated);
     return res.json({ success: true });
   }
