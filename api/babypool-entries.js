@@ -40,10 +40,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Someone with that name already entered!' });
     }
 
-    if (entries.some(e => e.date === date)) {
-      return res.status(400).json({ error: 'That date is already taken! Pick another one.' });
-    }
-
     const entry = {
       id: crypto.randomUUID(),
       name: name.trim(),
