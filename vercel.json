@@ -5,9 +5,7 @@
     }
   },
   "rewrites": [
-    {
-      "source": "/babypool/:path*",
-      "destination": "https://baby-pool-kappa.vercel.app/babypool/:path*"
-    }
+    { "source": "/babypool", "destination": "/babypool.html" },
+    { "source": "/babypool/admin", "destination": "/babypool-admin.html" }
   ]
 }

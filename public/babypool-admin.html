@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baby Pool - Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fdf6f0; color: #2d2a26; min-height: 100vh;
+    }
+    main { max-width: 500px; margin: 0 auto; padding: 40px 16px; }
+    h1 { font-size: 24px; font-weight: 700; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .stats { font-size: 14px; color: #78716c; }
+
+    .login-box { max-width: 320px; margin: 80px auto; text-align: center; }
+    .login-box h1 { margin-bottom: 24px; }
+    input[type="password"] {
+      width: 100%; border: 1px solid #d6d3d1; border-radius: 12px;
+      padding: 10px 14px; font-size: 14px; outline: none;
+      margin-bottom: 12px; font-family: inherit;
+    }
+    input[type="password"]:focus { box-shadow: 0 0 0 2px rgba(180,140,60,0.3); border-color: transparent; }
+    .btn {
+      width: 100%; background: #292524; color: #fff;
+      font-weight: 500; padding: 10px; border-radius: 12px;
+      border: none; font-size: 14px; cursor: pointer; font-family: inherit;
+    }
+    .btn:hover { background: #1c1917; }
+
+    .error-msg {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 12px; padding: 12px; font-size: 14px;
+      color: #dc2626; margin-bottom: 16px;
+    }
+    .empty { color: #a8a29e; font-size: 14px; }
+
+    .entry {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border: 1px solid #e7e5e4;
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 8px;
+    }
+    .entry-info { font-size: 14px; }
+    .entry-info .name { font-weight: 500; }
+    .entry-info .details { font-size: 12px; color: #78716c; margin-top: 2px; }
+    .dot { color: #d6d3d1; }
+    .boy { color: #0ea5e9; }
+    .girl { color: #ec4899; }
+    .actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .toggle-btn {
+      font-size: 12px; font-weight: 500; padding: 6px 12px;
+      border-radius: 8px; border: none; cursor: pointer; font-family: inherit;
+    }
+    .toggle-paid { background: #dcfce7; color: #15803d; }
+    .toggle-paid:hover { background: #bbf7d0; }
+    .toggle-unpaid { background: #fef2f2; color: #ef4444; }
+    .toggle-unpaid:hover { background: #fee2e2; }
+    .delete-btn {
+      font-size: 14px; color: #a8a29e; background: none;
+      border: none; cursor: pointer; padding: 4px 6px;
+      font-family: inherit;
+    }
+    .delete-btn:hover { color: #ef4444; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div id="login-view" class="login-box">
+      <h1>Admin</h1>
+      <input type="password" id="password" placeholder="Enter admin password">
+      <button class="btn" onclick="doLogin()">Log in</button>
+    </div>
+
+    <div id="admin-view" class="hidden">
+      <div class="header-row">
+        <h1>Admin</h1>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div id="error" class="error-msg hidden"></div>
+      <div id="entries"></div>
+    </div>
+  </main>
+
+  <script>
+    let password = '';
+
+    function doLogin() {
+      password = document.getElementById('password').value;
+      if (!password) return;
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('admin-view').classList.remove('hidden');
+      loadEntries();
+    }
+
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    async function loadEntries() {
+      const res = await fetch('/api/babypool-entries');
+      const entries = await res.json();
+      const paidCount = entries.filter(e => e.paid).length;
+
+      document.getElementById('stats').textContent =
+        `${paidCount}/${entries.length} paid \u00b7 Pot: $${paidCount * 20}`;
+
+      if (entries.length === 0) {
+        document.getElementById('entries').innerHTML = '<p class="empty">No entries yet.</p>';
+        return;
+      }
+
+      document.getElementById('entries').innerHTML = entries.map(e => `
+        <div class="entry" id="entry-${e.id}">
+          <div class="entry-info">
+            <div class="name">${esc(e.name)}</div>
+            <div class="details">
+              ${formatDate(e.date)}
+              <span class="dot">&middot;</span>
+              ${e.weightLbs}lb ${e.weightOz}oz
+              <span class="dot">&middot;</span>
+              <span class="${e.gender === 'boy' ? 'boy' : 'girl'}">${e.gender === 'boy' ? 'Boy' : 'Girl'}</span>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="toggle-btn ${e.paid ? 'toggle-paid' : 'toggle-unpaid'}"
+              onclick="togglePaid('${e.id}')">
+              ${e.paid ? 'Paid' : 'Unpaid'}
+            </button>
+            <button class="delete-btn" onclick="deleteEntry('${e.id}', '${esc(e.name)}')"
+              title="Delete entry">&#x2715;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function adminAction(action, id) {
+      const errorEl = document.getElementById('error');
+      errorEl.classList.add('hidden');
+
+      const res = await fetch('/api/babypool-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id, password }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      loadEntries();
+    }
+
+    function togglePaid(id) {
+      adminAction('togglePaid', id);
+    }
+
+    function deleteEntry(id, name) {
+      if (!confirm(`Delete ${name}'s entry? This can't be undone.`)) return;
+      adminAction('delete', id);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baby Pool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fdf6f0;
+      color: #2d2a26;
+      min-height: 100vh;
+    }
+    main { max-width: 420px; margin: 0 auto; padding: 40px 16px; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 40px; }
+    .header .icon { font-size: 48px; margin-bottom: 12px; }
+    .header h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+    .header .subtitle { font-size: 13px; color: #78716c; margin-top: 8px; }
+    .header .subtitle strong { color: #57534e; }
+    .pot-badge {
+      display: inline-block; margin-top: 12px;
+      font-size: 13px; font-weight: 600;
+      background: #dcfce7; color: #15803d;
+      padding: 4px 12px; border-radius: 999px;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
+      border: 1px solid rgba(217,189,160,0.3);
+      border-radius: 16px; padding: 24px; margin-bottom: 24px;
+    }
+    .card-solid {
+      background: #fff; border: 1px solid rgba(217,189,160,0.25);
+      border-radius: 16px; padding: 24px; margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(180,140,100,0.08);
+    }
+    .card-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #78716c; margin-bottom: 12px;
+    }
+    .card-label-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .deadline-tag { font-size: 12px; color: #ef4444; font-weight: 500; }
+
+    /* Rules */
+    .rules-text { font-size: 14px; color: #44403c; line-height: 1.6; }
+    .rules-text strong { color: #292524; }
+    .tiebreaker { padding-top: 12px; margin-top: 12px; border-top: 1px solid rgba(217,189,160,0.3); }
+    .tiebreaker-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #57534e; margin-bottom: 8px;
+    }
+    .tiebreaker ol { list-style: none; font-size: 12px; color: #57534e; }
+    .tiebreaker li { display: flex; gap: 8px; margin-bottom: 4px; }
+    .tiebreaker .num { font-weight: 700; color: #92400e; flex-shrink: 0; }
+
+    /* Form */
+    label.field-label {
+      display: block; font-size: 12px; font-weight: 500;
+      color: #57534e; margin-bottom: 6px;
+    }
+    input[type="text"], input[type="date"], input[type="number"] {
+      width: 100%; background: rgba(245,235,220,0.3);
+      border: 1px solid rgba(217,189,160,0.35);
+      border-radius: 12px; padding: 10px 14px; font-size: 14px;
+      outline: none; transition: all 0.2s;
+      font-family: inherit; color: #2d2a26;
+    }
+    input:focus {
+      border-color: transparent;
+      box-shadow: 0 0 0 2px rgba(180,140,60,0.3);
+    }
+    input::placeholder { color: #a8a29e; }
+    .field { margin-bottom: 20px; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    .unit { font-size: 12px; color: #78716c; font-weight: 500; margin-left: 8px; }
+    .input-with-unit { display: flex; align-items: center; }
+    .input-with-unit input { flex: 1; }
+
+    /* Radio */
+    .gender-row { display: flex; gap: 12px; }
+    .gender-option {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(217,189,160,0.35); background: rgba(245,235,220,0.2);
+      border-radius: 12px; padding: 10px; cursor: pointer;
+      transition: all 0.2s; font-size: 14px;
+    }
+    .gender-option:has(input:checked).boy {
+      border-color: #7dd3fc; background: #f0f9ff; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .gender-option:has(input:checked).girl {
+      border-color: #f9a8d4; background: #fdf2f8; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .gender-option input { display: none; }
+
+    /* Button */
+    .submit-btn {
+      width: 100%; background: #292524; color: #fff;
+      font-weight: 500; padding: 12px; border-radius: 12px;
+      border: none; font-size: 14px; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .submit-btn:hover { background: #1c1917; }
+    .submit-btn:active { transform: scale(0.99); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .form-note { font-size: 11px; color: #a8a29e; text-align: center; margin-top: 12px; }
+
+    /* Entries */
+    .entries-card {
+      background: rgba(255,255,255,0.5);
+      border: 1px solid rgba(217,189,160,0.2);
+      border-radius: 16px; overflow: hidden;
+    }
+    .entry-row {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(231,229,228,0.5);
+    }
+    .entry-row:last-child { border-bottom: none; }
+    .entry-top { display: flex; align-items: center; justify-content: space-between; }
+    .entry-name { font-size: 14px; font-weight: 500; }
+    .badge {
+      font-size: 11px; font-weight: 500; padding: 2px 6px;
+      border-radius: 6px; display: inline-block;
+    }
+    .badge-paid { background: #dcfce7; color: #16a34a; }
+    .badge-unpaid { background: #fef2f2; color: #f87171; }
+    .entry-details {
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 4px; font-size: 12px; color: #78716c;
+    }
+    .dot { color: #d6d3d1; }
+    .boy-text { color: #0ea5e9; }
+    .girl-text { color: #ec4899; }
+    .entry-time { font-size: 10px; color: #a8a29e; margin-top: 2px; }
+    .entry-num { font-size: 12px; color: #a8a29e; font-family: monospace; width: 20px; flex-shrink: 0; text-align: right; margin-right: 12px; margin-top: 2px; }
+    .entry-content { display: flex; }
+    .entry-main { flex: 1; min-width: 0; }
+
+    .empty { text-align: center; padding: 32px; font-size: 14px; color: #a8a29e; }
+
+    /* Alerts */
+    .error-msg {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 12px; padding: 12px; font-size: 14px;
+      color: #dc2626; margin-bottom: 16px;
+    }
+    .closed-msg { text-align: center; padding: 16px; }
+    .closed-msg p { font-size: 14px; color: #57534e; font-weight: 500; }
+    .closed-msg .sub { font-size: 13px; color: #a8a29e; margin-top: 4px; }
+
+    /* Venmo modal */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 50; padding: 16px;
+    }
+    .modal {
+      background: #fff; border-radius: 16px; padding: 32px;
+      max-width: 360px; width: 100%; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .modal .icon { font-size: 48px; margin-bottom: 16px; }
+    .modal h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .modal p { font-size: 14px; color: #57534e; margin-bottom: 20px; }
+    .venmo-btn {
+      display: block; width: 100%; background: #008CFF; color: #fff;
+      font-weight: 600; padding: 12px; border-radius: 12px;
+      border: none; font-size: 14px; cursor: pointer;
+      text-decoration: none; margin-bottom: 8px; font-family: inherit;
+    }
+    .venmo-btn:hover { background: #0074d4; }
+    .venmo-note { font-size: 12px; color: #a8a29e; margin-bottom: 20px; }
+    .modal-close {
+      font-size: 13px; color: #78716c; background: none;
+      border: none; cursor: pointer; text-decoration: underline;
+      text-underline-offset: 2px; font-family: inherit;
+    }
+
+    .hidden { display: none; }
+    footer { text-align: center; margin-top: 48px; font-size: 11px; color: #a8a29e; }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="header">
+      <div class="icon">&#x1F37C;</div>
+      <h1>Baby Pool</h1>
+      <p class="subtitle">Due date: <strong>June 2, 2026</strong></p>
+      <p class="subtitle">$20 buy-in &middot; Winner takes all</p>
+      <div id="pot-badge" class="pot-badge hidden"></div>
+    </header>
+
+    <!-- Rules -->
+    <div class="card">
+      <div class="card-label">How it works</div>
+      <div class="rules-text">
+        Guess the <strong>birth date</strong>, <strong>weight</strong>, and
+        <strong>gender</strong>. Each date can only be picked once &mdash;
+        first come, first served.
+      </div>
+      <div class="tiebreaker">
+        <div class="tiebreaker-title">How the winner is decided</div>
+        <ol>
+          <li><span class="num">1.</span> Closest to the actual <strong>birth date</strong> (over or under)</li>
+          <li><span class="num">2.</span> If tied on date, closest <strong>birth weight</strong> wins</li>
+          <li><span class="num">3.</span> Still tied? Correct <strong>gender</strong> guess wins</li>
+          <li><span class="num">4.</span> Still tied? <strong>Earliest submission</strong> wins</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="card-solid" id="form-section">
+      <div class="card-label-row">
+        <div class="card-label" style="margin:0">Place your bet</div>
+        <span class="deadline-tag">Due by May 11</span>
+      </div>
+      <div id="form-error" class="error-msg hidden"></div>
+      <form id="entry-form">
+        <div class="field">
+          <label class="field-label" for="name">Your Name</label>
+          <input type="text" id="name" placeholder="First and last name" required>
+        </div>
+        <div class="field">
+          <label class="field-label" for="date">Birth Date</label>
+          <input type="date" id="date" min="2026-05-04" max="2026-06-30" required>
+        </div>
+        <div class="field">
+          <label class="field-label">Birth Weight</label>
+          <div class="row">
+            <div>
+              <div class="input-with-unit">
+                <input type="number" id="weightLbs" min="3" max="13" placeholder="7" required>
+                <span class="unit">lbs</span>
+              </div>
+            </div>
+            <div>
+              <div class="input-with-unit">
+                <input type="number" id="weightOz" min="0" max="15" placeholder="4" required>
+                <span class="unit">oz</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">Gender</label>
+          <div class="gender-row">
+            <label class="gender-option boy">
+              <input type="radio" name="gender" value="boy" required> Boy
+            </label>
+            <label class="gender-option girl">
+              <input type="radio" name="gender" value="girl"> Girl
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="submit-btn" id="submit-btn">Submit My Guess ($20)</button>
+        <p class="form-note">You'll be prompted to pay via Venmo after submitting.</p>
+      </form>
+    </div>
+
+    <!-- Closed message (shown after deadline) -->
+    <div class="card-solid hidden" id="closed-section">
+      <div class="closed-msg">
+        <p>Submissions are closed!</p>
+        <p class="sub">Deadline was May 11, 2026. Good luck to everyone in the pool.</p>
+      </div>
+    </div>
+
+    <!-- Entries -->
+    <div>
+      <div class="card-label-row">
+        <div class="card-label" style="margin:0" id="entries-label">Entries (0)</div>
+      </div>
+      <div id="entries-list"></div>
+    </div>
+
+    <footer>Baby Pool &middot; Good luck, everyone</footer>
+  </main>
+
+  <!-- Venmo Modal -->
+  <div class="overlay hidden" id="venmo-modal">
+    <div class="modal">
+      <div class="icon">&#x1F389;</div>
+      <h3>You're in!</h3>
+      <p>Don't forget to send your $20 buy-in to lock in your guess.</p>
+      <a href="https://venmo.com/u/Sameer-Bhutani" target="_blank" rel="noopener" class="venmo-btn">
+        Pay @Sameer-Bhutani on Venmo
+      </a>
+      <p class="venmo-note">Send $20 with "Baby Pool" in the note</p>
+      <button class="modal-close" onclick="document.getElementById('venmo-modal').classList.add('hidden')">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('entry-form');
+    const errorEl = document.getElementById('form-error');
+    const submitBtn = document.getElementById('submit-btn');
+    const entriesLabel = document.getElementById('entries-label');
+    const entriesList = document.getElementById('entries-list');
+    const potBadge = document.getElementById('pot-badge');
+    const venmoModal = document.getElementById('venmo-modal');
+    const formSection = document.getElementById('form-section');
+    const closedSection = document.getElementById('closed-section');
+
+    // Check deadline
+    if (new Date() > new Date('2026-05-11T23:59:59')) {
+      formSection.classList.add('hidden');
+      closedSection.classList.remove('hidden');
+    }
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function formatTimestamp(iso) {
+      return new Date(iso).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+      });
+    }
+
+    async function loadEntries() {
+      const res = await fetch('/api/babypool-entries');
+      const entries = await res.json();
+      const paidCount = entries.filter(e => e.paid).length;
+
+      entriesLabel.textContent = `Entries (${entries.length})`;
+
+      if (paidCount > 0) {
+        potBadge.textContent = `Pot: $${paidCount * 20}`;
+        potBadge.classList.remove('hidden');
+      }
+
+      if (entries.length === 0) {
+        entriesList.innerHTML = '<div class="empty">No entries yet. Be the first!</div>';
+        return;
+      }
+
+      entriesList.innerHTML = '<div class="entries-card">' + entries.map((e, i) => `
+        <div class="entry-row">
+          <div class="entry-content">
+            <span class="entry-num">${i + 1}</span>
+            <div class="entry-main">
+              <div class="entry-top">
+                <span class="entry-name">${esc(e.name)}</span>
+                <span class="badge ${e.paid ? 'badge-paid' : 'badge-unpaid'}">${e.paid ? 'Paid' : 'Unpaid'}</span>
+              </div>
+              <div class="entry-details">
+                <span>${formatDate(e.date)}</span>
+                <span class="dot">&middot;</span>
+                <span>${e.weightLbs}lb ${e.weightOz}oz</span>
+                <span class="dot">&middot;</span>
+                <span class="${e.gender === 'boy' ? 'boy-text' : 'girl-text'}">${e.gender === 'boy' ? 'Boy' : 'Girl'}</span>
+              </div>
+              <div class="entry-time">${formatTimestamp(e.submittedAt)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('') + '</div>';
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      errorEl.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      const gender = document.querySelector('input[name="gender"]:checked');
+
+      const body = {
+        name: document.getElementById('name').value,
+        date: document.getElementById('date').value,
+        weightLbs: Number(document.getElementById('weightLbs').value),
+        weightOz: Number(document.getElementById('weightOz').value),
+        gender: gender ? gender.value : null,
+      };
+
+      try {
+        const res = await fetch('/api/babypool-entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          errorEl.textContent = data.error;
+          errorEl.classList.remove('hidden');
+        } else {
+          form.reset();
+          venmoModal.classList.remove('hidden');
+          loadEntries();
+        }
+      } catch {
+        errorEl.textContent = 'Something went wrong. Try again.';
+        errorEl.classList.remove('hidden');
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit My Guess ($20)';
+    });
+
+    loadEntries();
+  </script>
+</body>
+</html>
