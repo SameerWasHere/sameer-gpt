@@ -3,5 +3,11 @@
     "api/*.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/babypool/:path*",
+      "destination": "https://baby-pool-kappa.vercel.app/babypool/:path*"
+    }
+  ]
 }
