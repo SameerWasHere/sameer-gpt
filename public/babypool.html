@@ -222,7 +222,7 @@
     <div class="card-solid" id="form-section">
       <div class="card-label-row">
         <div class="card-label" style="margin:0">Place your bet</div>
-        <span class="deadline-tag">Due by May 11</span>
+        <span class="deadline-tag">Due by May 15</span>
       </div>
       <div id="form-error" class="error-msg hidden"></div>
       <form id="entry-form">
@@ -271,7 +271,7 @@
     <div class="card-solid hidden" id="closed-section">
       <div class="closed-msg">
         <p>Submissions are closed!</p>
-        <p class="sub">Deadline was May 11, 2026. Good luck to everyone in the pool.</p>
+        <p class="sub">Deadline was May 15, 2026. Good luck to everyone in the pool.</p>
       </div>
     </div>
 
@@ -312,7 +312,7 @@
     const closedSection = document.getElementById('closed-section');
 
     // Check deadline
-    if (new Date() > new Date('2026-05-11T23:59:59')) {
+    if (new Date() > new Date('2026-05-15T23:59:59')) {
       formSection.classList.add('hidden');
       closedSection.classList.remove('hidden');
     }

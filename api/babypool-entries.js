@@ -14,8 +14,8 @@ export default async function handler(req, res) {
     const { name, date, weightLbs, weightOz, gender } = req.body;
 
     // Deadline check
-    if (new Date() > new Date('2026-05-11T23:59:59')) {
-      return res.status(400).json({ error: 'Submissions are closed! Deadline was May 11, 2026.' });
+    if (new Date() > new Date('2026-05-15T23:59:59')) {
+      return res.status(400).json({ error: 'Submissions are closed! Deadline was May 15, 2026.' });
     }
 
     if (!name?.trim() || !date || weightLbs == null || weightOz == null || !gender) {
