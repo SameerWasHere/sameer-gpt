@@ -8,10 +8,28 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { action, id, password, updates } = req.body;
+  const { action, id, password, updates, entry } = req.body;
 
   if (password !== ADMIN_PASSWORD) {
     return res.status(401).json({ error: 'Wrong password.' });
+  }
+
+  if (action === 'add') {
+    if (!entry || !entry.name || !entry.date || entry.weightLbs == null || entry.weightOz == null || !entry.gender) {
+      return res.status(400).json({ error: 'Missing entry fields.' });
+    }
+    const newEntry = {
+      id: entry.id || crypto.randomUUID(),
+      name: entry.name.trim(),
+      date: entry.date,
+      weightLbs: Number(entry.weightLbs),
+      weightOz: Number(entry.weightOz),
+      gender: entry.gender,
+      paid: entry.paid === true,
+      submittedAt: entry.submittedAt || new Date().toISOString(),
+    };
+    await kv.rpush(ENTRIES_KEY, newEntry);
+    return res.json({ success: true, entry: newEntry });
   }
 
   const entries = await kv.lrange(ENTRIES_KEY, 0, -1) || [];
