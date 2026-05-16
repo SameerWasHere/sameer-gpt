@@ -167,20 +167,16 @@
       text-align: center; font-size: 12px; color: #a8a29e;
       margin-bottom: 20px;
     }
-    .stat-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 10px; margin-bottom: 20px;
-    }
     .stat-tile {
-      background: #fef3e2; border-radius: 12px; padding: 12px;
-      text-align: center;
+      background: #fef3e2; border-radius: 12px; padding: 14px;
+      text-align: center; margin-bottom: 20px;
     }
-    .stat-tile .value { font-size: 18px; font-weight: 700; color: #b45309; }
+    .stat-tile .value { font-size: 22px; font-weight: 700; color: #b45309; }
     .stat-tile .label {
-      font-size: 10px; text-transform: uppercase; color: #78716c;
-      letter-spacing: 0.06em; margin-top: 2px;
+      font-size: 11px; text-transform: uppercase; color: #78716c;
+      letter-spacing: 0.06em; margin-top: 4px;
     }
-    .stat-tile .meta { font-size: 10px; color: #a8a29e; margin-top: 2px; }
+    .stat-tile .meta { font-size: 11px; color: #a8a29e; margin-top: 2px; }
     .gender-bar-wrap { margin-bottom: 20px; }
     .gender-labels {
       display: flex; justify-content: space-between;
@@ -200,54 +196,76 @@
     }
     .hist-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 12px;
+      margin-bottom: 10px; gap: 8px; flex-wrap: wrap;
     }
     .hist-header .title {
       font-size: 11px; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.08em; color: #78716c;
     }
-    .hist-header .due-key {
-      font-size: 10px; color: #a8a29e; display: inline-flex; align-items: center; gap: 4px;
+    .cal-key {
+      display: inline-flex; gap: 10px; align-items: center;
+      font-size: 10px; color: #78716c;
     }
-    .hist-header .due-key .dot-due {
-      width: 8px; height: 8px; border-radius: 2px; background: #22c55e;
+    .cal-key .key-item {
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .cal-key .dot {
+      width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+    }
+    .cal-key .dot.boy { background: #38bdf8; }
+    .cal-key .dot.girl { background: #f472b6; }
+    .cal-key .due-swatch {
+      width: 8px; height: 8px; border-radius: 3px;
+      background: #dcfce7; border: 1px solid #22c55e;
       display: inline-block;
     }
-    .histogram {
-      position: relative; height: 110px; width: 100%;
-      font-size: 0; white-space: nowrap;
+    .cal-month-label {
+      font-size: 11px; font-weight: 600; color: #57534e;
+      margin-bottom: 6px; text-align: center;
     }
-    .hist-col {
-      display: inline-block; vertical-align: bottom;
-      height: 100%; position: relative;
-      text-align: center;
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
     }
-    .hist-col .count {
-      display: block;
-      font-size: 9px; color: #78716c; line-height: 1;
-      margin-bottom: 2px;
-      height: 10px;
+    .cal-hdr {
+      font-size: 9px; font-weight: 600;
+      color: #a8a29e; text-align: center;
+      padding: 2px 0 4px;
+      text-transform: uppercase;
     }
-    .hist-col .bar {
-      display: block; width: 100%;
-      border-radius: 3px 3px 0 0;
-      background: #fbbf24;
-    }
-    .hist-col.due .bar { background: #22c55e; }
-    .hist-col.empty .bar { background: #e7e5e4; }
-    .hist-col.due.empty .bar {
-      background: #bbf7d0; box-shadow: inset 0 0 0 1px #22c55e;
-    }
-    .hist-col-wrap {
-      position: absolute; bottom: 0;
+    .cal-cell {
+      aspect-ratio: 1; min-height: 0;
+      background: #faf5ec; border-radius: 6px;
+      padding: 3px;
       display: flex; flex-direction: column;
-      justify-content: flex-end; align-items: center;
-      height: 100%;
+      position: relative;
+      border: 1px solid transparent;
     }
-    .hist-range {
-      display: flex; justify-content: space-between;
-      font-size: 10px; color: #a8a29e; margin-top: 6px;
+    .cal-cell .day {
+      font-size: 10px; color: #78716c; line-height: 1;
     }
+    .cal-cell .dots {
+      display: flex; flex-wrap: wrap; gap: 2px;
+      align-content: center; justify-content: center;
+      margin-top: 2px; flex: 1; padding: 1px;
+    }
+    .cal-cell .dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      display: block;
+    }
+    .cal-cell .dot.boy { background: #38bdf8; }
+    .cal-cell .dot.girl { background: #f472b6; }
+    .cal-cell .more {
+      font-size: 8px; color: #78716c; font-weight: 600;
+      width: 100%; text-align: center; line-height: 1;
+    }
+    .cal-cell.due {
+      background: #dcfce7; border-color: #22c55e;
+    }
+    .cal-cell.due .day { color: #15803d; font-weight: 700; }
+    .cal-cell.out { background: transparent; }
+    .cal-cell.out .day { color: #d6d3d1; }
+    .cal-cell.month-boundary { border-top: 1px dashed #d6d3d1; }
 
     /* Venmo modal */
     .overlay {
@@ -296,17 +314,10 @@
       <div class="predict-title">The Crowd&apos;s Predictions</div>
       <div class="predict-sub" id="predict-sub">Submissions closed</div>
 
-      <div class="stat-grid">
-        <div class="stat-tile">
-          <div class="value" id="stat-popular-date">&mdash;</div>
-          <div class="label">Most popular date</div>
-          <div class="meta" id="stat-popular-meta">&nbsp;</div>
-        </div>
-        <div class="stat-tile">
-          <div class="value" id="stat-avg-weight">&mdash;</div>
-          <div class="label">Average weight</div>
-          <div class="meta" id="stat-weight-range">&nbsp;</div>
-        </div>
+      <div class="stat-tile stat-full">
+        <div class="value" id="stat-avg-weight">&mdash;</div>
+        <div class="label">Average weight</div>
+        <div class="meta" id="stat-weight-range">&nbsp;</div>
       </div>
 
       <div class="gender-bar-wrap">
@@ -327,13 +338,14 @@
       <div>
         <div class="hist-header">
           <span class="title">Date picks</span>
-          <span class="due-key"><span class="dot-due"></span> Due date</span>
+          <span class="cal-key">
+            <span class="key-item"><span class="dot boy"></span> Boy</span>
+            <span class="key-item"><span class="dot girl"></span> Girl</span>
+            <span class="key-item"><span class="due-swatch"></span> Due</span>
+          </span>
         </div>
-        <div class="histogram" id="histogram"></div>
-        <div class="hist-range">
-          <span id="hist-start"></span>
-          <span id="hist-end"></span>
-        </div>
+        <div class="cal-month-label" id="cal-month-label"></div>
+        <div class="cal-grid" id="calendar"></div>
       </div>
     </div>
 
@@ -419,12 +431,6 @@
       });
       const sortedDates = [...dateCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
-      // Most popular date
-      const popular = sortedDates.reduce((max, cur) => cur[1] > max[1] ? cur : max);
-      document.getElementById('stat-popular-date').textContent = formatDate(popular[0]);
-      document.getElementById('stat-popular-meta').textContent =
-        `${popular[1]} ${popular[1] === 1 ? 'pick' : 'picks'}`;
-
       // Weight stats
       const weightsOz = entries.map(e => e.weightLbs * 16 + e.weightOz);
       const avgOz = weightsOz.reduce((a, b) => a + b, 0) / total;
@@ -440,43 +446,65 @@
       document.getElementById('stat-weight-range').textContent =
         `${minL}lb ${minR}oz – ${maxL}lb ${maxR}oz`;
 
-      // Histogram - fill date range including due date
+      // Calendar - cover pick range expanded to whole weeks, include due date
+      const picksByDate = new Map();
+      entries.forEach(e => {
+        if (!picksByDate.has(e.date)) picksByDate.set(e.date, []);
+        picksByDate.get(e.date).push(e);
+      });
+
       const [fy, fm, fd] = sortedDates[0][0].split('-').map(Number);
       const [ly, lm, ld] = sortedDates[sortedDates.length - 1][0].split('-').map(Number);
       const [dy, dm, dd] = DUE_DATE_STR.split('-').map(Number);
-      const dueMs = new Date(dy, dm - 1, dd).getTime();
-      let startMs = Math.min(new Date(fy, fm - 1, fd).getTime(), dueMs);
-      let endMs = Math.max(new Date(ly, lm - 1, ld).getTime(), dueMs);
+      const firstPick = new Date(fy, fm - 1, fd);
+      const lastPick = new Date(ly, lm - 1, ld);
+      const due = new Date(dy, dm - 1, dd);
+      const rangeStart = new Date(Math.min(firstPick.getTime(), due.getTime()));
+      const rangeEnd = new Date(Math.max(lastPick.getTime(), due.getTime()));
 
-      const days = [];
-      const cur = new Date(startMs);
-      const end = new Date(endMs);
-      while (cur <= end) {
-        const k = dateKey(cur);
-        days.push({ date: k, count: dateCounts.get(k) || 0 });
+      const calStart = new Date(rangeStart);
+      calStart.setDate(calStart.getDate() - calStart.getDay());
+      const calEnd = new Date(rangeEnd);
+      calEnd.setDate(calEnd.getDate() + (6 - calEnd.getDay()));
+
+      // Month label spans the months in view
+      const monthFmt = (d) => d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const monthLabel = rangeStart.getMonth() === rangeEnd.getMonth()
+        ? monthFmt(rangeStart)
+        : `${rangeStart.toLocaleDateString('en-US', { month: 'long' })} – ${monthFmt(rangeEnd)}`;
+      document.getElementById('cal-month-label').textContent = monthLabel;
+
+      const headerCells = ['S','M','T','W','T','F','S']
+        .map(d => `<div class="cal-hdr">${d}</div>`).join('');
+
+      const cells = [];
+      const cur = new Date(calStart);
+      while (cur <= calEnd) {
+        const key = dateKey(cur);
+        const inRange = cur >= rangeStart && cur <= rangeEnd;
+        const picks = picksByDate.get(key) || [];
+        const isDue = key === DUE_DATE_STR;
+        const isMonthStart = cur.getDate() === 1;
+        const classes = ['cal-cell'];
+        if (isDue) classes.push('due');
+        if (!inRange) classes.push('out');
+        if (isMonthStart && cells.length >= 7) classes.push('month-boundary');
+
+        const MAX_DOTS = 6;
+        let dotsHtml = '';
+        if (picks.length <= MAX_DOTS) {
+          dotsHtml = picks.map(p => `<span class="dot ${p.gender}"></span>`).join('');
+        } else {
+          const shown = picks.slice(0, MAX_DOTS - 1);
+          dotsHtml = shown.map(p => `<span class="dot ${p.gender}"></span>`).join('')
+            + `<span class="more">+${picks.length - shown.length}</span>`;
+        }
+
+        cells.push(`<div class="${classes.join(' ')}"><div class="day">${cur.getDate()}</div><div class="dots">${dotsHtml}</div></div>`);
         cur.setDate(cur.getDate() + 1);
       }
-      const maxCount = Math.max(...days.map(d => d.count), 1);
-      const MAX_BAR_PX = 90;
 
-      const histEl = document.getElementById('histogram');
-      const colWidth = 100 / days.length;
-      const gapPct = 0.5;
-      const innerWidth = colWidth - gapPct;
-      histEl.innerHTML = days.map(({ date, count }, idx) => {
-        const isDue = date === DUE_DATE_STR;
-        const cls = ['hist-col'];
-        if (isDue) cls.push('due');
-        if (count === 0) cls.push('empty');
-        const barPx = count > 0
-          ? Math.max(8, (count / maxCount) * MAX_BAR_PX)
-          : (isDue ? 6 : 2);
-        const left = idx * colWidth;
-        return `<div class="hist-col-wrap" style="left:${left}%;width:${innerWidth}%"><div class="${cls.join(' ')}" style="width:100%"><span class="count">${count > 0 ? count : ''}</span><div class="bar" style="height:${barPx}px"></div></div></div>`;
-      }).join('');
-
-      document.getElementById('hist-start').textContent = formatDate(dateKey(new Date(startMs)));
-      document.getElementById('hist-end').textContent = formatDate(dateKey(new Date(endMs)));
+      document.getElementById('calendar').innerHTML = headerCells + cells.join('');
     }
 
     async function loadEntries() {
