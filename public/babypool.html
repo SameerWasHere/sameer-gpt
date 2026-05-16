@@ -157,6 +157,98 @@
     .closed-msg p { font-size: 14px; color: #57534e; font-weight: 500; }
     .closed-msg .sub { font-size: 13px; color: #a8a29e; margin-top: 4px; }
 
+    /* Predictions infographic */
+    .predict-title {
+      text-align: center;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #78716c; margin-bottom: 4px;
+    }
+    .predict-sub {
+      text-align: center; font-size: 12px; color: #a8a29e;
+      margin-bottom: 20px;
+    }
+    .stat-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-bottom: 20px;
+    }
+    .stat-tile {
+      background: #fef3e2; border-radius: 12px; padding: 12px;
+      text-align: center;
+    }
+    .stat-tile .value { font-size: 18px; font-weight: 700; color: #b45309; }
+    .stat-tile .label {
+      font-size: 10px; text-transform: uppercase; color: #78716c;
+      letter-spacing: 0.06em; margin-top: 2px;
+    }
+    .stat-tile .meta { font-size: 10px; color: #a8a29e; margin-top: 2px; }
+    .gender-bar-wrap { margin-bottom: 20px; }
+    .gender-labels {
+      display: flex; justify-content: space-between;
+      font-size: 12px; font-weight: 500; margin-bottom: 6px;
+    }
+    .gender-labels .boy-text { color: #0284c7; }
+    .gender-labels .girl-text { color: #ec4899; }
+    .gender-bar {
+      height: 12px; background: #f5f5f4; border-radius: 999px;
+      overflow: hidden; display: flex;
+    }
+    .gender-bar .boy-fill { background: #38bdf8; }
+    .gender-bar .girl-fill { background: #f472b6; }
+    .gender-pct {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #a8a29e; margin-top: 4px;
+    }
+    .hist-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .hist-header .title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #78716c;
+    }
+    .hist-header .due-key {
+      font-size: 10px; color: #a8a29e; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .hist-header .due-key .dot-due {
+      width: 8px; height: 8px; border-radius: 2px; background: #22c55e;
+      display: inline-block;
+    }
+    .histogram {
+      position: relative; height: 110px; width: 100%;
+      font-size: 0; white-space: nowrap;
+    }
+    .hist-col {
+      display: inline-block; vertical-align: bottom;
+      height: 100%; position: relative;
+      text-align: center;
+    }
+    .hist-col .count {
+      display: block;
+      font-size: 9px; color: #78716c; line-height: 1;
+      margin-bottom: 2px;
+      height: 10px;
+    }
+    .hist-col .bar {
+      display: block; width: 100%;
+      border-radius: 3px 3px 0 0;
+      background: #fbbf24;
+    }
+    .hist-col.due .bar { background: #22c55e; }
+    .hist-col.empty .bar { background: #e7e5e4; }
+    .hist-col.due.empty .bar {
+      background: #bbf7d0; box-shadow: inset 0 0 0 1px #22c55e;
+    }
+    .hist-col-wrap {
+      position: absolute; bottom: 0;
+      display: flex; flex-direction: column;
+      justify-content: flex-end; align-items: center;
+      height: 100%;
+    }
+    .hist-range {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: #a8a29e; margin-top: 6px;
+    }
+
     /* Venmo modal */
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.5);
@@ -199,79 +291,67 @@
       <div id="pot-badge" class="pot-badge hidden"></div>
     </header>
 
+    <!-- Crowd Predictions (infographic) -->
+    <div class="card-solid hidden" id="predictions-section">
+      <div class="predict-title">The Crowd&apos;s Predictions</div>
+      <div class="predict-sub" id="predict-sub">Submissions closed</div>
+
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <div class="value" id="stat-popular-date">&mdash;</div>
+          <div class="label">Most popular date</div>
+          <div class="meta" id="stat-popular-meta">&nbsp;</div>
+        </div>
+        <div class="stat-tile">
+          <div class="value" id="stat-avg-weight">&mdash;</div>
+          <div class="label">Average weight</div>
+          <div class="meta" id="stat-weight-range">&nbsp;</div>
+        </div>
+      </div>
+
+      <div class="gender-bar-wrap">
+        <div class="gender-labels">
+          <span class="boy-text">Boy &middot; <span id="boy-count">0</span></span>
+          <span class="girl-text">Girl &middot; <span id="girl-count">0</span></span>
+        </div>
+        <div class="gender-bar">
+          <div class="boy-fill" id="boy-fill" style="width:0%"></div>
+          <div class="girl-fill" id="girl-fill" style="width:0%"></div>
+        </div>
+        <div class="gender-pct">
+          <span id="boy-pct">0%</span>
+          <span id="girl-pct">0%</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="hist-header">
+          <span class="title">Date picks</span>
+          <span class="due-key"><span class="dot-due"></span> Due date</span>
+        </div>
+        <div class="histogram" id="histogram"></div>
+        <div class="hist-range">
+          <span id="hist-start"></span>
+          <span id="hist-end"></span>
+        </div>
+      </div>
+    </div>
+
     <!-- Rules -->
     <div class="card">
-      <div class="card-label">How it works</div>
+      <div class="card-label">How you win</div>
       <div class="rules-text">
-        Guess the <strong>birth date</strong>, <strong>weight</strong>, and
-        <strong>gender</strong>. Multiple people can pick the same date &mdash;
-        tiebreakers decide the winner.
+        Entries are closed &mdash; good luck to everyone in the pool! Here&apos;s
+        how the winner gets decided once the baby arrives.
       </div>
       <div class="tiebreaker">
-        <div class="tiebreaker-title">How the winner is decided</div>
+        <div class="tiebreaker-title">Winner is decided by</div>
         <ol>
           <li><span class="num">1.</span> Closest to the actual <strong>birth date</strong> (over or under)</li>
           <li><span class="num">2.</span> If tied on date, closest <strong>birth weight</strong> wins</li>
           <li><span class="num">3.</span> Still tied? Correct <strong>gender</strong> guess wins</li>
           <li><span class="num">4.</span> Still tied? <strong>Earliest submission</strong> wins</li>
         </ol>
-      </div>
-    </div>
-
-    <!-- Form -->
-    <div class="card-solid" id="form-section">
-      <div class="card-label-row">
-        <div class="card-label" style="margin:0">Place your bet</div>
-        <span class="deadline-tag">Due by May 15</span>
-      </div>
-      <div id="form-error" class="error-msg hidden"></div>
-      <form id="entry-form">
-        <div class="field">
-          <label class="field-label" for="name">Your Name</label>
-          <input type="text" id="name" placeholder="First and last name" required>
-        </div>
-        <div class="field">
-          <label class="field-label" for="date">Birth Date</label>
-          <input type="date" id="date" min="2026-05-04" max="2026-06-30" required>
-        </div>
-        <div class="field">
-          <label class="field-label">Birth Weight</label>
-          <div class="row">
-            <div>
-              <div class="input-with-unit">
-                <input type="number" id="weightLbs" min="3" max="13" placeholder="7" required>
-                <span class="unit">lbs</span>
-              </div>
-            </div>
-            <div>
-              <div class="input-with-unit">
-                <input type="number" id="weightOz" min="0" max="15" placeholder="4" required>
-                <span class="unit">oz</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label">Gender</label>
-          <div class="gender-row">
-            <label class="gender-option boy">
-              <input type="radio" name="gender" value="boy" required> Boy
-            </label>
-            <label class="gender-option girl">
-              <input type="radio" name="gender" value="girl"> Girl
-            </label>
-          </div>
-        </div>
-        <button type="submit" class="submit-btn" id="submit-btn">Submit My Guess ($20)</button>
-        <p class="form-note">You'll be prompted to pay via Venmo after submitting.</p>
-      </form>
-    </div>
-
-    <!-- Closed message (shown after deadline) -->
-    <div class="card-solid hidden" id="closed-section">
-      <div class="closed-msg">
-        <p>Submissions are closed!</p>
-        <p class="sub">Deadline was May 15, 2026. Good luck to everyone in the pool.</p>
       </div>
     </div>
 
@@ -286,36 +366,13 @@
     <footer>Baby Pool &middot; Good luck, everyone</footer>
   </main>
 
-  <!-- Venmo Modal -->
-  <div class="overlay hidden" id="venmo-modal">
-    <div class="modal">
-      <div class="icon">&#x1F389;</div>
-      <h3>You're in!</h3>
-      <p>Don't forget to send your $20 buy-in to lock in your guess.</p>
-      <a href="https://venmo.com/u/Sameer-Bhutani" target="_blank" rel="noopener" class="venmo-btn">
-        Pay @Sameer-Bhutani on Venmo
-      </a>
-      <p class="venmo-note">Send $20 with "Baby Pool" in the note</p>
-      <button class="modal-close" onclick="document.getElementById('venmo-modal').classList.add('hidden')">Close</button>
-    </div>
-  </div>
-
   <script>
-    const form = document.getElementById('entry-form');
-    const errorEl = document.getElementById('form-error');
-    const submitBtn = document.getElementById('submit-btn');
     const entriesLabel = document.getElementById('entries-label');
     const entriesList = document.getElementById('entries-list');
     const potBadge = document.getElementById('pot-badge');
-    const venmoModal = document.getElementById('venmo-modal');
-    const formSection = document.getElementById('form-section');
-    const closedSection = document.getElementById('closed-section');
+    const predictionsSection = document.getElementById('predictions-section');
 
-    // Check deadline
-    if (new Date() > new Date('2026-05-15T23:59:59')) {
-      formSection.classList.add('hidden');
-      closedSection.classList.remove('hidden');
-    }
+    const DUE_DATE_STR = '2026-06-02';
 
     function formatDate(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
@@ -326,6 +383,100 @@
       return new Date(iso).toLocaleDateString('en-US', {
         month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
       });
+    }
+
+    function dateKey(dateObj) {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function renderPredictions(entries) {
+      const total = entries.length;
+      if (total === 0) return;
+
+      predictionsSection.classList.remove('hidden');
+      document.getElementById('predict-sub').textContent =
+        `Submissions closed · ${total} ${total === 1 ? 'entry' : 'entries'} in`;
+
+      // Gender split
+      const boyCount = entries.filter(e => e.gender === 'boy').length;
+      const girlCount = total - boyCount;
+      const boyPct = (boyCount / total) * 100;
+      const girlPct = (girlCount / total) * 100;
+      document.getElementById('boy-count').textContent = boyCount;
+      document.getElementById('girl-count').textContent = girlCount;
+      document.getElementById('boy-fill').style.width = `${boyPct}%`;
+      document.getElementById('girl-fill').style.width = `${girlPct}%`;
+      document.getElementById('boy-pct').textContent = `${Math.round(boyPct)}%`;
+      document.getElementById('girl-pct').textContent = `${Math.round(girlPct)}%`;
+
+      // Date stats
+      const dateCounts = new Map();
+      entries.forEach(e => {
+        dateCounts.set(e.date, (dateCounts.get(e.date) || 0) + 1);
+      });
+      const sortedDates = [...dateCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+      // Most popular date
+      const popular = sortedDates.reduce((max, cur) => cur[1] > max[1] ? cur : max);
+      document.getElementById('stat-popular-date').textContent = formatDate(popular[0]);
+      document.getElementById('stat-popular-meta').textContent =
+        `${popular[1]} ${popular[1] === 1 ? 'pick' : 'picks'}`;
+
+      // Weight stats
+      const weightsOz = entries.map(e => e.weightLbs * 16 + e.weightOz);
+      const avgOz = weightsOz.reduce((a, b) => a + b, 0) / total;
+      const avgLbs = Math.floor(avgOz / 16);
+      const avgRem = Math.round(avgOz - avgLbs * 16);
+      const minOz = Math.min(...weightsOz);
+      const maxOz = Math.max(...weightsOz);
+      const minL = Math.floor(minOz / 16);
+      const minR = minOz - minL * 16;
+      const maxL = Math.floor(maxOz / 16);
+      const maxR = maxOz - maxL * 16;
+      document.getElementById('stat-avg-weight').textContent = `${avgLbs}lb ${avgRem}oz`;
+      document.getElementById('stat-weight-range').textContent =
+        `${minL}lb ${minR}oz – ${maxL}lb ${maxR}oz`;
+
+      // Histogram - fill date range including due date
+      const [fy, fm, fd] = sortedDates[0][0].split('-').map(Number);
+      const [ly, lm, ld] = sortedDates[sortedDates.length - 1][0].split('-').map(Number);
+      const [dy, dm, dd] = DUE_DATE_STR.split('-').map(Number);
+      const dueMs = new Date(dy, dm - 1, dd).getTime();
+      let startMs = Math.min(new Date(fy, fm - 1, fd).getTime(), dueMs);
+      let endMs = Math.max(new Date(ly, lm - 1, ld).getTime(), dueMs);
+
+      const days = [];
+      const cur = new Date(startMs);
+      const end = new Date(endMs);
+      while (cur <= end) {
+        const k = dateKey(cur);
+        days.push({ date: k, count: dateCounts.get(k) || 0 });
+        cur.setDate(cur.getDate() + 1);
+      }
+      const maxCount = Math.max(...days.map(d => d.count), 1);
+      const MAX_BAR_PX = 90;
+
+      const histEl = document.getElementById('histogram');
+      const colWidth = 100 / days.length;
+      const gapPct = 0.5;
+      const innerWidth = colWidth - gapPct;
+      histEl.innerHTML = days.map(({ date, count }, idx) => {
+        const isDue = date === DUE_DATE_STR;
+        const cls = ['hist-col'];
+        if (isDue) cls.push('due');
+        if (count === 0) cls.push('empty');
+        const barPx = count > 0
+          ? Math.max(8, (count / maxCount) * MAX_BAR_PX)
+          : (isDue ? 6 : 2);
+        const left = idx * colWidth;
+        return `<div class="hist-col-wrap" style="left:${left}%;width:${innerWidth}%"><div class="${cls.join(' ')}" style="width:100%"><span class="count">${count > 0 ? count : ''}</span><div class="bar" style="height:${barPx}px"></div></div></div>`;
+      }).join('');
+
+      document.getElementById('hist-start').textContent = formatDate(dateKey(new Date(startMs)));
+      document.getElementById('hist-end').textContent = formatDate(dateKey(new Date(endMs)));
     }
 
     async function loadEntries() {
@@ -340,8 +491,10 @@
         potBadge.classList.remove('hidden');
       }
 
+      renderPredictions(entries);
+
       if (entries.length === 0) {
-        entriesList.innerHTML = '<div class="empty">No entries yet. Be the first!</div>';
+        entriesList.innerHTML = '<div class="empty">No entries yet.</div>';
         return;
       }
 
@@ -373,47 +526,6 @@
       d.textContent = s;
       return d.innerHTML;
     }
-
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      errorEl.classList.add('hidden');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Submitting...';
-
-      const gender = document.querySelector('input[name="gender"]:checked');
-
-      const body = {
-        name: document.getElementById('name').value,
-        date: document.getElementById('date').value,
-        weightLbs: Number(document.getElementById('weightLbs').value),
-        weightOz: Number(document.getElementById('weightOz').value),
-        gender: gender ? gender.value : null,
-      };
-
-      try {
-        const res = await fetch('/api/babypool-entries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-
-        if (data.error) {
-          errorEl.textContent = data.error;
-          errorEl.classList.remove('hidden');
-        } else {
-          form.reset();
-          venmoModal.classList.remove('hidden');
-          loadEntries();
-        }
-      } catch {
-        errorEl.textContent = 'Something went wrong. Try again.';
-        errorEl.classList.remove('hidden');
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit My Guess ($20)';
-    });
 
     loadEntries();
   </script>
