@@ -275,6 +275,8 @@
     .cal-cell.out { background: transparent; }
     .cal-cell.out .day { color: #d6d3d1; }
     .cal-cell.month-boundary { border-top: 1px dashed #d6d3d1; }
+    /* Today's solid ring wins over the dashed month-boundary border */
+    .cal-cell.today.month-boundary { border-top: 1px solid #f59e0b; }
 
     /* Venmo modal */
     .overlay {
