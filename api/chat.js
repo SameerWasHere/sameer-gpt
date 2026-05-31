@@ -35,6 +35,64 @@ const getClientInfo = (req) => {
   return { ip, location };
 };
 
+// Lightweight User-Agent parse for a readable browser + OS label.
+const parseUA = (ua) => {
+  if (!ua) return { browser: '', os: '' };
+  let browser = 'Unknown browser';
+  if (/Edg\//.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/.test(ua)) browser = 'Opera';
+  else if (/Chrome\//.test(ua)) browser = 'Chrome';
+  else if (/Firefox\//.test(ua)) browser = 'Firefox';
+  else if (/Safari\//.test(ua)) browser = 'Safari';
+  let os = 'Unknown OS';
+  if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if (/Android/.test(ua)) os = 'Android';
+  else if (/Mac OS X/.test(ua)) os = 'macOS';
+  else if (/Windows/.test(ua)) os = 'Windows';
+  else if (/Linux/.test(ua)) os = 'Linux';
+  return { browser, os };
+};
+
+// Build a nicely formatted "who's chatting" banner combining server-side
+// IP/geo with the browser fingerprint sent from the client.
+const formatVisitorBanner = (req, clientInfo) => {
+  const { ip, location } = getClientInfo(req);
+  const lines = ['=== New chat ===', `IP: ${ip}`, `IP location: ${location}`];
+
+  const c = clientInfo || {};
+  if (c.timezone) {
+    let tz = c.timezone;
+    if (typeof c.timezoneOffsetMin === 'number') {
+      const off = -c.timezoneOffsetMin / 60;
+      const sign = off >= 0 ? '+' : '-';
+      tz += ` (UTC${sign}${Math.abs(off)})`;
+    }
+    lines.push(`Timezone: ${tz}`);
+  }
+  if (c.deviceType || c.platform) {
+    lines.push(`Device: ${[c.deviceType, c.platform].filter(Boolean).join(' / ')}`);
+  }
+  if (c.userAgent) {
+    const { browser, os } = parseUA(c.userAgent);
+    lines.push(`Browser/OS: ${browser} on ${os}`);
+  }
+  if (c.language) {
+    const extra = c.languages && c.languages !== c.language ? ` (${c.languages})` : '';
+    lines.push(`Language: ${c.language}${extra}`);
+  }
+  if (c.screen) lines.push(`Screen: ${c.screen}${c.pixelRatio ? ` @${c.pixelRatio}x` : ''}`);
+  if (c.viewport) lines.push(`Viewport: ${c.viewport}`);
+  const hw = [];
+  if (c.cpuCores) hw.push(`${c.cpuCores} CPU cores`);
+  if (c.deviceMemory) hw.push(`${c.deviceMemory}GB RAM`);
+  if (typeof c.touchPoints === 'number') hw.push(`${c.touchPoints} touch points`);
+  if (hw.length) lines.push(`Hardware: ${hw.join(' / ')}`);
+  lines.push(`Referrer: ${c.referrer || '(direct)'}`);
+  if (c.userAgent) lines.push(`Raw UA: ${c.userAgent}`);
+
+  return lines.join('\n') + '\n\n';
+};
+
 const notifyTelegram = async (text, sessionId) => {
   try {
     if (!BOT_TOKEN) return;
@@ -111,7 +169,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { messages, stream, conversationId } = req.body;
+      const { messages, stream, conversationId, clientInfo } = req.body;
 
       const apiKey = process.env.OPENAI_API_KEY;
       if (!apiKey) {
@@ -168,8 +226,7 @@ export default async function handler(req, res) {
       let infoBanner = '';
       const followupQuestion = 'By the way — who am I chatting with?';
       if (isFirstMessage) {
-        const { ip, location } = getClientInfo(req);
-        infoBanner = `New chat\nIP: ${ip}\nLocation: ${location}\n\n`;
+        infoBanner = formatVisitorBanner(req, clientInfo);
       }
 
       const fullMessages = [

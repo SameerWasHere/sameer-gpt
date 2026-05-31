@@ -27,6 +27,37 @@ const PRESET_QUESTIONS = [
   "What's your favorite movie?",
 ];
 
+// Gather browser-side info to help identify who's chatting. IP geolocation is
+// unreliable, so this fills in the gaps (timezone especially narrows location).
+function collectClientInfo() {
+  try {
+    const ua = navigator.userAgent || '';
+    const isTablet = /iPad|Tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua));
+    const isMobile = !isTablet && /Mobi|Android|iPhone|iPod/i.test(ua);
+    const deviceType = isTablet ? 'Tablet' : isMobile ? 'Mobile' : 'Desktop';
+    return {
+      userAgent: ua,
+      platform: navigator.platform || '',
+      deviceType,
+      language: navigator.language || '',
+      languages: (navigator.languages || []).join(', '),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+      timezoneOffsetMin: new Date().getTimezoneOffset(),
+      screen: `${window.screen.width}x${window.screen.height}`,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      pixelRatio: window.devicePixelRatio || 1,
+      colorDepth: window.screen.colorDepth || null,
+      touchPoints: navigator.maxTouchPoints || 0,
+      cpuCores: navigator.hardwareConcurrency || null,
+      deviceMemory: navigator.deviceMemory || null,
+      referrer: document.referrer || '(direct)',
+      pageUrl: window.location.href,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function Chat({ onEditRequest }) {
   const [messages, setMessages] = useState(() => {
     try {
@@ -331,10 +362,17 @@ function Chat({ onEditRequest }) {
     try {
       const chatMessages = [...messages, newMessage].filter(m => m.role === 'user' || m.role === 'assistant');
 
+      const payload = { messages: chatMessages, stream: true, conversationId };
+      // On the first message, send browser fingerprint info so Sameer gets a
+      // full picture of who's chatting in the Telegram forward.
+      if (chatMessages.length === 1) {
+        payload.clientInfo = collectClientInfo();
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatMessages, stream: true, conversationId }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error('Stream failed');
@@ -439,7 +477,11 @@ function Chat({ onEditRequest }) {
     if (updateMode === 'password') return 'Enter password...';
     if (updateMode === 'instruction') return 'Describe update or type /delete...';
     if (updateMode === 'updating') return 'Updating...';
-    return input ? '' : placeholderText || 'Ask SameerGPT...';
+    if (input) return '';
+    // Only cycle through example-question suggestions before the first message.
+    // Once the chat has started, keep the bar neutral.
+    if (hasStarted) return 'Ask SameerGPT...';
+    return placeholderText || 'Ask SameerGPT...';
   };
 
   const getInputType = () => {
