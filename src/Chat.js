@@ -342,6 +342,7 @@ function Chat({ onEditRequest }) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
+      let followupMsg = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -355,6 +356,10 @@ function Chat({ onEditRequest }) {
             if (accumulated) {
               setStreamingContent('');
               setMessages(prev => [...prev, { role: 'assistant', content: accumulated }]);
+            }
+            // Separate follow-up bubble (e.g. "who am I chatting with?")
+            if (followupMsg) {
+              setMessages(prev => [...prev, { role: 'assistant', content: followupMsg }]);
             }
             setIsLoading(false);
             return;
@@ -399,6 +404,9 @@ function Chat({ onEditRequest }) {
                 };
                 pollForResponse();
                 return;
+              }
+              if (data.followup) {
+                followupMsg = data.followup;
               }
               if (data.content) {
                 accumulated += data.content;

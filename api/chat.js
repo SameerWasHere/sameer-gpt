@@ -4,6 +4,37 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const FORUM_CHAT_ID = '-1003840040892';
 
+// Cheatsheet appended to every message forwarded to Sameer so he doesn't
+// have to remember the slash commands.
+const COMMANDS_HELP =
+  '\n\n- - -\n' +
+  'Commands (type in this topic):\n' +
+  '- type a message = send directly to the user\n' +
+  '- /in = intercept (you become the AI)\n' +
+  '- /coach <advice> = AI replies using your guidance\n' +
+  '- /coach = enter coach mode\n' +
+  '- /out = hand back to the AI\n' +
+  '- /learn = update the AI prompt from your messages';
+
+// Pull the visitor's IP and IP-based location from the request headers.
+// Vercel injects geo headers on every request.
+const getClientInfo = (req) => {
+  const h = req.headers || {};
+  const ip =
+    (h['x-forwarded-for'] || '').split(',')[0].trim() ||
+    h['x-real-ip'] ||
+    'unknown';
+  const dec = (v) => {
+    if (!v) return '';
+    try { return decodeURIComponent(v); } catch { return v; }
+  };
+  const city = dec(h['x-vercel-ip-city']);
+  const region = dec(h['x-vercel-ip-country-region']);
+  const country = dec(h['x-vercel-ip-country']);
+  const location = [city, region, country].filter(Boolean).join(', ') || 'unknown';
+  return { ip, location };
+};
+
 const notifyTelegram = async (text, sessionId) => {
   try {
     if (!BOT_TOKEN) return;
@@ -31,7 +62,7 @@ const notifyTelegram = async (text, sessionId) => {
       }
     }
 
-    const body = { chat_id: FORUM_CHAT_ID, text };
+    const body = { chat_id: FORUM_CHAT_ID, text: text + COMMANDS_HELP };
     if (threadId) body.message_thread_id = threadId;
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -130,15 +161,20 @@ export default async function handler(req, res) {
 
       // Build messages with system context
       const isFirstMessage = messages.length === 1;
+
+      // On the first message, capture who's chatting (IP + location) so we can
+      // tell Sameer in the Telegram forward, and queue a follow-up that asks
+      // the visitor who they are after the AI's first reply.
+      let infoBanner = '';
+      const followupQuestion = 'By the way — who am I chatting with?';
+      if (isFirstMessage) {
+        const { ip, location } = getClientInfo(req);
+        infoBanner = `New chat\nIP: ${ip}\nLocation: ${location}\n\n`;
+      }
+
       const fullMessages = [
         { role: 'system', content: context },
       ];
-      if (isFirstMessage) {
-        fullMessages.push({
-          role: 'system',
-          content: 'This is the first message from someone new. Before diving into their question, casually ask who they are — like you got a text from an unknown number. Keep it friendly and natural, like "Hey! Who\'s this?" Then briefly address what they asked.',
-        });
-      }
       fullMessages.push(...messages);
 
       if (stream) {
@@ -185,7 +221,14 @@ export default async function handler(req, res) {
               }
               // Notify Telegram (must await or Vercel kills the process)
               if (lastUserMsg && fullContent) {
-                await notifyTelegram(`User: ${lastUserMsg.content}\n\nAI: ${fullContent}`, conversationId);
+                let note = `${infoBanner}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`;
+                if (isFirstMessage) note += `\n\nAI (follow-up): ${followupQuestion}`;
+                await notifyTelegram(note, conversationId);
+              }
+              // After the first reply, ask the visitor who they are as a
+              // separate follow-up message.
+              if (isFirstMessage) {
+                res.write(`data: ${JSON.stringify({ followup: followupQuestion })}\n\n`);
               }
               res.write('data: [DONE]\n\n');
               res.end();
@@ -231,7 +274,7 @@ export default async function handler(req, res) {
         }
         // Notify Telegram (must await or Vercel kills the process)
         if (lastUserMsg && assistantMsg) {
-          await notifyTelegram(`User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`, conversationId);
+          await notifyTelegram(`${infoBanner}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`, conversationId);
         }
 
         res.status(200).json(data);
