@@ -215,8 +215,13 @@
     .cal-key .dot.boy { background: #38bdf8; }
     .cal-key .dot.girl { background: #f472b6; }
     .cal-key .due-swatch {
+      font-size: 11px; font-weight: 700; color: #15803d;
+      line-height: 1; display: inline-block;
+    }
+    .cal-key .today-swatch {
       width: 8px; height: 8px; border-radius: 3px;
-      background: #dcfce7; border: 1px solid #22c55e;
+      background: transparent; border: 1px solid #f59e0b;
+      box-shadow: 0 0 0 1px #f59e0b;
       display: inline-block;
     }
     .cal-month-label {
@@ -259,10 +264,14 @@
       font-size: 8px; color: #78716c; font-weight: 600;
       width: 100%; text-align: center; line-height: 1;
     }
-    .cal-cell.due {
-      background: #dcfce7; border-color: #22c55e;
-    }
     .cal-cell.due .day { color: #15803d; font-weight: 700; }
+    .cal-cell.today {
+      border-color: #f59e0b;
+      box-shadow: 0 0 0 1px #f59e0b;
+    }
+    .cal-cell.today .day {
+      font-weight: 700; color: #b45309;
+    }
     .cal-cell.out { background: transparent; }
     .cal-cell.out .day { color: #d6d3d1; }
     .cal-cell.month-boundary { border-top: 1px dashed #d6d3d1; }
@@ -341,7 +350,8 @@
           <span class="cal-key">
             <span class="key-item"><span class="dot boy"></span> Boy</span>
             <span class="key-item"><span class="dot girl"></span> Girl</span>
-            <span class="key-item"><span class="due-swatch"></span> Due</span>
+            <span class="key-item"><span class="due-swatch">2</span> Due</span>
+            <span class="key-item"><span class="today-swatch"></span> Today</span>
           </span>
         </div>
         <div class="cal-month-label" id="cal-month-label"></div>
@@ -477,6 +487,8 @@
       const headerCells = ['S','M','T','W','T','F','S']
         .map(d => `<div class="cal-hdr">${d}</div>`).join('');
 
+      const todayKey = dateKey(new Date());
+
       const cells = [];
       const cur = new Date(calStart);
       while (cur <= calEnd) {
@@ -484,9 +496,11 @@
         const inRange = cur >= rangeStart && cur <= rangeEnd;
         const picks = picksByDate.get(key) || [];
         const isDue = key === DUE_DATE_STR;
+        const isToday = key === todayKey;
         const isMonthStart = cur.getDate() === 1;
         const classes = ['cal-cell'];
         if (isDue) classes.push('due');
+        if (isToday) classes.push('today');
         if (!inRange) classes.push('out');
         if (isMonthStart && cells.length >= 7) classes.push('month-boundary');
 
