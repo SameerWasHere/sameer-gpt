@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#fdf6f0">
+  <title>Claude Workspace</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fdf6f0;
+      color: #2d2a26;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== PIN gate ===== */
+    .gate {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .gate-card {
+      width: 100%; max-width: 340px;
+      background: #fff; border: 1px solid rgba(217,189,160,0.3);
+      border-radius: 20px; padding: 36px 28px;
+      box-shadow: 0 4px 24px rgba(180,140,100,0.10);
+      text-align: center;
+    }
+    .gate-icon { font-size: 40px; margin-bottom: 14px; }
+    .gate-card h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+    .gate-card p { font-size: 13px; color: #78716c; margin-top: 8px; margin-bottom: 24px; }
+    .pin-input {
+      width: 100%; text-align: center;
+      font-size: 28px; letter-spacing: 12px; font-weight: 600;
+      padding: 14px 12px; border-radius: 14px;
+      border: 1.5px solid #e7d9c8; background: #fdfaf6;
+      color: #2d2a26; outline: none;
+      transition: border-color 0.15s;
+    }
+    .pin-input::placeholder { letter-spacing: 12px; color: #d6c9b8; }
+    .pin-input:focus { border-color: #f59e0b; }
+    .pin-input.error { border-color: #ef4444; animation: shake 0.35s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-7px); }
+      75% { transform: translateX(7px); }
+    }
+    .gate-btn {
+      width: 100%; margin-top: 16px;
+      font-size: 15px; font-weight: 600;
+      background: #2d2a26; color: #fff;
+      padding: 14px; border-radius: 14px;
+      border: none; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .gate-btn:hover { background: #44403c; }
+    .gate-btn:disabled { opacity: 0.5; cursor: default; }
+    .gate-error { font-size: 13px; color: #ef4444; margin-top: 14px; min-height: 16px; }
+
+    /* ===== Workspace ===== */
+    .workspace { display: none; max-width: 760px; margin: 0 auto; padding: 40px 18px 64px; }
+    .ws-header { margin-bottom: 28px; }
+    .ws-header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+    .ws-header p { font-size: 14px; color: #78716c; margin-top: 6px; }
+
+    .grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+    .tile {
+      display: flex; flex-direction: column;
+      background: #fff; border: 1px solid rgba(217,189,160,0.3);
+      border-radius: 16px; padding: 20px;
+      box-shadow: 0 1px 3px rgba(180,140,100,0.08);
+      text-decoration: none; color: inherit;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .tile:hover, .tile:active {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(180,140,100,0.16);
+    }
+    .tile-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px;
+    }
+    .tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #92400e; background: #fdecd2;
+      padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    }
+    .tile-date { font-size: 11px; color: #a8a29e; white-space: nowrap; }
+    .tile h2 { font-size: 16px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .tile p { font-size: 13px; color: #57534e; line-height: 1.5; flex: 1; }
+    .tile-cta {
+      font-size: 13px; font-weight: 600; color: #b45309;
+      margin-top: 14px; display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    .empty, .loading {
+      text-align: center; color: #a8a29e; font-size: 14px;
+      padding: 48px 0;
+    }
+    .ws-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 36px; font-size: 12px; color: #a8a29e;
+    }
+    .logout {
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 12px; color: #a8a29e;
+      text-decoration: underline;
+    }
+    .logout:hover { color: #78716c; }
+  </style>
+</head>
+<body>
+  <!-- PIN gate -->
+  <div class="gate" id="gate">
+    <div class="gate-card">
+      <div class="gate-icon">&#x1F512;</div>
+      <h1>Claude Workspace</h1>
+      <p>Enter your PIN to continue</p>
+      <input
+        id="pin"
+        class="pin-input"
+        type="tel"
+        inputmode="numeric"
+        maxlength="4"
+        placeholder="&bull;&bull;&bull;&bull;"
+        autocomplete="off"
+        aria-label="PIN"
+      >
+      <button class="gate-btn" id="unlock">Unlock</button>
+      <div class="gate-error" id="error"></div>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace" id="workspace">
+    <div class="ws-header">
+      <h1>Claude Workspace</h1>
+      <p>Things Claude built for you to review.</p>
+    </div>
+    <div class="grid" id="grid">
+      <div class="loading">Loading&hellip;</div>
+    </div>
+    <div class="ws-footer">
+      <span>sameer.us/claude</span>
+      <button class="logout" id="logout">Lock</button>
+    </div>
+  </div>
+
+  <script>
+    // SHA-256 hash of the PIN. The plaintext PIN is never stored in the code.
+    const PIN_HASH = 'ad5ef4b29e148afd784de5373b210eb00879dfbf08922c96dc6ce4fc1e064fd9';
+    const COOKIE = 'claude_auth';
+    const ONE_YEAR = 60 * 60 * 24 * 365;
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function getCookie(name) {
+      const hit = document.cookie.split('; ').find(c => c.startsWith(name + '='));
+      return hit ? hit.split('=')[1] : null;
+    }
+    function setCookie(name, value, maxAge) {
+      document.cookie = `${name}=${value}; max-age=${maxAge}; path=/; samesite=lax`;
+    }
+    function clearCookie(name) {
+      document.cookie = `${name}=; max-age=0; path=/`;
+    }
+
+    const gate = document.getElementById('gate');
+    const workspace = document.getElementById('workspace');
+    const pinInput = document.getElementById('pin');
+    const unlockBtn = document.getElementById('unlock');
+    const errorEl = document.getElementById('error');
+
+    function showWorkspace() {
+      gate.style.display = 'none';
+      workspace.style.display = 'block';
+      loadArtifacts();
+    }
+    function showGate() {
+      gate.style.display = 'flex';
+      workspace.style.display = 'none';
+      setTimeout(() => pinInput.focus(), 50);
+    }
+
+    async function tryUnlock() {
+      const pin = pinInput.value.trim();
+      if (!pin) return;
+      const hash = await sha256(pin);
+      if (hash === PIN_HASH) {
+        setCookie(COOKIE, hash, ONE_YEAR);
+        errorEl.textContent = '';
+        showWorkspace();
+      } else {
+        errorEl.textContent = 'Wrong PIN. Try again.';
+        pinInput.classList.add('error');
+        pinInput.value = '';
+        setTimeout(() => pinInput.classList.remove('error'), 400);
+      }
+    }
+
+    unlockBtn.addEventListener('click', tryUnlock);
+    pinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') tryUnlock();
+    });
+    pinInput.addEventListener('input', () => { errorEl.textContent = ''; });
+
+    document.getElementById('logout').addEventListener('click', () => {
+      clearCookie(COOKIE);
+      pinInput.value = '';
+      showGate();
+    });
+
+    function formatDate(dateStr) {
+      const [y, m, d] = (dateStr || '').split('-').map(Number);
+      if (!y || !m || !d) return dateStr || '';
+      return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric',
+      });
+    }
+
+    async function loadArtifacts() {
+      const grid = document.getElementById('grid');
+      try {
+        const res = await fetch('/claude/manifest.json', { cache: 'no-store' });
+        const data = await res.json();
+        const items = (data.artifacts || []).slice().sort((a, b) =>
+          (b.date || '').localeCompare(a.date || '')
+        );
+        if (!items.length) {
+          grid.innerHTML = '<div class="empty">Nothing here yet. Check back soon.</div>';
+          return;
+        }
+        grid.innerHTML = items.map(a => {
+          const tag = a.category
+            ? `<span class="tag">${escapeHtml(a.category)}</span>`
+            : '<span></span>';
+          return `
+            <a class="tile" href="/claude/artifacts/${encodeURIComponent(a.filename)}">
+              <div class="tile-top">
+                ${tag}
+                <span class="tile-date">${formatDate(a.date)}</span>
+              </div>
+              <h2>${escapeHtml(a.title || 'Untitled')}</h2>
+              <p>${escapeHtml(a.description || '')}</p>
+              <span class="tile-cta">Open &rarr;</span>
+            </a>`;
+        }).join('');
+      } catch (e) {
+        grid.innerHTML = '<div class="empty">Could not load artifacts.</div>';
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    // Boot
+    if (getCookie(COOKIE) === PIN_HASH) {
+      showWorkspace();
+    } else {
+      showGate();
+    }
+  </script>
+</body>
+</html>

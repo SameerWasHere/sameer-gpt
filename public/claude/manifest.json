@@ -1,0 +1,12 @@
+{
+  "artifacts": [
+    {
+      "id": "welcome",
+      "title": "Welcome to your Claude workspace",
+      "description": "How this shared space works and how new artifacts get added.",
+      "category": "Guide",
+      "date": "2026-05-31",
+      "filename": "welcome.html"
+    }
+  ]
+}
