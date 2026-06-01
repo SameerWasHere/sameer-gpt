@@ -127,6 +127,59 @@
       text-decoration: underline;
     }
     .logout:hover { color: #78716c; }
+
+    .tile-actions { display: inline-flex; align-items: center; gap: 4px; }
+    .manage-btn {
+      font-size: 12px; font-weight: 600; color: #b45309;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      padding: 4px 6px; border-radius: 8px; transition: background 0.12s;
+    }
+    .manage-btn:hover { background: #fdecd2; }
+
+    /* Modal */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(45,42,38,0.45);
+      align-items: center; justify-content: center; padding: 20px; z-index: 50;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      width: 100%; max-width: 380px;
+      background: #fff; border-radius: 20px; padding: 28px 24px;
+      box-shadow: 0 16px 48px rgba(45,42,38,0.25);
+    }
+    .modal h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .modal-sub { font-size: 13px; color: #78716c; margin-top: 4px; margin-bottom: 18px; }
+    .seg {
+      display: flex; gap: 6px; background: #f5ede3;
+      padding: 4px; border-radius: 12px; margin-bottom: 16px;
+    }
+    .seg-btn {
+      flex: 1; font-size: 13px; font-weight: 600; font-family: inherit;
+      padding: 9px; border-radius: 9px; border: none; cursor: pointer;
+      background: transparent; color: #78716c; transition: background 0.12s, color 0.12s;
+    }
+    .seg-btn.active { background: #fff; color: #2d2a26; box-shadow: 0 1px 2px rgba(180,140,100,0.12); }
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #78716c; margin-bottom: 6px;
+    }
+    .modal-input {
+      width: 100%; font-size: 15px; padding: 11px 12px; border-radius: 12px;
+      border: 1.5px solid #e7d9c8; background: #fdfaf6; color: #2d2a26;
+      outline: none; transition: border-color 0.15s; font-family: inherit;
+    }
+    .modal-input:focus { border-color: #f59e0b; }
+    .modal-msg { font-size: 13px; min-height: 18px; margin: 4px 0 10px; }
+    .modal-msg.err { color: #ef4444; }
+    .modal-msg.ok { color: #15803d; }
+    .modal-close {
+      width: 100%; margin-top: 8px; background: none; border: none;
+      font-family: inherit; font-size: 13px; color: #78716c;
+      cursor: pointer; text-decoration: underline; padding: 8px;
+    }
+    .modal-close:hover { color: #57534e; }
   </style>
 </head>
 <body>
@@ -163,6 +216,37 @@
     <div class="ws-footer">
       <span>sameer.us/claude</span>
       <button class="logout" id="logout">Lock</button>
+    </div>
+  </div>
+
+  <!-- Manage access modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h3 id="mTitle">Manage access</h3>
+      <p class="modal-sub">Change who can open this artifact.</p>
+
+      <div class="seg" id="mSeg">
+        <button type="button" class="seg-btn" data-val="public">&#x1F310; Public</button>
+        <button type="button" class="seg-btn" data-val="protected">&#x1F512; Protected</button>
+      </div>
+
+      <div class="field" id="mCurrentWrap">
+        <label>Current password</label>
+        <input type="password" id="mCurrent" class="modal-input" autocomplete="off" placeholder="Needed to change a protected artifact">
+      </div>
+      <div class="field" id="mNewWrap">
+        <label>New password</label>
+        <input type="password" id="mNew" class="modal-input" autocomplete="off" placeholder="Password to protect with">
+      </div>
+      <div class="field" id="mPinWrap">
+        <label>Confirm PIN</label>
+        <input type="tel" inputmode="numeric" id="mPin" class="modal-input" autocomplete="off" placeholder="Your admin PIN">
+      </div>
+
+      <div class="modal-msg" id="mMsg"></div>
+
+      <button class="gate-btn" id="mSave">Save</button>
+      <button class="modal-close" id="mCancel">Cancel</button>
     </div>
   </div>
 
@@ -210,6 +294,9 @@
       const hash = await sha256(pin);
       if (hash === PIN_HASH) {
         setCookie(COOKIE, hash, ONE_YEAR);
+        // Keep the plaintext PIN for the session so admin actions can
+        // authenticate to the API. Cleared when the tab closes.
+        try { sessionStorage.setItem('claude_pin', pin); } catch (e) {}
         errorEl.textContent = '';
         showWorkspace();
       } else {
@@ -228,6 +315,7 @@
 
     document.getElementById('logout').addEventListener('click', () => {
       clearCookie(COOKIE);
+      try { sessionStorage.removeItem('claude_pin'); } catch (e) {}
       pinInput.value = '';
       showGate();
     });
@@ -272,7 +360,13 @@
               </a>
               <div class="tile-foot">
                 ${badge}
-                <button class="copy-link" data-id="${escapeHtml(a.id)}">Copy link</button>
+                <div class="tile-actions">
+                  <button class="copy-link" data-id="${escapeHtml(a.id)}">Copy link</button>
+                  <button class="manage-btn"
+                    data-id="${escapeHtml(a.id)}"
+                    data-title="${escapeHtml(a.title || a.id)}"
+                    data-access="${isProtected ? 'protected' : 'public'}">Manage</button>
+                </div>
               </div>
             </div>`;
         }).join('');
@@ -294,6 +388,10 @@
             setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
           });
         });
+
+        grid.querySelectorAll('.manage-btn').forEach(btn => {
+          btn.addEventListener('click', () => openManage(btn.dataset));
+        });
       } catch (e) {
         grid.innerHTML = '<div class="empty">Could not load artifacts.</div>';
       }
@@ -304,6 +402,88 @@
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+
+    // ---- Manage access modal ----
+    const overlay = document.getElementById('overlay');
+    const mTitle = document.getElementById('mTitle');
+    const mSeg = document.getElementById('mSeg');
+    const mCurrentWrap = document.getElementById('mCurrentWrap');
+    const mNewWrap = document.getElementById('mNewWrap');
+    const mPinWrap = document.getElementById('mPinWrap');
+    const mCurrent = document.getElementById('mCurrent');
+    const mNew = document.getElementById('mNew');
+    const mPin = document.getElementById('mPin');
+    const mMsg = document.getElementById('mMsg');
+    const mSave = document.getElementById('mSave');
+
+    let manageState = { id: null, currentAccess: 'public', target: 'public' };
+
+    function getPin() {
+      try { return sessionStorage.getItem('claude_pin'); } catch (e) { return null; }
+    }
+    function setMsg(text, kind) {
+      mMsg.textContent = text;
+      mMsg.className = 'modal-msg' + (kind ? ' ' + kind : '');
+    }
+    function updateModalFields() {
+      mSeg.querySelectorAll('.seg-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.val === manageState.target));
+      mCurrentWrap.style.display = manageState.currentAccess === 'protected' ? 'block' : 'none';
+      mNewWrap.style.display = manageState.target === 'protected' ? 'block' : 'none';
+      mPinWrap.style.display = getPin() ? 'none' : 'block';
+    }
+    function openManage(data) {
+      manageState = { id: data.id, currentAccess: data.access, target: data.access };
+      mTitle.textContent = data.title;
+      mCurrent.value = ''; mNew.value = ''; mPin.value = '';
+      setMsg('', '');
+      mSave.disabled = false; mSave.textContent = 'Save';
+      updateModalFields();
+      overlay.classList.add('open');
+    }
+    function closeManage() { overlay.classList.remove('open'); }
+
+    mSeg.querySelectorAll('.seg-btn').forEach(b => {
+      b.addEventListener('click', () => { manageState.target = b.dataset.val; updateModalFields(); });
+    });
+    document.getElementById('mCancel').addEventListener('click', closeManage);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeManage(); });
+
+    mSave.addEventListener('click', async () => {
+      const pin = getPin() || mPin.value.trim();
+      if (!pin) { setMsg('Enter your PIN to confirm.', 'err'); return; }
+      if (manageState.currentAccess === 'protected' && !mCurrent.value) {
+        setMsg('Enter the current password to change a protected artifact.', 'err'); return;
+      }
+      if (manageState.target === 'protected' && !mNew.value) {
+        setMsg('Enter a new password.', 'err'); return;
+      }
+      mSave.disabled = true; mSave.textContent = 'Saving…';
+      setMsg('Saving and committing to GitHub…', '');
+      try {
+        const res = await fetch('/api/claude-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-claude-pin': pin },
+          body: JSON.stringify({
+            id: manageState.id,
+            target: manageState.target,
+            currentPassword: mCurrent.value || undefined,
+            newPassword: mNew.value || undefined,
+          }),
+        });
+        const text = await res.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (e) { data = {}; }
+        if (!res.ok) throw new Error(data.error || `Save failed (${res.status})`);
+        try { sessionStorage.setItem('claude_pin', pin); } catch (e) {}
+        setMsg('Saved. Vercel redeploys in ~1 min — refresh this page after that to see the change.', 'ok');
+        mSave.textContent = 'Saved';
+        document.getElementById('mCancel').textContent = 'Close';
+      } catch (e) {
+        mSave.disabled = false; mSave.textContent = 'Save';
+        setMsg(e.message, 'err');
+      }
+    });
 
     // Boot
     if (getCookie(COOKIE) === PIN_HASH) {
