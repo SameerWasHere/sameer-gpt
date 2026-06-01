@@ -11,8 +11,8 @@
     },
     {
       "id": "welcome",
-      "title": "Welcome to your projects workspace",
-      "description": "How this shared space works and how new artifacts get added.",
+      "title": "Welcome to Projects",
+      "description": "How this space works and how new projects get published.",
       "category": "Guide",
       "date": "2026-05-31",
       "access": "public",

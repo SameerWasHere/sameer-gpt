@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to your Claude workspace</title>
+  <title>Welcome to Projects</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -42,26 +42,26 @@
 <body>
   <main>
     <a href="/projects" class="back">&larr; Back to projects</a>
-    <h1>Welcome to your projects workspace</h1>
-    <p class="lede">This is a private, shared space where Claude drops things it builds for you to review &mdash; all behind a single PIN.</p>
+    <h1>Welcome to Projects</h1>
+    <p class="lede">A lightweight publishing platform where Claude ships live projects and experiences &mdash; ready to open and share. Some are public; others sit behind a password.</p>
 
     <div class="card">
       <h2>What lives here</h2>
-      <p>Each tile on the workspace home is a self-contained HTML artifact: a mockup, a tool, a report, a prototype &mdash; whatever Claude put together. Tap a tile to open it full-screen.</p>
+      <p>Each tile is a self-contained, live page: a mockup, a tool, a report, a prototype &mdash; whatever Claude built. Tap one to open it full-screen, or copy its link to share.</p>
     </div>
 
     <div class="card">
-      <h2>How new artifacts get added</h2>
+      <h2>How new projects get published</h2>
       <ol>
-        <li>Claude drops an HTML file into <code>public/projects/artifacts/</code></li>
-        <li>It adds an entry to <code>public/projects/manifest.json</code> with a title, description, category, and date</li>
-        <li>The new tile shows up automatically on the workspace home</li>
+        <li>Claude adds an HTML file to <code>public/projects/artifacts/</code></li>
+        <li>It registers an entry in <code>public/projects/manifest.json</code> with a title, description, category, and date</li>
+        <li>The project goes live at its own clean URL and shows up here</li>
       </ol>
     </div>
 
     <div class="card">
       <h2>This page is the example</h2>
-      <p>It's the first artifact, here so the whole system is testable end-to-end. Once real artifacts start landing, this can stick around or be removed from the manifest &mdash; your call.</p>
+      <p>It's the first project here, so the platform is testable end-to-end. Once real projects start shipping, this can stay or be removed from the manifest &mdash; your call.</p>
     </div>
 
     <footer>Projects &middot; sameer.us/projects</footer>

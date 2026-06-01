@@ -60,7 +60,7 @@ export default async function middleware(request) {
   // Crawlers: return a lightweight page carrying the Open Graph tags.
   if (CRAWLER_RE.test(ua)) {
     const title = escapeHtml(artifact.title || 'Projects');
-    const description = escapeHtml(artifact.description || 'A shared workspace of things Claude built.');
+    const description = escapeHtml(artifact.description || 'Live projects and experiences, published by Claude.');
     const pageUrl = `${url.origin}/${encodeURIComponent(id)}`;
     const image = `${url.origin}/logo512.png`;
     const html = `<!DOCTYPE html>

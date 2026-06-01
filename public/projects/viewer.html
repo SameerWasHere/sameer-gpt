@@ -232,7 +232,7 @@
       try {
         const res = await fetch('/projects/manifest.json', { cache: 'no-store' });
         manifest = await res.json();
-      } catch (e) { showError('Could not load the workspace manifest.'); return; }
+      } catch (e) { showError('Could not load the projects list.'); return; }
 
       const artifact = (manifest.artifacts || []).find(a => a.id === id);
       if (!artifact) { showError('No artifact named "' + escapeHtml(id) + '".'); return; }
