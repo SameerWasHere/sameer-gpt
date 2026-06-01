@@ -247,9 +247,9 @@ export default async function handler(req, res) {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: 'gpt-5.5',
             messages: fullMessages,
-            max_tokens: 1000,
+            max_completion_tokens: 1000,
             stream: true,
           }),
         });
@@ -317,9 +317,9 @@ export default async function handler(req, res) {
             'Authorization': `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: 'gpt-5.5',
             messages: fullMessages,
-            max_tokens: 1000,
+            max_completion_tokens: 1000,
           }),
         });
 

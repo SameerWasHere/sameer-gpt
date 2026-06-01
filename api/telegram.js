@@ -97,9 +97,9 @@ async function coachResponse(instruction, sessionId) {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5.5',
       messages: fullMessages,
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
     }),
   });
 
@@ -154,7 +154,7 @@ async function learnFromSession(sessionId) {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5.5',
       messages: [
         {
           role: 'system',
@@ -175,7 +175,7 @@ Rules:
           content: `CURRENT SYSTEM PROMPT:\n${currentPrompt}\n\n---\n\nCONVERSATION:\n${convoSummary}\n\n---\n\nSAMEER'S INTERVENTIONS:\n${interventionSummary}\n\n---\n\nBased on Sameer's interventions above, what should be ADDED to the system prompt to make the AI sound more like Sameer?`,
         },
       ],
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
     }),
   });
 
@@ -205,7 +205,7 @@ async function generateAiResponse(sessionId) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: 'gpt-4o', messages: fullMessages, max_tokens: 1000 }),
+    body: JSON.stringify({ model: 'gpt-5.5', messages: fullMessages, max_completion_tokens: 1000 }),
   });
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || null;
