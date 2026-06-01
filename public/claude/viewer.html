@@ -109,11 +109,12 @@
     const ITER_DEFAULT = 150000;
 
     function artifactId() {
-      // Prod uses a clean path (/claude/welcome). The ?id= fallback lets the
-      // viewer work where the rewrite isn't applied (e.g. local static serving).
+      // Prod serves the artifact at a clean root path (/welcome) via middleware.
+      // The ?id= fallback lets the viewer work where that isn't applied (e.g.
+      // local static serving). The last path segment is the id either way.
       const q = new URLSearchParams(location.search).get('id');
       if (q) return q;
-      const parts = location.pathname.split('/').filter(Boolean); // ['claude','welcome']
+      const parts = location.pathname.split('/').filter(Boolean); // ['welcome']
       return decodeURIComponent(parts[parts.length - 1] || '');
     }
 
