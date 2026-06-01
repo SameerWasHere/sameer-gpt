@@ -6,7 +6,18 @@
       "description": "How this shared space works and how new artifacts get added.",
       "category": "Guide",
       "date": "2026-05-31",
+      "access": "public",
       "filename": "welcome.html"
+    },
+    {
+      "id": "protected-sample",
+      "title": "Protected sample",
+      "description": "A password-protected artifact, encrypted with AES-GCM. Demo password: openme",
+      "category": "Demo",
+      "date": "2026-06-01",
+      "access": "protected",
+      "filename": "protected-sample.enc.json",
+      "passwordHash": "7690f53198cd324ad283ea1d4fac1244a0b9fd3eb6fd3adb131265d714165ce9"
     }
   ]
 }

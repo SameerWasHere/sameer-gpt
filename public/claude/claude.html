@@ -75,13 +75,13 @@
       background: #fff; border: 1px solid rgba(217,189,160,0.3);
       border-radius: 16px; padding: 20px;
       box-shadow: 0 1px 3px rgba(180,140,100,0.08);
-      text-decoration: none; color: inherit;
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
     .tile:hover, .tile:active {
       transform: translateY(-2px);
       box-shadow: 0 6px 18px rgba(180,140,100,0.16);
     }
+    .tile-main { text-decoration: none; color: inherit; display: block; }
     .tile-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 10px; margin-bottom: 10px;
@@ -93,11 +93,25 @@
     }
     .tile-date { font-size: 11px; color: #a8a29e; white-space: nowrap; }
     .tile h2 { font-size: 16px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
-    .tile p { font-size: 13px; color: #57534e; line-height: 1.5; flex: 1; }
-    .tile-cta {
-      font-size: 13px; font-weight: 600; color: #b45309;
-      margin-top: 14px; display: inline-flex; align-items: center; gap: 5px;
+    .tile p { font-size: 13px; color: #57534e; line-height: 1.5; }
+    .tile-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-top: 16px; padding-top: 12px;
+      border-top: 1px solid rgba(217,189,160,0.25);
     }
+    .access-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .access-badge.public { color: #15803d; }
+    .access-badge.protected { color: #b45309; }
+    .copy-link {
+      font-size: 12px; font-weight: 600; color: #78716c;
+      background: none; border: none; cursor: pointer; font-family: inherit;
+      padding: 4px 6px; border-radius: 8px; transition: background 0.12s, color 0.12s;
+    }
+    .copy-link:hover { background: #f5ede3; color: #57534e; }
+    .copy-link.copied { color: #15803d; }
 
     .empty, .loading {
       text-align: center; color: #a8a29e; font-size: 14px;
@@ -242,17 +256,44 @@
           const tag = a.category
             ? `<span class="tag">${escapeHtml(a.category)}</span>`
             : '<span></span>';
+          const isProtected = a.access === 'protected';
+          const badge = isProtected
+            ? '<span class="access-badge protected">&#x1F512; Protected</span>'
+            : '<span class="access-badge public">&#x1F310; Public</span>';
           return `
-            <a class="tile" href="/claude/artifacts/${encodeURIComponent(a.filename)}">
-              <div class="tile-top">
-                ${tag}
-                <span class="tile-date">${formatDate(a.date)}</span>
+            <div class="tile">
+              <a class="tile-main" href="/claude/${encodeURIComponent(a.id)}">
+                <div class="tile-top">
+                  ${tag}
+                  <span class="tile-date">${formatDate(a.date)}</span>
+                </div>
+                <h2>${escapeHtml(a.title || 'Untitled')}</h2>
+                <p>${escapeHtml(a.description || '')}</p>
+              </a>
+              <div class="tile-foot">
+                ${badge}
+                <button class="copy-link" data-id="${escapeHtml(a.id)}">Copy link</button>
               </div>
-              <h2>${escapeHtml(a.title || 'Untitled')}</h2>
-              <p>${escapeHtml(a.description || '')}</p>
-              <span class="tile-cta">Open &rarr;</span>
-            </a>`;
+            </div>`;
         }).join('');
+
+        grid.querySelectorAll('.copy-link').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const url = `${location.origin}/claude/${btn.dataset.id}`;
+            try {
+              await navigator.clipboard.writeText(url);
+            } catch (e) {
+              // Fallback for non-secure contexts
+              const t = document.createElement('textarea');
+              t.value = url; document.body.appendChild(t); t.select();
+              document.execCommand('copy'); t.remove();
+            }
+            const original = btn.textContent;
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+          });
+        });
       } catch (e) {
         grid.innerHTML = '<div class="empty">Could not load artifacts.</div>';
       }

@@ -7,6 +7,7 @@
   "rewrites": [
     { "source": "/babypool", "destination": "/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
-    { "source": "/claude", "destination": "/claude/claude.html" }
+    { "source": "/claude", "destination": "/claude/claude.html" },
+    { "source": "/claude/:id", "destination": "/claude/viewer.html" }
   ]
 }
