@@ -548,7 +548,7 @@
             <span class="entry-num">${i + 1}</span>
             <div class="entry-main">
               <div class="entry-top">
-                <span class="entry-name">${esc(e.name)}</span>
+                <span class="entry-name">${esc(abbreviateName(e.name))}</span>
                 <span class="badge ${e.paid ? 'badge-paid' : 'badge-unpaid'}">${e.paid ? 'Paid' : 'Unpaid'}</span>
               </div>
               <div class="entry-details">
@@ -569,6 +569,17 @@
       const d = document.createElement('div');
       d.textContent = s;
       return d.innerHTML;
+    }
+
+    // Display only: abbreviate the last name to an initial. "John Smith" -> "John S."
+    // Single names (no last name) are returned unchanged. Stored data is untouched.
+    function abbreviateName(full) {
+      const name = (full || '').trim();
+      if (!name) return name;
+      const parts = name.split(/\s+/);
+      if (parts.length < 2) return name;
+      const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+      return parts.slice(0, -1).join(' ') + ' ' + lastInitial + '.';
     }
 
     loadEntries();
