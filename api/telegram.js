@@ -97,7 +97,7 @@ async function coachResponse(instruction, sessionId) {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5.5',
       messages: fullMessages,
       max_tokens: 1000,
     }),
@@ -154,7 +154,7 @@ async function learnFromSession(sessionId) {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
+      model: 'gpt-5.5',
       messages: [
         {
           role: 'system',
@@ -205,7 +205,7 @@ async function generateAiResponse(sessionId) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({ model: 'gpt-4o', messages: fullMessages, max_tokens: 1000 }),
+    body: JSON.stringify({ model: 'gpt-5.5', messages: fullMessages, max_tokens: 1000 }),
   });
   const data = await resp.json();
   return data.choices?.[0]?.message?.content || null;
