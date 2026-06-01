@@ -114,7 +114,7 @@
       // local static serving). The last path segment is the id either way.
       const q = new URLSearchParams(location.search).get('id');
       if (q) return q;
-      const parts = location.pathname.split('/').filter(Boolean); // ['welcome']
+      const parts = location.pathname.split('/').filter(Boolean); // e.g. ['my-project']
       return decodeURIComponent(parts[parts.length - 1] || '');
     }
 

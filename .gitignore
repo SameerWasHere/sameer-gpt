@@ -21,3 +21,14 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# env (all variants — never commit secrets)
+.env
+.env*.local
+
+# vercel CLI local state
+.vercel
+
+# local dev/test artifacts
+.playwright-mcp/
+screenshot*.mjs

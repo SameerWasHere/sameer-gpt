@@ -1,4 +1,4 @@
-// Edge middleware: serve workspace artifacts from the root domain.
+// Edge middleware: serve project pages from the root domain.
 //
 // Artifacts live at sameer.us/<id> (the root domain). This middleware is
 // the ONLY thing that gives meaning to a root-level /<id>:
