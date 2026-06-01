@@ -1,6 +1,6 @@
 // Edge middleware: serve workspace artifacts from the root domain.
 //
-// Artifacts now live at sameer.us/<id> (not /claude/<id>). This middleware is
+// Artifacts live at sameer.us/<id> (the root domain). This middleware is
 // the ONLY thing that gives meaning to a root-level /<id>:
 //   - If <id> matches a viewer-rendered artifact in the manifest:
 //       * crawler (iMessage, Slack, Twitter, ...) -> OG-tagged HTML preview
@@ -19,8 +19,7 @@ export const config = {
 const CRAWLER_RE = /(facebookexternalhit|Facebot|Twitterbot|Slackbot|Slack-ImgProxy|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Pinterest|redditbot|Applebot|bingbot|Googlebot|embedly|quora link preview|outbrain|vkShare|W3C_Validator|SkypeUriPreview|iframely|Discourse|Mastodon|developers\.google\.com\/\+\/web\/snippet)/i;
 
 // Single-segment paths that are real pages/handlers — never treat as artifacts.
-// 'claude' stays reserved so the /claude -> /projects redirect can run.
-const RESERVED = new Set(['projects', 'claude', 'babypool', 'api', 'static', 'assets', 'index']);
+const RESERVED = new Set(['projects', 'babypool', 'api', 'static', 'assets', 'index']);
 
 function escapeHtml(s) {
   return String(s)

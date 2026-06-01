@@ -4,10 +4,6 @@
       "maxDuration": 30
     }
   },
-  "redirects": [
-    { "source": "/claude", "destination": "/projects", "permanent": false },
-    { "source": "/claude/:id([^/.]+)", "destination": "/:id", "permanent": false }
-  ],
   "rewrites": [
     { "source": "/babypool", "destination": "/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
