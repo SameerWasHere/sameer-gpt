@@ -4,8 +4,9 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const FORUM_CHAT_ID = '-1003840040892';
 
-// Cheatsheet appended to every message forwarded to Sameer so he doesn't
-// have to remember the slash commands.
+// Cheatsheet appended to the FIRST forwarded message of a new chat session
+// (alongside the visitor info) so Sameer has the slash commands handy without
+// repeating them on every message.
 const COMMANDS_HELP =
   '\n\n- - -\n' +
   'Commands (type in this topic):\n' +
@@ -93,7 +94,7 @@ const formatVisitorBanner = (req, clientInfo) => {
   return lines.join('\n') + '\n\n';
 };
 
-const notifyTelegram = async (text, sessionId) => {
+const notifyTelegram = async (text, sessionId, includeCommands = false) => {
   try {
     if (!BOT_TOKEN) return;
 
@@ -120,7 +121,7 @@ const notifyTelegram = async (text, sessionId) => {
       }
     }
 
-    const body = { chat_id: FORUM_CHAT_ID, text: text + COMMANDS_HELP };
+    const body = { chat_id: FORUM_CHAT_ID, text: includeCommands ? text + COMMANDS_HELP : text };
     if (threadId) body.message_thread_id = threadId;
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -280,7 +281,7 @@ export default async function handler(req, res) {
               if (lastUserMsg && fullContent) {
                 let note = `${infoBanner}User: ${lastUserMsg.content}\n\nAI: ${fullContent}`;
                 if (isFirstMessage) note += `\n\nAI (follow-up): ${followupQuestion}`;
-                await notifyTelegram(note, conversationId);
+                await notifyTelegram(note, conversationId, isFirstMessage);
               }
               // After the first reply, ask the visitor who they are as a
               // separate follow-up message.
@@ -331,7 +332,7 @@ export default async function handler(req, res) {
         }
         // Notify Telegram (must await or Vercel kills the process)
         if (lastUserMsg && assistantMsg) {
-          await notifyTelegram(`${infoBanner}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`, conversationId);
+          await notifyTelegram(`${infoBanner}User: ${lastUserMsg.content}\n\nAI: ${assistantMsg.content}`, conversationId, isFirstMessage);
         }
 
         res.status(200).json(data);
