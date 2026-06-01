@@ -1,4 +1,4 @@
-// Admin API for the /claude workspace.
+// Admin API for the /projects workspace.
 //
 // Lets the dashboard (after the main PIN) flip an artifact between public and
 // password-protected, and set/change protected passwords — without hand-editing
@@ -9,7 +9,7 @@
 // Requires a GitHub personal access token in the GITHUB_TOKEN env var (repo
 // contents write scope, fine-grained token scoped to this repo is ideal).
 //
-// The encrypt/decrypt scheme MUST match public/claude/viewer.html and
+// The encrypt/decrypt scheme MUST match public/projects/viewer.html and
 // scripts/encrypt-artifact.mjs.
 import crypto from 'node:crypto';
 
@@ -21,8 +21,8 @@ const EXPECTED_PIN_HASH =
 
 const REPO = process.env.GITHUB_REPO || 'SameerWasHere/sameer-gpt';
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
-const ARTIFACTS_DIR = 'public/claude/artifacts';
-const MANIFEST_PATH = 'public/claude/manifest.json';
+const ARTIFACTS_DIR = 'public/projects/artifacts';
+const MANIFEST_PATH = 'public/projects/manifest.json';
 
 const sha256Hex = (str) => crypto.createHash('sha256').update(str).digest('hex');
 
@@ -208,7 +208,7 @@ export default async function handler(req, res) {
     const sha = await commitChanges({
       writes,
       deletes,
-      message: `claude workspace: set "${id}" to ${target}`,
+      message: `projects workspace: set "${id}" to ${target}`,
     });
 
     return res.status(200).json({

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fdf6f0">
-  <title>Claude Workspace</title>
+  <title>Projects</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -90,7 +90,7 @@
 </head>
 <body>
   <div class="bar" id="bar">
-    <a class="back" href="/claude">&larr; Workspace</a>
+    <a class="back" href="/projects">&larr; Projects</a>
     <span class="title" id="barTitle"></span>
     <span class="lock-pill" id="lockPill" style="display:none">Protected</span>
   </div>
@@ -164,7 +164,7 @@
       center.style.display = 'none';
       frame.style.display = 'block';
       frame.srcdoc = withTopBase(html);
-      document.title = title ? `${title} · Claude Workspace` : 'Claude Workspace';
+      document.title = title ? `${title} · Projects` : 'Projects';
     }
 
     function showError(message) {
@@ -172,7 +172,7 @@
         '<div class="card"><div class="icon">&#x1F50D;</div>' +
         '<h1>Not found</h1>' +
         '<p class="sub">' + message + '</p>' +
-        '<a class="backlink" href="/claude">&larr; Back to workspace</a></div>';
+        '<a class="backlink" href="/projects">&larr; Back to projects</a></div>';
     }
 
     function showPasswordGate(artifact, blob) {
@@ -184,7 +184,7 @@
           '<input id="pw" class="pw-input" type="password" placeholder="Password" autocomplete="off" autofocus>' +
           '<button id="go" class="btn">Unlock</button>' +
           '<div class="msg" id="pwMsg"></div>' +
-          '<a class="backlink" href="/claude">&larr; Back to workspace</a>' +
+          '<a class="backlink" href="/projects">&larr; Back to projects</a>' +
         '</div>';
       const pw = document.getElementById('pw');
       const go = document.getElementById('go');
@@ -230,7 +230,7 @@
       if (!id || id === 'viewer.html') { showError('No artifact specified.'); return; }
       let manifest;
       try {
-        const res = await fetch('/claude/manifest.json', { cache: 'no-store' });
+        const res = await fetch('/projects/manifest.json', { cache: 'no-store' });
         manifest = await res.json();
       } catch (e) { showError('Could not load the workspace manifest.'); return; }
 
@@ -240,7 +240,7 @@
       if (artifact.access === 'protected') {
         let blob;
         try {
-          const res = await fetch('/claude/artifacts/' + artifact.filename, { cache: 'no-store' });
+          const res = await fetch('/projects/artifacts/' + artifact.filename, { cache: 'no-store' });
           blob = await res.json();
         } catch (e) { showError('Could not load this artifact.'); return; }
 
@@ -258,7 +258,7 @@
       } else {
         // Public — fetch and render directly, no auth.
         try {
-          const res = await fetch('/claude/artifacts/' + artifact.filename, { cache: 'no-store' });
+          const res = await fetch('/projects/artifacts/' + artifact.filename, { cache: 'no-store' });
           const html = await res.text();
           renderHtml(html, artifact.title, false);
         } catch (e) { showError('Could not load this artifact.'); }

@@ -5,11 +5,12 @@
     }
   },
   "redirects": [
+    { "source": "/claude", "destination": "/projects", "permanent": false },
     { "source": "/claude/:id([^/.]+)", "destination": "/:id", "permanent": false }
   ],
   "rewrites": [
     { "source": "/babypool", "destination": "/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
-    { "source": "/claude", "destination": "/claude/claude.html" }
+    { "source": "/projects", "destination": "/projects/projects.html" }
   ]
 }

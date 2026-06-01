@@ -1,15 +1,15 @@
-// Encrypt an HTML artifact for the /claude workspace.
+// Encrypt an HTML artifact for the /projects workspace.
 //
 // Usage:
 //   node scripts/encrypt-artifact.mjs <input.html> <password> [outName]
 //
-// Produces public/claude/artifacts/<outName>.enc.json containing an AES-GCM
+// Produces public/projects/artifacts/<outName>.enc.json containing an AES-GCM
 // ciphertext (key derived from the password via PBKDF2). The plaintext is never
 // written to the public folder, so the encrypted file is useless without the
 // password. Prints the SHA-256 password hash and a manifest snippet to paste in.
 //
 // The KDF + cipher params here MUST match the browser decryption in
-// public/claude/viewer.html.
+// public/projects/viewer.html.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -46,7 +46,7 @@ const blob = {
 
 const base = (outNameArg || path.basename(inputPath).replace(/\.html?$/i, ''))
   .replace(/[^a-z0-9-_]/gi, '-');
-const outDir = path.join('public', 'claude', 'artifacts');
+const outDir = path.join('public', 'projects', 'artifacts');
 fs.mkdirSync(outDir, { recursive: true });
 const outFile = path.join(outDir, `${base}.enc.json`);
 fs.writeFileSync(outFile, JSON.stringify(blob));

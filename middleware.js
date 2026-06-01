@@ -6,20 +6,21 @@
 //       * crawler (iMessage, Slack, Twitter, ...) -> OG-tagged HTML preview
 //       * real browser                            -> serve the artifact viewer
 //   - Otherwise: return undefined so the request is handled exactly as before
-//     (homepage SPA, /claude dashboard, /babypool, /api/*, static files, ...).
+//     (homepage SPA, /projects dashboard, /babypool, /api/*, static files, ...).
 //
 // Because the default is pass-through, existing pages are never shadowed.
 
 export const config = {
   // Single root segment only. This already excludes "/" (homepage) and any
-  // multi-segment path (/api/*, /claude/*, /babypool/admin, static folders).
+  // multi-segment path (/api/*, /projects/*, /babypool/admin, static folders).
   matcher: ['/:id'],
 };
 
 const CRAWLER_RE = /(facebookexternalhit|Facebot|Twitterbot|Slackbot|Slack-ImgProxy|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Pinterest|redditbot|Applebot|bingbot|Googlebot|embedly|quora link preview|outbrain|vkShare|W3C_Validator|SkypeUriPreview|iframely|Discourse|Mastodon|developers\.google\.com\/\+\/web\/snippet)/i;
 
 // Single-segment paths that are real pages/handlers — never treat as artifacts.
-const RESERVED = new Set(['claude', 'babypool', 'api', 'static', 'assets', 'index']);
+// 'claude' stays reserved so the /claude -> /projects redirect can run.
+const RESERVED = new Set(['projects', 'claude', 'babypool', 'api', 'static', 'assets', 'index']);
 
 function escapeHtml(s) {
   return String(s)
@@ -39,8 +40,8 @@ export default async function middleware(request) {
   // filename and no external url) are served here.
   let artifact = null;
   try {
-    const res = await fetch(new URL('/claude/manifest.json', url.origin), {
-      headers: { 'User-Agent': 'sameer-claude-mw' },
+    const res = await fetch(new URL('/projects/manifest.json', url.origin), {
+      headers: { 'User-Agent': 'sameer-projects-mw' },
     });
     if (res.ok) {
       const data = await res.json();
@@ -59,7 +60,7 @@ export default async function middleware(request) {
 
   // Crawlers: return a lightweight page carrying the Open Graph tags.
   if (CRAWLER_RE.test(ua)) {
-    const title = escapeHtml(artifact.title || 'Claude Workspace');
+    const title = escapeHtml(artifact.title || 'Projects');
     const description = escapeHtml(artifact.description || 'A shared workspace of things Claude built.');
     const pageUrl = `${url.origin}/${encodeURIComponent(id)}`;
     const image = `${url.origin}/logo512.png`;
@@ -74,7 +75,7 @@ export default async function middleware(request) {
 <meta property="og:description" content="${description}">
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:image" content="${image}">
-<meta property="og:site_name" content="Claude Workspace">
+<meta property="og:site_name" content="Projects">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
@@ -83,7 +84,7 @@ export default async function middleware(request) {
 <body>
 <h1>${title}</h1>
 <p>${description}</p>
-<p><a href="${pageUrl}">Open in Claude Workspace</a></p>
+<p><a href="${pageUrl}">Open in Projects</a></p>
 </body>
 </html>`;
     return new Response(html, {
@@ -95,8 +96,8 @@ export default async function middleware(request) {
   // Real browser: serve the viewer page at the clean root URL. The viewer reads
   // the id from the path itself. We proxy the static file so the URL stays /<id>.
   try {
-    const res = await fetch(new URL('/claude/viewer.html', url.origin), {
-      headers: { 'User-Agent': 'sameer-claude-mw' },
+    const res = await fetch(new URL('/projects/viewer.html', url.origin), {
+      headers: { 'User-Agent': 'sameer-projects-mw' },
     });
     if (!res.ok) return;
     const html = await res.text();
