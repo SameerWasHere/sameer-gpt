@@ -5,7 +5,7 @@
     }
   },
   "rewrites": [
-    { "source": "/babypool", "destination": "/babypool.html" },
+    { "source": "/babypool", "destination": "/projects/artifacts/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
     { "source": "/projects", "destination": "/projects/projects.html" }
   ]

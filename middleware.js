@@ -19,7 +19,7 @@ export const config = {
 const CRAWLER_RE = /(facebookexternalhit|Facebot|Twitterbot|Slackbot|Slack-ImgProxy|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Pinterest|redditbot|Applebot|bingbot|Googlebot|embedly|quora link preview|outbrain|vkShare|W3C_Validator|SkypeUriPreview|iframely|Discourse|Mastodon|developers\.google\.com\/\+\/web\/snippet)/i;
 
 // Single-segment paths that are real pages/handlers — never treat as artifacts.
-const RESERVED = new Set(['projects', 'babypool', 'api', 'static', 'assets', 'index']);
+const RESERVED = new Set(['projects', 'api', 'static', 'assets', 'index']);
 
 function escapeHtml(s) {
   return String(s)
@@ -92,10 +92,15 @@ export default async function middleware(request) {
     });
   }
 
-  // Real browser: serve the viewer page at the clean root URL. The viewer reads
-  // the id from the path itself. We proxy the static file so the URL stays /<id>.
+  // Real browser. Proxy the right static file so the URL stays /<id>:
+  //   - public    -> the artifact's own HTML, served directly as a full page
+  //                  (no chrome/iframe — best for self-contained apps like babypool)
+  //   - protected -> the viewer, which prompts for the password and decrypts
+  const target = artifact.access === 'protected'
+    ? '/projects/viewer.html'
+    : `/projects/artifacts/${artifact.filename}`;
   try {
-    const res = await fetch(new URL('/projects/viewer.html', url.origin), {
+    const res = await fetch(new URL(target, url.origin), {
       headers: { 'User-Agent': 'sameer-projects-mw' },
     });
     if (!res.ok) return;
@@ -105,6 +110,6 @@ export default async function middleware(request) {
       headers: { 'content-type': 'text/html; charset=utf-8' },
     });
   } catch {
-    return; // fall through if the viewer can't be fetched
+    return; // fall through if the file can't be fetched
   }
 }
