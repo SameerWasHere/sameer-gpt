@@ -154,6 +154,9 @@ export default async function handler(req, res) {
     const manifest = JSON.parse(manifestFile.content);
     const artifact = (manifest.artifacts || []).find((a) => a.id === id);
     if (!artifact) return res.status(404).json({ error: `No artifact "${id}".` });
+    if (artifact.url) {
+      return res.status(400).json({ error: 'External pages (like /babypool) can\'t be managed here.' });
+    }
 
     const currentAccess = artifact.access === 'protected' ? 'protected' : 'public';
     const oldFile = artifact.filename;

@@ -345,12 +345,21 @@
             ? `<span class="tag">${escapeHtml(a.category)}</span>`
             : '<span></span>';
           const isProtected = a.access === 'protected';
+          const isExternal = !!a.url; // external pages (e.g. /babypool) aren't viewer-managed
           const badge = isProtected
             ? '<span class="access-badge protected">&#x1F512; Protected</span>'
             : '<span class="access-badge public">&#x1F310; Public</span>';
+          // Artifacts live at the root: /<id>. External entries use their own url.
+          const path = isExternal ? a.url : `/${encodeURIComponent(a.id)}`;
+          const manageBtn = isExternal
+            ? ''
+            : `<button class="manage-btn"
+                    data-id="${escapeHtml(a.id)}"
+                    data-title="${escapeHtml(a.title || a.id)}"
+                    data-access="${isProtected ? 'protected' : 'public'}">Manage</button>`;
           return `
             <div class="tile">
-              <a class="tile-main" href="/claude/${encodeURIComponent(a.id)}">
+              <a class="tile-main" href="${escapeHtml(path)}">
                 <div class="tile-top">
                   ${tag}
                   <span class="tile-date">${formatDate(a.date)}</span>
@@ -361,11 +370,8 @@
               <div class="tile-foot">
                 ${badge}
                 <div class="tile-actions">
-                  <button class="copy-link" data-id="${escapeHtml(a.id)}">Copy link</button>
-                  <button class="manage-btn"
-                    data-id="${escapeHtml(a.id)}"
-                    data-title="${escapeHtml(a.title || a.id)}"
-                    data-access="${isProtected ? 'protected' : 'public'}">Manage</button>
+                  <button class="copy-link" data-path="${escapeHtml(path)}">Copy link</button>
+                  ${manageBtn}
                 </div>
               </div>
             </div>`;
@@ -373,7 +379,7 @@
 
         grid.querySelectorAll('.copy-link').forEach(btn => {
           btn.addEventListener('click', async () => {
-            const url = `${location.origin}/claude/${btn.dataset.id}`;
+            const url = `${location.origin}${btn.dataset.path}`;
             try {
               await navigator.clipboard.writeText(url);
             } catch (e) {

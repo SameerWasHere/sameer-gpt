@@ -1,20 +1,25 @@
-// Edge middleware: give /claude/<id> links a rich preview when shared.
+// Edge middleware: serve workspace artifacts from the root domain.
 //
-// Link-preview crawlers (iMessage, Slack, Twitter, etc.) don't run JS, so the
-// generic viewer page can't show artifact-specific Open Graph tags. This
-// intercepts /claude/<id>:
-//   - Crawler  -> return a tiny HTML page with OG tags from the manifest.
-//   - Browser  -> pass through; the vercel.json rewrite serves viewer.html and
-//                 the clean URL is preserved.
+// Artifacts now live at sameer.us/<id> (not /claude/<id>). This middleware is
+// the ONLY thing that gives meaning to a root-level /<id>:
+//   - If <id> matches a viewer-rendered artifact in the manifest:
+//       * crawler (iMessage, Slack, Twitter, ...) -> OG-tagged HTML preview
+//       * real browser                            -> serve the artifact viewer
+//   - Otherwise: return undefined so the request is handled exactly as before
+//     (homepage SPA, /claude dashboard, /babypool, /api/*, static files, ...).
 //
-// Runs on the Edge before routing/rewrites, so real files (manifest.json, the
-// artifacts folder, viewer.html) are left untouched.
+// Because the default is pass-through, existing pages are never shadowed.
 
 export const config = {
-  matcher: ['/claude/:id'],
+  // Single root segment only. This already excludes "/" (homepage) and any
+  // multi-segment path (/api/*, /claude/*, /babypool/admin, static folders).
+  matcher: ['/:id'],
 };
 
 const CRAWLER_RE = /(facebookexternalhit|Facebot|Twitterbot|Slackbot|Slack-ImgProxy|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Pinterest|redditbot|Applebot|bingbot|Googlebot|embedly|quora link preview|outbrain|vkShare|W3C_Validator|SkypeUriPreview|iframely|Discourse|Mastodon|developers\.google\.com\/\+\/web\/snippet)/i;
+
+// Single-segment paths that are real pages/handlers — never treat as artifacts.
+const RESERVED = new Set(['claude', 'babypool', 'api', 'static', 'assets', 'index']);
 
 function escapeHtml(s) {
   return String(s)
@@ -24,36 +29,41 @@ function escapeHtml(s) {
 
 export default async function middleware(request) {
   const url = new URL(request.url);
-  const seg = url.pathname.replace(/^\/claude\//, '').replace(/\/$/, '');
+  const seg = url.pathname.replace(/^\//, '').replace(/\/$/, '');
 
-  // Leave real pages/files alone (anything with a dot, or the known pages).
-  if (!seg || seg.includes('.') || seg === 'claude' || seg === 'viewer') return;
+  // Leave the homepage, static files (anything with a dot), and reserved
+  // pages alone — no manifest lookup, no interception.
+  if (!seg || seg.includes('.') || RESERVED.has(seg)) return;
 
-  const ua = request.headers.get('user-agent') || '';
-  if (!CRAWLER_RE.test(ua)) return; // browser -> continue to the viewer rewrite
-
-  const id = decodeURIComponent(seg);
+  // Look the id up in the manifest. Only "viewer artifacts" (those with a
+  // filename and no external url) are served here.
   let artifact = null;
   try {
     const res = await fetch(new URL('/claude/manifest.json', url.origin), {
-      headers: { 'User-Agent': 'sameer-claude-og' },
+      headers: { 'User-Agent': 'sameer-claude-mw' },
     });
     if (res.ok) {
       const data = await res.json();
-      artifact = (data.artifacts || []).find((a) => a.id === id);
+      artifact = (data.artifacts || []).find(
+        (a) => a.id === seg && a.filename && !a.url
+      );
     }
   } catch {
-    // fall through to generic preview
+    return; // manifest unavailable -> behave as if not an artifact
   }
 
-  const title = escapeHtml(artifact?.title || 'Claude Workspace');
-  const description = escapeHtml(
-    artifact?.description || 'A shared workspace of things Claude built.'
-  );
-  const pageUrl = `${url.origin}/claude/${encodeURIComponent(id)}`;
-  const image = `${url.origin}/logo512.png`;
+  if (!artifact) return; // not one of ours -> pass through to the normal site
 
-  const html = `<!DOCTYPE html>
+  const id = artifact.id;
+  const ua = request.headers.get('user-agent') || '';
+
+  // Crawlers: return a lightweight page carrying the Open Graph tags.
+  if (CRAWLER_RE.test(ua)) {
+    const title = escapeHtml(artifact.title || 'Claude Workspace');
+    const description = escapeHtml(artifact.description || 'A shared workspace of things Claude built.');
+    const pageUrl = `${url.origin}/${encodeURIComponent(id)}`;
+    const image = `${url.origin}/logo512.png`;
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -76,12 +86,25 @@ export default async function middleware(request) {
 <p><a href="${pageUrl}">Open in Claude Workspace</a></p>
 </body>
 </html>`;
+    return new Response(html, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' },
+    });
+  }
 
-  return new Response(html, {
-    status: 200,
-    headers: {
-      'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'public, max-age=300',
-    },
-  });
+  // Real browser: serve the viewer page at the clean root URL. The viewer reads
+  // the id from the path itself. We proxy the static file so the URL stays /<id>.
+  try {
+    const res = await fetch(new URL('/claude/viewer.html', url.origin), {
+      headers: { 'User-Agent': 'sameer-claude-mw' },
+    });
+    if (!res.ok) return;
+    const html = await res.text();
+    return new Response(html, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+    });
+  } catch {
+    return; // fall through if the viewer can't be fetched
+  }
 }
