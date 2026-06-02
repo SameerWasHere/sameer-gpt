@@ -62,7 +62,16 @@ export default async function middleware(request) {
     const title = escapeHtml(artifact.title || 'Projects');
     const description = escapeHtml(artifact.description || 'Live projects and experiences, published by Claude.');
     const pageUrl = `${url.origin}/${encodeURIComponent(id)}`;
-    const image = `${url.origin}/logo512.png`;
+    // Per-project preview image when set; otherwise the site default. A custom
+    // image gets the big "large image" card; the fallback uses the small card.
+    const hasCustomImage = !!artifact.image;
+    const image = hasCustomImage
+      ? `${url.origin}/projects/images/${encodeURIComponent(artifact.image)}`
+      : `${url.origin}/logo512.png`;
+    const twitterCard = hasCustomImage ? 'summary_large_image' : 'summary';
+    const sizeTags = hasCustomImage
+      ? '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n'
+      : '';
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,8 +83,8 @@ export default async function middleware(request) {
 <meta property="og:description" content="${description}">
 <meta property="og:url" content="${pageUrl}">
 <meta property="og:image" content="${image}">
-<meta property="og:site_name" content="Projects">
-<meta name="twitter:card" content="summary">
+${sizeTags}<meta property="og:site_name" content="Projects">
+<meta name="twitter:card" content="${twitterCard}">
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${description}">
 <meta name="twitter:image" content="${image}">

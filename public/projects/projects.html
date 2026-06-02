@@ -82,6 +82,11 @@
       box-shadow: 0 6px 18px rgba(180,140,100,0.16);
     }
     .tile-main { text-decoration: none; color: inherit; display: block; }
+    .tile-thumb {
+      display: block; width: calc(100% + 40px); margin: -20px -20px 14px;
+      aspect-ratio: 1200 / 630; object-fit: cover;
+      border-radius: 16px 16px 0 0; background: #f5ede3;
+    }
     .tile-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 10px; margin-bottom: 10px;
@@ -357,9 +362,13 @@
                     data-id="${escapeHtml(a.id)}"
                     data-title="${escapeHtml(a.title || a.id)}"
                     data-access="${isProtected ? 'protected' : 'public'}">Manage</button>`;
+          const thumb = a.image
+            ? `<img class="tile-thumb" src="/projects/images/${encodeURIComponent(a.image)}" alt="" loading="lazy">`
+            : '';
           return `
             <div class="tile">
               <a class="tile-main" href="${escapeHtml(path)}">
+                ${thumb}
                 <div class="tile-top">
                   ${tag}
                   <span class="tile-date">${formatDate(a.date)}</span>
