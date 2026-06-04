@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Q Meter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root { --accent: #fb923c; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(120% 90% at 50% 8%, #16161f 0%, #0b0b11 55%, #060608 100%);
+      color: #e7e5e4;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 28px 18px calc(28px + env(safe-area-inset-bottom));
+      overflow: hidden;
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      position: relative;
+    }
+
+    /* danger vignette that pulses at high levels */
+    .vignette {
+      position: fixed; inset: 0; pointer-events: none; opacity: 0;
+      background: radial-gradient(120% 100% at 50% 60%, transparent 40%, rgba(220,38,38,0.32) 100%);
+      transition: opacity 0.8s ease; z-index: 0;
+    }
+    body.hot .vignette { opacity: 1; animation: vignettePulse 2.4s ease-in-out infinite; }
+    body.critical .vignette { animation: vignettePulse 1.1s ease-in-out infinite; }
+    @keyframes vignettePulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+    .wrap { position: relative; z-index: 2; width: 100%; max-width: 540px; text-align: center; }
+
+    .eyebrow {
+      font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
+      color: #78716c; margin-bottom: 6px;
+    }
+    h1 {
+      font-size: clamp(38px, 12vw, 64px); font-weight: 900; letter-spacing: -1px;
+      line-height: 1; color: #fafaf9;
+      text-shadow: 0 0 28px rgba(251,146,60,0.25);
+    }
+    .tagline { font-size: clamp(13px, 3.6vw, 16px); color: #a8a29e; margin-top: 10px; font-weight: 500; }
+
+    .gauge-wrap {
+      position: relative; width: 100%; margin: 18px auto 4px;
+      touch-action: manipulation;
+    }
+    svg.gauge { width: 100%; height: auto; display: block; overflow: visible; }
+
+    /* invisible long-press zones (admin only) */
+    .zone {
+      position: absolute; top: 0; bottom: 26%; width: 50%; z-index: 3;
+    }
+    .zone.left { left: 0; } .zone.right { right: 0; }
+    .zone.flash { animation: zoneFlash 0.4s ease; }
+    @keyframes zoneFlash { 0% { background: rgba(255,255,255,0.10); } 100% { background: transparent; } }
+
+    #needle { transform-box: fill-box; transform-origin: 50% 100%;
+      transition: transform 1.05s cubic-bezier(.34,1.32,.5,1); }
+
+    .readout { margin-top: 6px; }
+    .level-name {
+      font-size: clamp(30px, 9vw, 50px); font-weight: 800; letter-spacing: -0.5px;
+      line-height: 1.04; color: var(--accent);
+      text-shadow: 0 0 26px var(--accent);
+      transition: color 0.6s ease, text-shadow 0.6s ease;
+    }
+    body.critical .level-name { animation: namePulse 1s ease-in-out infinite; }
+    @keyframes namePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+    .level-meta {
+      font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      color: #78716c; margin-top: 12px;
+    }
+    .ends {
+      display: flex; justify-content: space-between; margin: 2px 6px 0;
+      font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #57534e;
+    }
+
+    .footer { position: relative; z-index: 2; margin-top: 26px; font-size: 11px; color: #44403c; letter-spacing: 1px; }
+
+    /* embers at high levels */
+    .embers { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.6s; }
+    body.hot .embers { opacity: 1; }
+    .ember {
+      position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%;
+      background: #fb7185; box-shadow: 0 0 8px 2px rgba(248,113,113,0.7);
+      animation: rise linear infinite;
+    }
+    @keyframes rise {
+      0% { transform: translateY(0) scale(1); opacity: 0; }
+      10% { opacity: 0.9; }
+      100% { transform: translateY(-104vh) scale(0.3); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="vignette"></div>
+  <div class="embers" id="embers"></div>
+
+  <div class="wrap">
+    <div class="eyebrow">Live Reading</div>
+    <h1>Q Meter</h1>
+    <div class="tagline">How unhinged is Q right now?</div>
+
+    <div class="gauge-wrap" id="gaugeWrap">
+      <div class="zone left" id="zoneLeft"></div>
+      <div class="zone right" id="zoneRight"></div>
+      <svg class="gauge" viewBox="0 0 440 252" aria-label="Q unhinged meter">
+        <defs>
+          <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#22d3ee"/>
+            <stop offset="28%" stop-color="#a3e635"/>
+            <stop offset="52%" stop-color="#fde047"/>
+            <stop offset="74%" stop-color="#fb923c"/>
+            <stop offset="100%" stop-color="#dc2626"/>
+          </linearGradient>
+          <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- track -->
+        <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="#1c1c24" stroke-width="30" stroke-linecap="round"/>
+        <!-- colored band -->
+        <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="url(#arcGrad)" stroke-width="26" stroke-linecap="round" opacity="0.92"/>
+
+        <!-- tick dots (filled by JS) -->
+        <g id="ticks"></g>
+
+        <!-- needle -->
+        <g id="needle">
+          <polygon points="220,58 212.5,220 227.5,220" fill="var(--accent)"/>
+        </g>
+        <circle cx="220" cy="220" r="17" fill="#101015" stroke="#3f3f46" stroke-width="2"/>
+        <circle cx="220" cy="220" r="6" fill="var(--accent)"/>
+      </svg>
+    </div>
+
+    <div class="ends"><span>Zen</span><span>Threat: Q</span></div>
+
+    <div class="readout">
+      <div class="level-name" id="levelName">&hellip;</div>
+      <div class="level-meta" id="levelMeta">Level &mdash; / 9</div>
+    </div>
+  </div>
+
+  <div class="footer">sameer.us/qmeter</div>
+
+  <script>
+    const NAMES = [
+      'Zen Master', 'Appropriately Hinged', 'Mildly Spicy', 'Unfiltered',
+      'Off the Rails', 'Unhinged', 'Completely Unhinged', 'Beyond Unhinged', 'Threat Level: Q'
+    ];
+    const COLORS = [
+      '#22d3ee', '#34d399', '#a3e635', '#fde047', '#fbbf24',
+      '#fb923c', '#f97316', '#ef4444', '#dc2626'
+    ];
+    const MIN = 1, MAX = 9;
+    const clamp = (n) => Math.min(MAX, Math.max(MIN, Math.round(n)));
+
+    let level = 8; // optimistic default until the API answers
+
+    // ---- gauge geometry ----
+    const CX = 220, CY = 220, R = 180;
+    function pointFor(lvl) {
+      const theta = (180 - (lvl - 1) * 22.5) * Math.PI / 180;
+      return { x: CX + R * Math.cos(theta), y: CY - R * Math.sin(theta) };
+    }
+    // ticks
+    const ticksG = document.getElementById('ticks');
+    for (let l = 1; l <= 9; l++) {
+      const p = pointFor(l);
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 3.2);
+      c.setAttribute('fill', 'rgba(0,0,0,0.45)');
+      ticksG.appendChild(c);
+    }
+
+    const needle = document.getElementById('needle');
+    const levelName = document.getElementById('levelName');
+    const levelMeta = document.getElementById('levelMeta');
+    const embers = document.getElementById('embers');
+
+    // build embers once
+    for (let i = 0; i < 16; i++) {
+      const e = document.createElement('span');
+      e.className = 'ember';
+      e.style.left = (Math.random() * 100) + '%';
+      e.style.animationDuration = (2.6 + Math.random() * 2.8) + 's';
+      e.style.animationDelay = (-Math.random() * 4) + 's';
+      const s = 4 + Math.random() * 6;
+      e.style.width = e.style.height = s + 'px';
+      embers.appendChild(e);
+    }
+
+    function render() {
+      const color = COLORS[level - 1];
+      document.documentElement.style.setProperty('--accent', color);
+      needle.style.transform = 'rotate(' + ((level - 5) * 22.5) + 'deg)';
+      needle.querySelector('polygon').setAttribute('fill', color);
+      needle.style.filter = 'drop-shadow(0 0 10px ' + color + ')';
+      levelName.textContent = NAMES[level - 1];
+      levelMeta.innerHTML = 'Level ' + level + ' / 9';
+      document.body.classList.toggle('hot', level >= 7);
+      document.body.classList.toggle('critical', level >= 9);
+    }
+
+    function setLevel(n, animate = true) {
+      const nl = clamp(n);
+      if (!animate) needle.style.transition = 'none';
+      level = nl;
+      render();
+      if (!animate) { void needle.offsetWidth; needle.style.transition = ''; }
+    }
+
+    // ---- shared state ----
+    async function loadLevel() {
+      try {
+        const r = await fetch('/api/qmeter', { cache: 'no-store' });
+        if (r.ok) { const d = await r.json(); if (d && d.level != null) setLevel(d.level); }
+      } catch (e) { /* offline / no API -> keep default */ }
+    }
+
+    // ---- secret admin: long-press left = calmer, right = more unhinged ----
+    let pressTimer = null, startX = 0, startY = 0, pressing = false, lastAdmin = 0;
+
+    function beginPress(side, zoneEl, x, y) {
+      pressing = true; startX = x; startY = y;
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => {
+        if (pressing) { zoneEl.classList.add('flash'); setTimeout(() => zoneEl.classList.remove('flash'), 400); adminAdjust(side); }
+      }, 550);
+    }
+    function endPress() { pressing = false; clearTimeout(pressTimer); }
+    function moveCheck(x, y) { if (pressing && (Math.abs(x - startX) > 12 || Math.abs(y - startY) > 12)) endPress(); }
+
+    function wireZone(el, side) {
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); beginPress(side, el, e.clientX, e.clientY); });
+      el.addEventListener('pointermove', (e) => moveCheck(e.clientX, e.clientY));
+      el.addEventListener('pointerup', endPress);
+      el.addEventListener('pointercancel', endPress);
+      el.addEventListener('pointerleave', endPress);
+      el.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+    wireZone(document.getElementById('zoneLeft'), 'left');
+    wireZone(document.getElementById('zoneRight'), 'right');
+
+    async function adminAdjust(side) {
+      lastAdmin = Date.now();
+      let key = null;
+      try { key = sessionStorage.getItem('qmeter_key'); } catch (e) {}
+      if (!key) {
+        key = prompt('Admin PIN');
+        if (!key) return;
+      }
+      const target = clamp(level + (side === 'right' ? 1 : -1));
+      if (target === level) { try { sessionStorage.setItem('qmeter_key', key); } catch (e) {} return; }
+      try {
+        const r = await fetch('/api/qmeter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-claude-pin': key },
+          body: JSON.stringify({ level: target }),
+        });
+        if (r.status === 401) { try { sessionStorage.removeItem('qmeter_key'); } catch (e) {} return; }
+        const d = await r.json().catch(() => ({}));
+        if (r.ok) {
+          try { sessionStorage.setItem('qmeter_key', key); } catch (e) {}
+          setLevel(d.level != null ? d.level : target);
+        }
+      } catch (e) { /* ignore network errors */ }
+    }
+
+    // boot
+    setLevel(level, false);
+    loadLevel();
+    // keep viewers in sync (skip right after a local admin change)
+    setInterval(() => { if (Date.now() - lastAdmin > 4000) loadLevel(); }, 20000);
+  </script>
+</body>
+</html>

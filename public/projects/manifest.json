@@ -1,6 +1,16 @@
 {
   "artifacts": [
     {
+      "id": "qmeter",
+      "title": "Q Meter",
+      "description": "How unhinged is Q right now? A live, doomsday-clock-style meter.",
+      "category": "Meter",
+      "date": "2026-06-02",
+      "access": "public",
+      "filename": "qmeter.html",
+      "image": "qmeter.png"
+    },
+    {
       "id": "babypool",
       "title": "Baby Pool",
       "description": "Guess the baby's birth date, weight, and gender. $20 buy-in, winner takes all.",
