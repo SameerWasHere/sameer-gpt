@@ -197,16 +197,51 @@
       embers.appendChild(e);
     }
 
-    function render() {
+    // setNeedleTransform=false lets the reveal sweep drive the needle angle
+    // continuously while labels/colors still snap per level.
+    function render(setNeedleTransform = true) {
       const color = COLORS[level - 1];
       document.documentElement.style.setProperty('--accent', color);
-      needle.style.transform = 'rotate(' + ((level - 5) * 22.5) + 'deg)';
+      if (setNeedleTransform) needle.style.transform = 'rotate(' + ((level - 5) * 22.5) + 'deg)';
       needle.querySelector('polygon').setAttribute('fill', color);
       needle.style.filter = 'drop-shadow(0 0 10px ' + color + ')';
       levelName.textContent = NAMES[level - 1];
       levelMeta.innerHTML = 'Level ' + level + ' / 9';
       document.body.classList.toggle('hot', level >= 7);
       document.body.classList.toggle('critical', level >= 9);
+    }
+
+    // Dramatic reveal: needle starts at level 1 and eases up to `target`,
+    // updating the label/colors as it crosses each level.
+    let shownLevel = 0;
+    function applyDiscrete(lvl) {
+      if (lvl === shownLevel) return;
+      shownLevel = lvl;
+      level = lvl;
+      render(false);
+    }
+    function sweepTo(target, duration = 1600) {
+      target = clamp(target);
+      needle.style.transition = 'none';
+      shownLevel = 0;
+      applyDiscrete(1);
+      needle.style.transform = 'rotate(' + ((1 - 5) * 22.5) + 'deg)';
+      if (target === 1) { needle.style.transition = ''; return; }
+      const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const start = performance.now();
+      function frame(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const frac = 1 + (target - 1) * ease(t);
+        needle.style.transform = 'rotate(' + ((frac - 5) * 22.5) + 'deg)';
+        applyDiscrete(clamp(frac));
+        if (t < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          level = target;
+          needle.style.transition = ''; // restore for later admin/poll changes
+        }
+      }
+      requestAnimationFrame(frame);
     }
 
     function setLevel(n, animate = true) {
@@ -274,9 +309,20 @@
       } catch (e) { /* ignore network errors */ }
     }
 
-    // boot
-    setLevel(level, false);
-    loadLevel();
+    // boot: park the needle at Zen, fetch the real level, then sweep up to it.
+    async function bootReveal() {
+      setLevel(1, false);
+      const minHold = new Promise((r) => setTimeout(r, 450)); // hold on Zen briefly
+      let target = 8;
+      try {
+        const r = await fetch('/api/qmeter', { cache: 'no-store' });
+        if (r.ok) { const d = await r.json(); if (d && d.level != null) target = clamp(d.level); }
+      } catch (e) { /* offline / no API -> reveal the default */ }
+      await minHold;
+      sweepTo(target);
+    }
+    bootReveal();
+
     // keep viewers in sync (skip right after a local admin change)
     setInterval(() => { if (Date.now() - lastAdmin > 4000) loadLevel(); }, 20000);
   </script>
