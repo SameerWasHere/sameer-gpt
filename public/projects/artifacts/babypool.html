@@ -306,6 +306,61 @@
       text-underline-offset: 2px; font-family: inherit;
     }
 
+    /* ===== Results mode (baby is here) ===== */
+    .born-banner { text-align: center; margin-bottom: 22px; }
+    .born-banner .pill {
+      display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #0369a1; background: #e0f2fe;
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 14px;
+    }
+    .born-banner h2 { font-size: clamp(30px, 10vw, 46px); font-weight: 900; letter-spacing: -1px; color: #0284c7; line-height: 1.05; }
+    .born-banner .sub { font-size: 13px; color: #78716c; margin-top: 10px; }
+
+    .actual-card {
+      background: linear-gradient(160deg, #f0f9ff, #ffffff);
+      border: 1px solid #bae6fd; border-radius: 16px; padding: 18px; margin-bottom: 18px;
+    }
+    .actual-row { display: flex; justify-content: space-around; text-align: center; gap: 6px; }
+    .actual-stat .v { font-size: 18px; font-weight: 800; color: #0c4a6e; }
+    .actual-stat .v.boy-text { color: #0ea5e9; }
+    .actual-stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #0891b2; margin-top: 4px; }
+
+    .winner-card {
+      background: linear-gradient(160deg, #fffbeb, #fff7ed);
+      border: 1px solid #fcd34d; border-radius: 16px; padding: 24px; margin-bottom: 18px;
+      text-align: center; box-shadow: 0 6px 22px rgba(217,119,6,0.14);
+    }
+    .winner-card .trophy { font-size: 42px; line-height: 1; margin-bottom: 8px; }
+    .winner-card .wlabel { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #b45309; }
+    .winner-card .wname { font-size: clamp(26px, 8vw, 34px); font-weight: 900; color: #92400e; letter-spacing: -0.5px; margin-top: 3px; }
+    .winner-card .wwhy { font-size: 13px; color: #78716c; margin-top: 8px; line-height: 1.5; }
+    .winner-card .wpot { display: inline-block; margin-top: 14px; font-size: 14px; font-weight: 700; color: #15803d; background: #dcfce7; padding: 6px 16px; border-radius: 999px; }
+
+    .honors { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 26px; }
+    .honor-tile { background: #fff; border: 1px solid rgba(217,189,160,0.3); border-radius: 14px; padding: 14px 12px; text-align: center; }
+    .honor-tile .ico { font-size: 22px; line-height: 1; }
+    .honor-tile .ht-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; margin-top: 6px; }
+    .honor-tile .ht-name { font-size: 14px; font-weight: 700; color: #44403c; margin-top: 3px; }
+    .honor-tile .ht-meta { font-size: 11px; color: #78716c; margin-top: 2px; }
+
+    /* leaderboard comparison */
+    .entry-row.winner-row { background: linear-gradient(90deg, rgba(252,211,77,0.22), rgba(252,211,77,0.02)); }
+    .entry-num.rank-badge { font-weight: 800; color: #57534e; }
+    .cmp { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 4px; font-size: 11px; }
+    .cmp .ok { color: #16a34a; font-weight: 600; }
+    .cmp .no { color: #b45309; }
+
+    /* actual birth day on the calendar */
+    .cal-cell.actual-day { background: #e0f2fe; border-color: #38bdf8; box-shadow: 0 0 0 1px #38bdf8; }
+    .cal-cell.actual-day .day { color: #0369a1; font-weight: 700; }
+    .cal-key .actual-swatch {
+      width: 8px; height: 8px; border-radius: 3px; background: #e0f2fe;
+      border: 1px solid #38bdf8; box-shadow: 0 0 0 1px #38bdf8; display: inline-block;
+    }
+
+    /* confetti */
+    #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
     .hidden { display: none; }
     footer { text-align: center; margin-top: 48px; font-size: 11px; color: #a8a29e; }
   </style>
@@ -319,6 +374,9 @@
       <p class="subtitle">$20 buy-in &middot; Winner takes all</p>
       <div id="pot-badge" class="pot-badge hidden"></div>
     </header>
+
+    <!-- Results (shown once the baby is born) -->
+    <div class="results hidden" id="results"></div>
 
     <!-- Crowd Predictions (infographic) -->
     <div class="card-solid hidden" id="predictions-section">
@@ -353,7 +411,7 @@
             <span class="key-item"><span class="dot boy"></span> Boy</span>
             <span class="key-item"><span class="dot girl"></span> Girl</span>
             <span class="key-item"><span class="due-swatch">2</span> Due</span>
-            <span class="key-item"><span class="today-swatch"></span> Today</span>
+            <span class="key-item"><span class="actual-swatch"></span> Born</span>
           </span>
         </div>
         <div class="cal-month-label" id="cal-month-label"></div>
@@ -363,10 +421,9 @@
 
     <!-- Rules -->
     <div class="card">
-      <div class="card-label">How you win</div>
+      <div class="card-label">How the winner was decided</div>
       <div class="rules-text">
-        Entries are closed &mdash; good luck to everyone in the pool! Here&apos;s
-        how the winner gets decided once the baby arrives.
+        The baby is here! Here&apos;s the scoring that crowned the winner.
       </div>
       <div class="tiebreaker">
         <div class="tiebreaker-title">Winner is decided by</div>
@@ -397,6 +454,38 @@
     const predictionsSection = document.getElementById('predictions-section');
 
     const DUE_DATE_STR = '2026-06-02';
+
+    // The baby is here! Set RESULTS_MODE = false to revert to the live pool view.
+    const RESULTS_MODE = true;
+    const RESULTS = {
+      date: '2026-06-07',
+      timeLabel: '4:49 PM',
+      dateLabel: 'June 7, 2026',
+      weightLbs: 7,
+      weightOz: 4,
+      gender: 'boy',
+    };
+    const ACTUAL_OZ = RESULTS.weightLbs * 16 + RESULTS.weightOz;
+
+    function actualDateObj() {
+      const [y, m, d] = RESULTS.date.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    // Score an entry against the actual stats per the pool rules.
+    function scoreEntry(e) {
+      const [y, m, d] = e.date.split('-').map(Number);
+      const dDiff = Math.abs(Math.round((new Date(y, m - 1, d) - actualDateObj()) / 86400000));
+      const wDiff = Math.abs((e.weightLbs * 16 + e.weightOz) - ACTUAL_OZ);
+      const genderOk = e.gender === RESULTS.gender;
+      return { ...e, dDiff, wDiff, genderOk, sub: new Date(e.submittedAt).getTime() };
+    }
+    // Rank: closest date, then closest weight, then correct gender, then earliest.
+    function rankEntries(entries) {
+      return entries.map(scoreEntry).sort((a, b) =>
+        a.dDiff - b.dDiff || a.wDiff - b.wDiff || (b.genderOk - a.genderOk) || a.sub - b.sub);
+    }
+    const ozLabel = (oz) => { const l = Math.floor(oz / 16); return l + 'lb ' + (oz - l * 16) + 'oz'; };
+    const firstName = (n) => (n || '').trim().split(/\s+/)[0];
 
     function formatDate(dateStr) {
       const [y, m, d] = dateStr.split('-').map(Number);
@@ -471,8 +560,10 @@
       const firstPick = new Date(fy, fm - 1, fd);
       const lastPick = new Date(ly, lm - 1, ld);
       const due = new Date(dy, dm - 1, dd);
-      const rangeStart = new Date(Math.min(firstPick.getTime(), due.getTime()));
-      const rangeEnd = new Date(Math.max(lastPick.getTime(), due.getTime()));
+      const extras = [due.getTime()];
+      if (RESULTS_MODE) { const [ay, am, ad] = RESULTS.date.split('-').map(Number); extras.push(new Date(ay, am - 1, ad).getTime()); }
+      const rangeStart = new Date(Math.min(firstPick.getTime(), ...extras));
+      const rangeEnd = new Date(Math.max(lastPick.getTime(), ...extras));
 
       const calStart = new Date(rangeStart);
       calStart.setDate(calStart.getDate() - calStart.getDay());
@@ -499,10 +590,12 @@
         const picks = picksByDate.get(key) || [];
         const isDue = key === DUE_DATE_STR;
         const isToday = key === todayKey;
+        const isActual = RESULTS_MODE && key === RESULTS.date;
         const isMonthStart = cur.getDate() === 1;
         const classes = ['cal-cell'];
         if (isDue) classes.push('due');
-        if (isToday) classes.push('today');
+        if (isToday && !RESULTS_MODE) classes.push('today');
+        if (isActual) classes.push('actual-day');
         if (!inRange) classes.push('out');
         if (isMonthStart && cells.length >= 7) classes.push('month-boundary');
 
@@ -523,12 +616,113 @@
       document.getElementById('calendar').innerHTML = headerCells + cells.join('');
     }
 
-    async function loadEntries() {
-      const res = await fetch('/api/babypool-entries');
-      const entries = await res.json();
-      const paidCount = entries.filter(e => e.paid).length;
+    function renderResults(ranked, paidCount) {
+      const results = document.getElementById('results');
+      const winner = ranked[0];
+      const runnerUp = ranked[1];
+      const pot = paidCount * 20;
 
-      entriesLabel.textContent = `Entries (${entries.length})`;
+      const closestWeight = [...ranked].sort((a, b) => a.wDiff - b.wDiff || a.sub - b.sub)[0];
+      const cwTie = ranked.filter(e => e.wDiff === closestWeight.wDiff).length;
+      const closestDate = [...ranked].sort((a, b) => a.dDiff - b.dDiff || a.sub - b.sub)[0];
+      const cdTie = ranked.filter(e => e.dDiff === closestDate.dDiff).length;
+      const boyCallers = ranked.filter(e => e.genderOk).length;
+
+      const why = [];
+      why.push(winner.dDiff === 0 ? 'nailed the date' : ('closest date, ' + winner.dDiff + ' day' + (winner.dDiff === 1 ? '' : 's') + ' off'));
+      if (winner.genderOk) why.push('called it a boy');
+
+      const tieNote = (n) => (n > 1 ? ' · ' + n + '-way tie' : '');
+
+      let html = `
+        <div class="born-banner">
+          <span class="pill">The baby is here</span>
+          <h2>It&apos;s a Boy! &#x1F499;</h2>
+          <div class="sub">Born ${RESULTS.dateLabel} at ${RESULTS.timeLabel}</div>
+        </div>
+        <div class="actual-card">
+          <div class="actual-row">
+            <div class="actual-stat"><div class="v">${formatDate(RESULTS.date)}</div><div class="l">Birth date</div></div>
+            <div class="actual-stat"><div class="v">${RESULTS.timeLabel}</div><div class="l">Time</div></div>
+            <div class="actual-stat"><div class="v">${RESULTS.weightLbs}lb ${RESULTS.weightOz}oz</div><div class="l">Weight</div></div>
+            <div class="actual-stat"><div class="v boy-text">Boy</div><div class="l">Gender</div></div>
+          </div>
+        </div>
+        <div class="winner-card">
+          <div class="trophy">&#x1F3C6;</div>
+          <div class="wlabel">Winner &mdash; takes the pot</div>
+          <div class="wname">${esc(abbreviateName(winner.name))}</div>
+          <div class="wwhy">${esc(firstName(winner.name))} ${why.join(' and ')}.</div>
+          ${pot > 0 ? `<span class="wpot">Pot: $${pot}</span>` : ''}
+        </div>
+        <div class="honors">
+          <div class="honor-tile">
+            <div class="ico">&#x1F3AF;</div><div class="ht-label">Closest date</div>
+            <div class="ht-name">${esc(abbreviateName(closestDate.name))}</div>
+            <div class="ht-meta">${formatDate(closestDate.date)} &middot; ${closestDate.dDiff === 0 ? 'exact!' : closestDate.dDiff + 'd off'}${tieNote(cdTie)}</div>
+          </div>
+          <div class="honor-tile">
+            <div class="ico">&#x2696;&#xFE0F;</div><div class="ht-label">Closest weight</div>
+            <div class="ht-name">${esc(abbreviateName(closestWeight.name))}</div>
+            <div class="ht-meta">${closestWeight.weightLbs}lb ${closestWeight.weightOz}oz &middot; ${closestWeight.wDiff}oz off${tieNote(cwTie)}</div>
+          </div>
+          <div class="honor-tile">
+            <div class="ico">&#x1F499;</div><div class="ht-label">Called it a boy</div>
+            <div class="ht-name">${boyCallers} of ${ranked.length}</div>
+            <div class="ht-meta">guessed the gender right</div>
+          </div>
+          <div class="honor-tile">
+            <div class="ico">&#x1F948;</div><div class="ht-label">Runner-up</div>
+            <div class="ht-name">${esc(abbreviateName(runnerUp.name))}</div>
+            <div class="ht-meta">${formatDate(runnerUp.date)} &middot; ${runnerUp.weightLbs}lb ${runnerUp.weightOz}oz</div>
+          </div>
+        </div>`;
+      results.innerHTML = html;
+      results.classList.remove('hidden');
+    }
+
+    function launchConfetti() {
+      const c = document.createElement('canvas');
+      c.id = 'confetti';
+      document.body.appendChild(c);
+      const ctx = c.getContext('2d');
+      let W, H;
+      const size = () => { W = c.width = window.innerWidth; H = c.height = window.innerHeight; };
+      size(); window.addEventListener('resize', size);
+      const colors = ['#38bdf8', '#7dd3fc', '#bae6fd', '#fcd34d', '#fb923c', '#f472b6', '#a7f3d0', '#ffffff'];
+      const P = [];
+      for (let i = 0; i < 150; i++) {
+        P.push({
+          x: Math.random() * W, y: Math.random() * -H,
+          r: 4 + Math.random() * 6, color: colors[Math.floor(Math.random() * colors.length)],
+          vy: 2 + Math.random() * 4, vx: -2 + Math.random() * 4,
+          rot: Math.random() * 6, vr: -0.2 + Math.random() * 0.4, sway: Math.random() * 6,
+        });
+      }
+      const start = performance.now();
+      const DURATION = 6500;
+      function frame(now) {
+        const t = now - start;
+        ctx.clearRect(0, 0, W, H);
+        P.forEach(p => {
+          p.y += p.vy; p.x += p.vx + Math.sin(now / 320 + p.sway) * 0.6; p.rot += p.vr;
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+          ctx.fillStyle = p.color; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.6); ctx.restore();
+          if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
+        });
+        if (t < DURATION) requestAnimationFrame(frame);
+        else c.remove();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    async function loadEntries() {
+      let entries = [];
+      try {
+        const res = await fetch('/api/babypool-entries');
+        entries = await res.json();
+      } catch (e) { entries = []; }
+      const paidCount = entries.filter(e => e.paid).length;
 
       if (paidCount > 0) {
         potBadge.textContent = `Pot: $${paidCount * 20}`;
@@ -538,10 +732,51 @@
       renderPredictions(entries);
 
       if (entries.length === 0) {
+        entriesLabel.textContent = 'Entries (0)';
         entriesList.innerHTML = '<div class="empty">No entries yet.</div>';
         return;
       }
 
+      if (RESULTS_MODE) {
+        const ranked = rankEntries(entries);
+        entriesLabel.textContent = `Leaderboard (${entries.length})`;
+        renderResults(ranked, paidCount);
+        entriesList.innerHTML = '<div class="entries-card">' + ranked.map((e, i) => {
+          const win = i === 0;
+          const dCmp = e.dDiff === 0
+            ? '<span class="ok">date &#x2713;</span>'
+            : '<span class="no">' + e.dDiff + 'd off</span>';
+          const wCmp = '<span class="' + (e.wDiff === 0 ? 'ok' : 'no') + '">' +
+            (e.wDiff === 0 ? 'weight &#x2713;' : e.wDiff + 'oz off') + '</span>';
+          const gCmp = e.genderOk
+            ? '<span class="ok">gender &#x2713;</span>'
+            : '<span class="no">gender &#x2717;</span>';
+          return `
+            <div class="entry-row${win ? ' winner-row' : ''}">
+              <div class="entry-content">
+                <span class="entry-num rank-badge">${i + 1}</span>
+                <div class="entry-main">
+                  <div class="entry-top">
+                    <span class="entry-name">${win ? '&#x1F3C6; ' : ''}${esc(abbreviateName(e.name))}</span>
+                    <span class="badge ${e.paid ? 'badge-paid' : 'badge-unpaid'}">${e.paid ? 'Paid' : 'Unpaid'}</span>
+                  </div>
+                  <div class="entry-details">
+                    <span>${formatDate(e.date)}</span>
+                    <span class="dot">&middot;</span>
+                    <span>${e.weightLbs}lb ${e.weightOz}oz</span>
+                    <span class="dot">&middot;</span>
+                    <span class="${e.gender === 'boy' ? 'boy-text' : 'girl-text'}">${e.gender === 'boy' ? 'Boy' : 'Girl'}</span>
+                  </div>
+                  <div class="cmp">${dCmp}<span class="dot">&middot;</span>${wCmp}<span class="dot">&middot;</span>${gCmp}</div>
+                </div>
+              </div>
+            </div>`;
+        }).join('') + '</div>';
+        launchConfetti();
+        return;
+      }
+
+      entriesLabel.textContent = `Entries (${entries.length})`;
       entriesList.innerHTML = '<div class="entries-card">' + entries.map((e, i) => `
         <div class="entry-row">
           <div class="entry-content">
