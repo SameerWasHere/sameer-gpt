@@ -3,148 +3,406 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0f">
+  <meta name="theme-color" content="#07070b">
   <title>Q Meter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     :root { --accent: #fb923c; }
     html, body { height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: radial-gradient(120% 90% at 50% 8%, #16161f 0%, #0b0b11 55%, #060608 100%);
+      font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: radial-gradient(130% 95% at 50% 6%, #14141d 0%, #0a0a10 52%, #050507 100%);
       color: #e7e5e4;
       min-height: 100vh;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 28px 18px calc(28px + env(safe-area-inset-bottom));
+      padding: 24px 18px calc(24px + env(safe-area-inset-bottom));
       overflow: hidden;
       user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
       position: relative;
     }
 
+    /* ============ atmosphere layers ============ */
+    .bg-grid {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 46px 46px;
+      -webkit-mask-image: radial-gradient(90% 80% at 50% 45%, #000 30%, transparent 100%);
+      mask-image: radial-gradient(90% 80% at 50% 45%, #000 30%, transparent 100%);
+    }
+    .blob {
+      position: fixed; width: 64vmax; height: 64vmax; border-radius: 50%;
+      pointer-events: none; z-index: 0; filter: blur(70px); opacity: 0.07;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 65%);
+      transition: opacity 1.2s ease;
+    }
+    .blob.b1 { top: -28vmax; left: -22vmax; animation: drift1 38s ease-in-out infinite alternate; }
+    .blob.b2 { bottom: -30vmax; right: -24vmax; animation: drift2 52s ease-in-out infinite alternate; }
+    body.hot .blob { opacity: 0.13; }
+    @keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(9vmax, 6vmax) scale(1.18); } }
+    @keyframes drift2 { from { transform: translate(0,0) scale(1.1); } to { transform: translate(-8vmax, -7vmax) scale(0.95); } }
+    .noise {
+      position: fixed; inset: -50%; pointer-events: none; z-index: 4; opacity: 0.05;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/><feColorMatrix type="saturate" values="0"/></filter><rect width="140" height="140" filter="url(%23n)" opacity="0.55"/></svg>');
+    }
+
     /* danger vignette that pulses at high levels */
     .vignette {
       position: fixed; inset: 0; pointer-events: none; opacity: 0;
-      background: radial-gradient(120% 100% at 50% 60%, transparent 40%, rgba(220,38,38,0.32) 100%);
-      transition: opacity 0.8s ease; z-index: 0;
+      background: radial-gradient(120% 100% at 50% 60%, transparent 38%, rgba(220,38,38,0.34) 100%);
+      transition: opacity 0.8s ease; z-index: 1;
     }
     body.hot .vignette { opacity: 1; animation: vignettePulse 2.4s ease-in-out infinite; }
     body.critical .vignette { animation: vignettePulse 1.1s ease-in-out infinite; }
+    body.maxed .vignette {
+      background: radial-gradient(120% 100% at 50% 60%, transparent 28%, rgba(255,23,68,0.5) 100%);
+      animation: vignettePulse 0.55s ease-in-out infinite;
+    }
     @keyframes vignettePulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
-    .wrap { position: relative; z-index: 2; width: 100%; max-width: 540px; text-align: center; }
+    /* scanlines + tear (maxed only) */
+    .scan {
+      position: fixed; inset: 0; pointer-events: none; z-index: 5; opacity: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px);
+      transition: opacity 0.4s;
+    }
+    body.maxed .scan { opacity: 0.45; animation: scanFlicker 2.8s steps(4) infinite; }
+    .scan::after {
+      content: ''; position: absolute; left: 0; right: 0; height: 9vh;
+      background: linear-gradient(rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      mix-blend-mode: overlay; opacity: 0;
+    }
+    body.maxed .scan::after { opacity: 1; animation: tear 1.7s linear infinite; }
+    @keyframes scanFlicker { 0%,100% { opacity: 0.45; } 30% { opacity: 0.25; } 60% { opacity: 0.55; } 80% { opacity: 0.3; } }
+    @keyframes tear { 0% { top: -10vh; } 100% { top: 105vh; } }
+
+    #flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 6; opacity: 0;
+      background: radial-gradient(80% 80% at 50% 50%, #fff 0%, rgba(255,255,255,0.6) 45%, transparent 100%);
+    }
+
+    /* ============ stage / layout ============ */
+    .stage { position: relative; z-index: 2; width: 100%; display: flex; justify-content: center; }
+    body.maxed .stage { animation: shake 0.42s linear infinite; }
+    @keyframes shake {
+      0%,100% { transform: translate(0,0) rotate(0deg); }
+      12% { transform: translate(-5px,3px) rotate(-0.35deg); }
+      24% { transform: translate(4px,-4px) rotate(0.3deg); }
+      37% { transform: translate(-3px,-2px) rotate(0.2deg); }
+      51% { transform: translate(5px,3px) rotate(-0.25deg); }
+      64% { transform: translate(-4px,4px) rotate(0.35deg); }
+      78% { transform: translate(3px,-3px) rotate(-0.2deg); }
+      90% { transform: translate(-2px,2px) rotate(0.15deg); }
+    }
+
+    .wrap { width: 100%; max-width: 560px; text-align: center; animation: powerOn 1s steps(1) both; }
+    @keyframes powerOn {
+      0% { opacity: 0; } 8% { opacity: 1; } 14% { opacity: 0.2; } 22% { opacity: 1; }
+      30% { opacity: 0.4; } 38% { opacity: 1; } 100% { opacity: 1; }
+    }
 
     .eyebrow {
-      font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase;
-      color: #78716c; margin-bottom: 6px;
+      font-size: 11px; font-weight: 500; letter-spacing: 5px; text-transform: uppercase;
+      color: #6f6a64; display: flex; align-items: center; justify-content: center; gap: 9px;
+      margin-bottom: 8px;
     }
-    h1 {
-      font-size: clamp(38px, 12vw, 64px); font-weight: 900; letter-spacing: -1px;
-      line-height: 1; color: #fafaf9;
-      text-shadow: 0 0 28px rgba(251,146,60,0.25);
-    }
-    .tagline { font-size: clamp(13px, 3.6vw, 16px); color: #a8a29e; margin-top: 10px; font-weight: 500; }
+    .rec { width: 7px; height: 7px; border-radius: 50%; background: #ef4444;
+      box-shadow: 0 0 8px 2px rgba(239,68,68,0.7); animation: recBlink 1.5s ease-in-out infinite; }
+    @keyframes recBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
+    h1 {
+      font-family: 'Anton', 'Arial Narrow', sans-serif;
+      font-size: clamp(46px, 14vw, 78px); font-weight: 400; letter-spacing: 4px;
+      line-height: 1; color: #fafaf9; text-transform: uppercase;
+      text-shadow: 0 0 32px color-mix(in srgb, var(--accent) 45%, transparent),
+                   0 2px 0 rgba(0,0,0,0.55);
+      transition: text-shadow 0.6s ease;
+    }
+    @supports not (color: color-mix(in srgb, red, blue)) {
+      h1 { text-shadow: 0 0 32px rgba(251,146,60,0.35), 0 2px 0 rgba(0,0,0,0.55); }
+    }
+    body.maxed h1 { animation: rgbSplit 0.5s steps(2) infinite; }
+    @keyframes rgbSplit {
+      0%,100% { text-shadow: 2px 0 0 rgba(34,211,238,0.8), -2px 0 0 rgba(255,29,77,0.8), 0 0 32px rgba(255,29,77,0.5); }
+      50% { text-shadow: -3px 0 0 rgba(34,211,238,0.8), 3px 0 0 rgba(255,29,77,0.8), 0 0 40px rgba(255,29,77,0.7); }
+    }
+    .tagline { font-size: clamp(12px, 3.4vw, 14px); color: #8d867f; margin-top: 10px; letter-spacing: 0.5px; }
+
+    /* ============ gauge ============ */
     .gauge-wrap {
-      position: relative; width: 100%; margin: 18px auto 4px;
+      position: relative; width: 100%; margin: 20px auto 0;
       touch-action: manipulation;
+    }
+    body.critical .gauge-wrap { animation: rumble 0.16s linear infinite; }
+    @keyframes rumble {
+      0%,100% { transform: translate(0,0); }
+      25% { transform: translate(0.6px,-0.5px); }
+      50% { transform: translate(-0.5px,0.6px); }
+      75% { transform: translate(0.5px,0.4px); }
     }
     svg.gauge { width: 100%; height: auto; display: block; overflow: visible; }
 
     /* invisible long-press zones (admin only) */
-    .zone {
-      position: absolute; top: 0; bottom: 26%; width: 50%; z-index: 3;
-    }
+    .zone { position: absolute; top: 0; bottom: 26%; width: 50%; z-index: 3; }
     .zone.left { left: 0; } .zone.right { right: 0; }
     .zone.flash { animation: zoneFlash 0.4s ease; }
     @keyframes zoneFlash { 0% { background: rgba(255,255,255,0.10); } 100% { background: transparent; } }
 
-    #needle { transform-box: fill-box; transform-origin: 50% 100%;
-      transition: transform 1.05s cubic-bezier(.34,1.32,.5,1); }
+    #needle {
+      transform-box: view-box; transform-origin: 220px 220px;
+      transition: transform 1.05s cubic-bezier(.34,1.32,.5,1);
+    }
+    #needleInner { transform-box: view-box; transform-origin: 220px 220px; }
+    body.maxed #needleInner { animation: needleJitter 0.1s linear infinite; }
+    @keyframes needleJitter {
+      0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-1.3deg); }
+      50% { transform: rotate(0.9deg); } 75% { transform: rotate(-0.6deg); }
+    }
 
-    .readout { margin-top: 6px; }
+    #litArc { transition: stroke-dasharray 1.05s cubic-bezier(.34,1.32,.5,1); }
+    body.maxed #litArc { animation: arcFlicker 0.22s steps(2) infinite; }
+    @keyframes arcFlicker { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+    #cracks { opacity: 0; transition: opacity 0.3s; }
+    body.maxed #cracks { opacity: 1; animation: crackFlicker 2.6s steps(3) infinite; }
+    @keyframes crackFlicker { 0%,100% { opacity: 1; } 40% { opacity: 0.55; } 70% { opacity: 0.85; } }
+
+    #endSparks { opacity: 0; }
+    body.maxed #endSparks { opacity: 1; }
+    #endSparks line {
+      stroke: #fff; stroke-width: 2.5; stroke-linecap: round;
+      transform-origin: 0 0; opacity: 0;
+    }
+    body.maxed #endSparks line { animation: sparkPop 0.5s ease-out infinite; }
+    #endSparks line:nth-child(2) { animation-delay: 0.09s; stroke: var(--accent); }
+    #endSparks line:nth-child(3) { animation-delay: 0.18s; }
+    #endSparks line:nth-child(4) { animation-delay: 0.27s; stroke: var(--accent); }
+    #endSparks line:nth-child(5) { animation-delay: 0.36s; }
+    #endSparks line:nth-child(6) { animation-delay: 0.45s; stroke: var(--accent); }
+    @keyframes sparkPop {
+      0% { transform: scale(0.3); opacity: 0; }
+      25% { opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    .ends {
+      display: flex; justify-content: space-between; margin: 4px 8px 0;
+      font-size: 10px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: #57534e;
+    }
+
+    /* ============ readout ============ */
+    .readout { margin-top: 10px; }
     .level-name {
-      font-size: clamp(30px, 9vw, 50px); font-weight: 800; letter-spacing: -0.5px;
-      line-height: 1.04; color: var(--accent);
-      text-shadow: 0 0 26px var(--accent);
+      font-family: 'Anton', 'Arial Narrow', sans-serif;
+      font-size: clamp(34px, 10.5vw, 58px); font-weight: 400; letter-spacing: 2px;
+      line-height: 1.05; color: var(--accent); text-transform: uppercase;
+      text-shadow: 0 0 28px var(--accent);
       transition: color 0.6s ease, text-shadow 0.6s ease;
+      position: relative; display: inline-block;
     }
     body.critical .level-name { animation: namePulse 1s ease-in-out infinite; }
     @keyframes namePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+    body.maxed .level-name {
+      color: #fff; text-shadow: 0 0 34px rgba(255,29,77,0.9);
+      animation: namePulse 0.55s ease-in-out infinite;
+    }
+    .level-name::before, .level-name::after {
+      content: attr(data-text); position: absolute; inset: 0; display: none;
+      pointer-events: none;
+    }
+    body.maxed .level-name::before {
+      display: block; color: #22d3ee; text-shadow: none; z-index: -1;
+      animation: glitchA 1.15s steps(6) infinite;
+    }
+    body.maxed .level-name::after {
+      display: block; color: #ff1d4d; text-shadow: none; z-index: -1;
+      animation: glitchB 0.9s steps(5) infinite;
+    }
+    @keyframes glitchA {
+      0% { transform: translate(-4px,0); clip-path: inset(0 0 72% 0); }
+      20% { transform: translate(3px,-2px); clip-path: inset(58% 0 8% 0); }
+      40% { transform: translate(-5px,1px); clip-path: inset(24% 0 48% 0); }
+      60% { transform: translate(4px,0); clip-path: inset(80% 0 2% 0); }
+      80% { transform: translate(-3px,2px); clip-path: inset(8% 0 70% 0); }
+      100% { transform: translate(-4px,0); clip-path: inset(0 0 72% 0); }
+    }
+    @keyframes glitchB {
+      0% { transform: translate(4px,1px); clip-path: inset(64% 0 6% 0); }
+      25% { transform: translate(-4px,-1px); clip-path: inset(10% 0 64% 0); }
+      50% { transform: translate(5px,2px); clip-path: inset(38% 0 32% 0); }
+      75% { transform: translate(-3px,0); clip-path: inset(2% 0 84% 0); }
+      100% { transform: translate(4px,1px); clip-path: inset(64% 0 6% 0); }
+    }
     .level-meta {
-      font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      font-size: 12px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase;
       color: #78716c; margin-top: 12px;
     }
-    .ends {
-      display: flex; justify-content: space-between; margin: 2px 6px 0;
-      font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #57534e;
+    body.maxed .level-meta { color: #ff8094; animation: recBlink 0.5s steps(2) infinite; }
+
+    .leds { display: flex; justify-content: center; gap: 7px; margin-top: 16px; }
+    .leds i {
+      width: 20px; height: 6px; border-radius: 2px; background: #1d1d26;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.7);
+      transition: background 0.45s ease, box-shadow 0.45s ease;
+    }
+    body.maxed .leds i { animation: ledAlarm 0.32s steps(2) infinite; }
+    body.maxed .leds i:nth-child(odd) { animation-delay: 0.16s; }
+    @keyframes ledAlarm {
+      0%,100% { background: #ff1d4d; box-shadow: 0 0 10px #ff1d4d; }
+      50% { background: #ffffff; box-shadow: 0 0 12px #ffffff; }
     }
 
-    .footer { position: relative; z-index: 2; margin-top: 26px; font-size: 11px; color: #44403c; letter-spacing: 1px; }
+    .footer { position: relative; z-index: 2; margin-top: 26px; font-size: 11px; color: #46413c; letter-spacing: 2px; }
 
-    /* embers at high levels */
+    /* ============ particles ============ */
     .embers { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.6s; }
     body.hot .embers { opacity: 1; }
     .ember {
-      position: absolute; bottom: -20px; width: 6px; height: 6px; border-radius: 50%;
-      background: #fb7185; box-shadow: 0 0 8px 2px rgba(248,113,113,0.7);
+      position: absolute; bottom: -20px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 9px 2px var(--accent);
       animation: rise linear infinite;
     }
     @keyframes rise {
-      0% { transform: translateY(0) scale(1); opacity: 0; }
+      0% { transform: translate(0,0) scale(1); opacity: 0; }
       10% { opacity: 0.9; }
-      100% { transform: translateY(-104vh) scale(0.3); opacity: 0; }
+      100% { transform: translate(var(--drift), -106vh) scale(0.25); opacity: 0; }
+    }
+    .sparksUp { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0; transition: opacity 0.3s; }
+    body.maxed .sparksUp { opacity: 1; }
+    .sparkP {
+      position: absolute; bottom: -24px; width: 2px; height: 14px; border-radius: 1px;
+      background: linear-gradient(#fff, rgba(255,255,255,0)); box-shadow: 0 0 6px #fff;
+      animation: rise linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage, .gauge-wrap, #needleInner, .scan, .level-name, h1,
+      .blob, .leds i { animation: none !important; }
     }
   </style>
 </head>
 <body>
+  <div class="bg-grid"></div>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
   <div class="vignette"></div>
   <div class="embers" id="embers"></div>
+  <div class="sparksUp" id="sparksUp"></div>
+  <div class="scan"></div>
+  <div class="noise"></div>
+  <div id="flash"></div>
 
-  <div class="wrap">
-    <div class="eyebrow">Live Reading</div>
-    <h1>Q Meter</h1>
-    <div class="tagline">How unhinged is Q right now?</div>
+  <div class="stage">
+    <div class="wrap">
+      <div class="eyebrow"><span class="rec"></span>Live Telemetry</div>
+      <h1>Q Meter</h1>
+      <div class="tagline">How unhinged is Q right now?</div>
 
-    <div class="gauge-wrap" id="gaugeWrap">
-      <div class="zone left" id="zoneLeft"></div>
-      <div class="zone right" id="zoneRight"></div>
-      <svg class="gauge" viewBox="0 0 440 252" aria-label="Q unhinged meter">
-        <defs>
-          <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#22d3ee"/>
-            <stop offset="28%" stop-color="#a3e635"/>
-            <stop offset="52%" stop-color="#fde047"/>
-            <stop offset="74%" stop-color="#fb923c"/>
-            <stop offset="100%" stop-color="#dc2626"/>
-          </linearGradient>
-          <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="5" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
+      <div class="gauge-wrap" id="gaugeWrap">
+        <div class="zone left" id="zoneLeft"></div>
+        <div class="zone right" id="zoneRight"></div>
+        <svg class="gauge" viewBox="0 0 440 264" aria-label="Q unhinged meter">
+          <defs>
+            <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#22d3ee"/>
+              <stop offset="28%" stop-color="#a3e635"/>
+              <stop offset="52%" stop-color="#fde047"/>
+              <stop offset="74%" stop-color="#fb923c"/>
+              <stop offset="100%" stop-color="#dc2626"/>
+            </linearGradient>
+            <radialGradient id="dishGrad" cx="50%" cy="92%" r="80%">
+              <stop offset="0%" stop-color="#191921"/>
+              <stop offset="70%" stop-color="#0d0d13"/>
+              <stop offset="100%" stop-color="#08080c"/>
+            </radialGradient>
+            <radialGradient id="hubGrad" cx="38%" cy="32%" r="80%">
+              <stop offset="0%" stop-color="#34343e"/>
+              <stop offset="55%" stop-color="#17171d"/>
+              <stop offset="100%" stop-color="#0a0a0e"/>
+            </radialGradient>
+            <linearGradient id="shineGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.09)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+              <feGaussianBlur stdDeviation="5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="3" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
 
-        <!-- track -->
-        <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="#1c1c24" stroke-width="30" stroke-linecap="round"/>
-        <!-- colored band -->
-        <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="url(#arcGrad)" stroke-width="26" stroke-linecap="round" opacity="0.92"/>
+          <!-- dish backplate + bezel -->
+          <path d="M14 224 A206 206 0 0 1 426 224 Z" fill="url(#dishGrad)" stroke="#26262e" stroke-width="2"/>
+          <path d="M11 224 A209 209 0 0 1 429 224" fill="none" stroke="#000" stroke-width="3" opacity="0.7"/>
+          <path d="M22 224 A198 198 0 0 1 418 224" fill="none" stroke="url(#shineGrad)" stroke-width="10" opacity="0.6"/>
+          <!-- screws -->
+          <circle cx="40" cy="236" r="5" fill="url(#hubGrad)" stroke="#33333c" stroke-width="1"/>
+          <line x1="36.7" y1="233.7" x2="43.3" y2="238.3" stroke="#000" stroke-width="1.2"/>
+          <circle cx="400" cy="236" r="5" fill="url(#hubGrad)" stroke="#33333c" stroke-width="1"/>
+          <line x1="397" y1="238.6" x2="403" y2="233.4" stroke="#000" stroke-width="1.2"/>
 
-        <!-- tick dots (filled by JS) -->
-        <g id="ticks"></g>
+          <!-- track -->
+          <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="#17171f" stroke-width="30" stroke-linecap="round"/>
+          <!-- dim colored band -->
+          <path d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="url(#arcGrad)" stroke-width="26" stroke-linecap="round" opacity="0.22"/>
+          <!-- lit portion, fills with the needle -->
+          <path id="litArc" d="M40 220 A180 180 0 0 1 400 220" fill="none" stroke="url(#arcGrad)" stroke-width="26" stroke-linecap="round" filter="url(#softGlow)" style="stroke-dasharray: 0 570;"/>
 
-        <!-- needle -->
-        <g id="needle">
-          <polygon points="220,58 212.5,220 227.5,220" fill="var(--accent)"/>
-        </g>
-        <circle cx="220" cy="220" r="17" fill="#101015" stroke="#3f3f46" stroke-width="2"/>
-        <circle cx="220" cy="220" r="6" fill="var(--accent)"/>
-      </svg>
-    </div>
+          <!-- the forbidden zone: the gauge literally runs out -->
+          <path d="M400 220 A180 180 0 0 1 394.6 263.5" fill="none" stroke="#b91c1c" stroke-width="10" stroke-dasharray="3 8" opacity="0.55"/>
 
-    <div class="ends"><span>Zen</span><span>Threat: Q</span></div>
+          <!-- ticks + numbers (filled by JS) -->
+          <g id="ticks"></g>
 
-    <div class="readout">
-      <div class="level-name" id="levelName">&hellip;</div>
-      <div class="level-meta" id="levelMeta">Level &mdash; / 9</div>
+          <!-- cracked glass (maxed only) -->
+          <g id="cracks" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" fill="none" stroke-linecap="round">
+            <path d="M384 168 l-11 15 7 9 -14 13 6 9"/>
+            <path d="M373 183 l-13 4"/>
+            <path d="M366 205 l11 7"/>
+            <path d="M122 96 l9 11 -6 8 11 9"/>
+            <path d="M131 107 l10 -3"/>
+          </g>
+
+          <!-- end-stop sparks (maxed only) -->
+          <g id="endSparks" transform="translate(400 220)" filter="url(#softGlow)">
+            <line x1="0" y1="0" x2="14" y2="-9"/>
+            <line x1="0" y1="0" x2="17" y2="2"/>
+            <line x1="0" y1="0" x2="12" y2="12"/>
+            <line x1="0" y1="0" x2="4" y2="17"/>
+            <line x1="0" y1="0" x2="16" y2="-16"/>
+            <line x1="0" y1="0" x2="-6" y2="-17"/>
+          </g>
+
+          <!-- needle: blade + counterweight tail -->
+          <g id="needle">
+            <g id="needleInner">
+              <polygon id="blade" points="220,48 214,206 226,206" fill="var(--accent)"/>
+              <polygon points="220,48 214,206 220,206" fill="rgba(255,255,255,0.28)"/>
+              <polygon points="212,220 228,220 224.5,248 215.5,248" fill="#23232b" stroke="#0a0a0e" stroke-width="1"/>
+            </g>
+          </g>
+
+          <!-- hub -->
+          <circle cx="220" cy="220" r="22" fill="url(#hubGrad)" stroke="#3c3c46" stroke-width="2"/>
+          <circle cx="220" cy="220" r="22" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="20 115"/>
+          <circle cx="220" cy="220" r="7" fill="var(--accent)" filter="url(#softGlow)"/>
+        </svg>
+      </div>
+
+      <div class="ends"><span>Zen</span><span>Threat: Q</span></div>
+
+      <div class="readout">
+        <div class="level-name" id="levelName" data-text="&hellip;">&hellip;</div>
+        <div class="level-meta" id="levelMeta">Calibrating ///</div>
+        <div class="leds" id="leds"></div>
+      </div>
     </div>
   </div>
 
@@ -153,48 +411,114 @@
   <script>
     const NAMES = [
       'Zen Master', 'Appropriately Hinged', 'Mildly Spicy', 'Unfiltered',
-      'Off the Rails', 'Unhinged', 'Completely Unhinged', 'Beyond Unhinged', 'Threat Level: Q'
+      'Off the Rails', 'Unhinged', 'Completely Unhinged', 'Beyond Unhinged',
+      'Threat Level: Q', 'Off the Charts'
     ];
     const COLORS = [
       '#22d3ee', '#34d399', '#a3e635', '#fde047', '#fbbf24',
-      '#fb923c', '#f97316', '#ef4444', '#dc2626'
+      '#fb923c', '#f97316', '#ef4444', '#dc2626', '#ff1d4d'
     ];
-    const MIN = 1, MAX = 9;
+    const STATUS = [
+      'System idle', 'All readings nominal', 'Elevated chatter', 'Filters disengaged',
+      'Rails not found', 'Hinges missing', 'Containment advised', 'Containment failing',
+      'Maximum recorded reading', 'Measurement failure'
+    ];
+    const MIN = 1, MAX = 10;
     const clamp = (n) => Math.min(MAX, Math.max(MIN, Math.round(n)));
 
     let level = 8; // optimistic default until the API answers
 
     // ---- gauge geometry ----
-    const CX = 220, CY = 220, R = 180;
-    function pointFor(lvl) {
-      const theta = (180 - (lvl - 1) * 22.5) * Math.PI / 180;
-      return { x: CX + R * Math.cos(theta), y: CY - R * Math.sin(theta) };
+    // levels 1-9 live on the 180° arc (22.5° apart); level 10 slams past the end stop
+    const CX = 220, CY = 220, R = 180, STEP = 22.5;
+    const ARC_LEN = Math.PI * R; // 565.49
+    function angleFor(frac) {
+      return frac <= 9 ? (frac - 5) * STEP : 90 + (frac - 9) * 13;
     }
-    // ticks
+    function polar(r, deg) {
+      const theta = (180 - deg) * Math.PI / 180;
+      return { x: CX + r * Math.cos(theta), y: CY - r * Math.sin(theta) };
+    }
+    const SVGNS = 'http://www.w3.org/2000/svg';
     const ticksG = document.getElementById('ticks');
     for (let l = 1; l <= 9; l++) {
-      const p = pointFor(l);
-      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 3.2);
-      c.setAttribute('fill', 'rgba(0,0,0,0.45)');
-      ticksG.appendChild(c);
+      const deg = (l - 1) * STEP;
+      const a = polar(160, deg), b = polar(146, deg);
+      const t = document.createElementNS(SVGNS, 'line');
+      t.setAttribute('x1', a.x); t.setAttribute('y1', a.y);
+      t.setAttribute('x2', b.x); t.setAttribute('y2', b.y);
+      t.setAttribute('stroke', '#4a4a55'); t.setAttribute('stroke-width', '2');
+      ticksG.appendChild(t);
+      const np = polar(124, deg);
+      const n = document.createElementNS(SVGNS, 'text');
+      n.setAttribute('x', np.x); n.setAttribute('y', np.y + 4);
+      n.setAttribute('text-anchor', 'middle'); n.setAttribute('fill', '#4b4b57');
+      n.setAttribute('font-size', '12'); n.setAttribute('font-family', "'IBM Plex Mono', monospace");
+      n.textContent = l;
+      ticksG.appendChild(n);
+    }
+    for (let i = 0; i < 8; i++) {
+      const deg = 11.25 + i * STEP;
+      const a = polar(157, deg), b = polar(149, deg);
+      const t = document.createElementNS(SVGNS, 'line');
+      t.setAttribute('x1', a.x); t.setAttribute('y1', a.y);
+      t.setAttribute('x2', b.x); t.setAttribute('y2', b.y);
+      t.setAttribute('stroke', '#2c2c36'); t.setAttribute('stroke-width', '1.5');
+      ticksG.appendChild(t);
     }
 
     const needle = document.getElementById('needle');
+    const blade = document.getElementById('blade');
+    const litArc = document.getElementById('litArc');
     const levelName = document.getElementById('levelName');
     const levelMeta = document.getElementById('levelMeta');
-    const embers = document.getElementById('embers');
+    const flashEl = document.getElementById('flash');
 
-    // build embers once
-    for (let i = 0; i < 16; i++) {
+    // LED strip
+    const ledsWrap = document.getElementById('leds');
+    const leds = [];
+    for (let i = 0; i < 10; i++) {
+      const led = document.createElement('i');
+      ledsWrap.appendChild(led);
+      leds.push(led);
+    }
+
+    // ---- particles ----
+    const embers = document.getElementById('embers');
+    for (let i = 0; i < 24; i++) {
       const e = document.createElement('span');
       e.className = 'ember';
       e.style.left = (Math.random() * 100) + '%';
-      e.style.animationDuration = (2.6 + Math.random() * 2.8) + 's';
-      e.style.animationDelay = (-Math.random() * 4) + 's';
-      const s = 4 + Math.random() * 6;
+      e.style.setProperty('--drift', ((Math.random() - 0.5) * 90) + 'px');
+      e.style.animationDuration = (2.4 + Math.random() * 3) + 's';
+      e.style.animationDelay = (-Math.random() * 5) + 's';
+      const s = 3 + Math.random() * 6;
       e.style.width = e.style.height = s + 'px';
       embers.appendChild(e);
+    }
+    const sparksUp = document.getElementById('sparksUp');
+    for (let i = 0; i < 16; i++) {
+      const s = document.createElement('span');
+      s.className = 'sparkP';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.setProperty('--drift', ((Math.random() - 0.5) * 140) + 'px');
+      s.style.animationDuration = (0.9 + Math.random() * 1.1) + 's';
+      s.style.animationDelay = (-Math.random() * 2) + 's';
+      sparksUp.appendChild(s);
+    }
+
+    function flash() {
+      flashEl.animate(
+        [{ opacity: 0.9 }, { opacity: 0 }],
+        { duration: 500, easing: 'ease-out' }
+      );
+      if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
+    }
+
+    function arcDash(frac) {
+      const deg = (Math.min(frac, 9) - 1) * STEP;
+      const lit = deg / 180 * ARC_LEN;
+      litArc.style.strokeDasharray = lit + ' ' + (ARC_LEN - lit + 8);
     }
 
     // setNeedleTransform=false lets the reveal sweep drive the needle angle
@@ -202,13 +526,26 @@
     function render(setNeedleTransform = true) {
       const color = COLORS[level - 1];
       document.documentElement.style.setProperty('--accent', color);
-      if (setNeedleTransform) needle.style.transform = 'rotate(' + ((level - 5) * 22.5) + 'deg)';
-      needle.querySelector('polygon').setAttribute('fill', color);
-      needle.style.filter = 'drop-shadow(0 0 10px ' + color + ')';
+      if (setNeedleTransform) { needle.style.transform = 'rotate(' + angleFor(level) + 'deg)'; arcDash(level); }
+      blade.setAttribute('fill', level === 10 ? '#ffffff' : color);
+      needle.style.filter = 'drop-shadow(0 0 12px ' + color + ')';
       levelName.textContent = NAMES[level - 1];
-      levelMeta.innerHTML = 'Level ' + level + ' / 9';
+      levelName.setAttribute('data-text', NAMES[level - 1]);
+      levelMeta.textContent = 'Level ' + (level === 10 ? 'ERR' : String(level).padStart(2, '0')) + ' / 10 · ' + STATUS[level - 1];
+      for (let i = 0; i < 10; i++) {
+        if (i < level) {
+          leds[i].style.background = COLORS[i];
+          leds[i].style.boxShadow = '0 0 8px ' + COLORS[i];
+        } else {
+          leds[i].style.background = '';
+          leds[i].style.boxShadow = '';
+        }
+      }
+      const wasMaxed = document.body.classList.contains('maxed');
       document.body.classList.toggle('hot', level >= 7);
       document.body.classList.toggle('critical', level >= 9);
+      document.body.classList.toggle('maxed', level === 10);
+      if (!wasMaxed && level === 10) flash();
     }
 
     // Dramatic reveal: needle starts at level 1 and eases up to `target`,
@@ -219,37 +556,68 @@
       shownLevel = lvl;
       level = lvl;
       render(false);
+      if (levelName.animate) {
+        levelName.animate(
+          [{ transform: 'scale(1.05)' }, { transform: 'scale(1)' }],
+          { duration: 170, easing: 'ease-out' }
+        );
+      }
+      if (navigator.vibrate && lvl > 1) navigator.vibrate(8);
     }
-    function sweepTo(target, duration = 1600) {
-      target = clamp(target);
-      needle.style.transition = 'none';
-      shownLevel = 0;
-      applyDiscrete(1);
-      needle.style.transform = 'rotate(' + ((1 - 5) * 22.5) + 'deg)';
-      if (target === 1) { needle.style.transition = ''; return; }
-      const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    function animateFrac(from, to, duration, ease, done) {
       const start = performance.now();
       function frame(now) {
         const t = Math.min(1, (now - start) / duration);
-        const frac = 1 + (target - 1) * ease(t);
-        needle.style.transform = 'rotate(' + ((frac - 5) * 22.5) + 'deg)';
+        const frac = from + (to - from) * ease(t);
+        needle.style.transform = 'rotate(' + angleFor(frac) + 'deg)';
+        arcDash(frac);
         applyDiscrete(clamp(frac));
-        if (t < 1) {
-          requestAnimationFrame(frame);
-        } else {
-          level = target;
-          needle.style.transition = ''; // restore for later admin/poll changes
-        }
+        if (t < 1) requestAnimationFrame(frame); else if (done) done();
       }
       requestAnimationFrame(frame);
     }
 
+    function sweepTo(target, duration = 1700) {
+      target = clamp(target);
+      needle.style.transition = 'none';
+      litArc.style.transition = 'none';
+      shownLevel = 0;
+      applyDiscrete(1);
+      needle.style.transform = 'rotate(' + angleFor(1) + 'deg)';
+      arcDash(1);
+      const finish = (lvl) => {
+        level = lvl;
+        needle.style.transition = '';
+        litArc.style.transition = '';
+        render();
+      };
+      if (target === 1) { finish(1); return; }
+      // ease-in-out with a slight physical overshoot at the end
+      const k = 0.6;
+      const backInOut = (t) => t < 0.5
+        ? (Math.pow(2 * t, 2) * ((k + 1) * 2 * t - k)) / 2
+        : (Math.pow(2 * t - 2, 2) * ((k + 1) * (2 * t - 2) + k) + 2) / 2;
+      const p1 = Math.min(target, 9);
+      animateFrac(1, p1, duration, backInOut, () => {
+        if (target < 10) { finish(p1); return; }
+        // hold on "Threat Level: Q"... then break the gauge
+        setTimeout(() => {
+          animateFrac(9, 10, 400, (t) => t * t * t, () => finish(10));
+        }, 600);
+      });
+    }
+
     function setLevel(n, animate = true) {
       const nl = clamp(n);
-      if (!animate) needle.style.transition = 'none';
+      if (!animate) { needle.style.transition = 'none'; litArc.style.transition = 'none'; }
       level = nl;
       render();
-      if (!animate) { void needle.offsetWidth; needle.style.transition = ''; }
+      if (!animate) {
+        void needle.offsetWidth;
+        needle.style.transition = '';
+        litArc.style.transition = '';
+      }
     }
 
     // ---- shared state ----
@@ -312,7 +680,8 @@
     // boot: park the needle at Zen, fetch the real level, then sweep up to it.
     async function bootReveal() {
       setLevel(1, false);
-      const minHold = new Promise((r) => setTimeout(r, 450)); // hold on Zen briefly
+      levelMeta.textContent = 'Calibrating ///';
+      const minHold = new Promise((r) => setTimeout(r, 650)); // let the power-on flicker finish
       let target = 8;
       try {
         const r = await fetch('/api/qmeter', { cache: 'no-store' });

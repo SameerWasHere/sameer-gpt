@@ -1,6 +1,6 @@
 // Q Meter state — how unhinged Q is right now, shared across everyone.
 //
-// GET  -> { level }            current level 1-9 (defaults if unset)
+// GET  -> { level }            current level 1-10 (defaults if unset)
 // POST -> { level }            set the level; requires the projects PIN in the
 //                              'x-claude-pin' header (hashed + compared server-side)
 //
@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 const KEY = 'qmeter_level';
 const DEFAULT_LEVEL = 8;
 const MIN = 1;
-const MAX = 9;
+const MAX = 10; // 10 = "Off the Charts"
 
 const EXPECTED_PIN_HASH =
   process.env.CLAUDE_PIN_HASH ||
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     }
     const { level } = req.body || {};
     if (level == null || isNaN(Number(level))) {
-      return res.status(400).json({ error: 'Provide a numeric level (1-9).' });
+      return res.status(400).json({ error: 'Provide a numeric level (1-10).' });
     }
     const lvl = clampLevel(level);
     try {
