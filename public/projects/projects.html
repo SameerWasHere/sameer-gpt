@@ -5,15 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#fdf6f0">
   <title>Projects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #fdf6f0;
+      --card: #fff;
+      --ink: #2d2a26;
+      --muted: #78716c;
+      --faint: #a8a29e;
+      --line: rgba(217,189,160,0.35);
+      --line-soft: rgba(217,189,160,0.22);
+      --amber: #f59e0b;
+      --amber-deep: #b45309;
+      --amber-wash: #fdecd2;
+      --green: #15803d;
+      --green-wash: #dcf3e3;
+      --shadow: 0 1px 3px rgba(180,140,100,0.08);
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #fdf6f0;
-      color: #2d2a26;
+      background: var(--bg);
+      color: var(--ink);
       min-height: 100vh;
       -webkit-font-smoothing: antialiased;
     }
+    .display { font-family: 'Fraunces', Georgia, serif; }
 
     /* ===== PIN gate ===== */
     .gate {
@@ -24,24 +43,35 @@
     }
     .gate-card {
       width: 100%; max-width: 340px;
-      background: #fff; border: 1px solid rgba(217,189,160,0.3);
-      border-radius: 20px; padding: 36px 28px;
-      box-shadow: 0 4px 24px rgba(180,140,100,0.10);
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 22px; padding: 36px 28px 28px;
+      box-shadow: 0 2px 6px rgba(180,140,100,0.07), 0 18px 48px rgba(180,140,100,0.16);
       text-align: center;
+      animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-    .gate-icon { font-size: 40px; margin-bottom: 14px; }
-    .gate-card h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-    .gate-card p { font-size: 13px; color: #78716c; margin-top: 8px; margin-bottom: 24px; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to   { opacity: 1; transform: none; }
+    }
+    .gate-icon {
+      width: 56px; height: 56px; margin: 0 auto 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; border-radius: 18px;
+      background: linear-gradient(160deg, #fde3bd, #f3bc77);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 6px 16px rgba(224,150,70,0.30);
+    }
+    .gate-card h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+    .gate-card p { font-size: 13px; color: var(--muted); margin-top: 8px; margin-bottom: 24px; }
     .pin-input {
       width: 100%; text-align: center;
       font-size: 28px; letter-spacing: 12px; font-weight: 600;
       padding: 14px 12px; border-radius: 14px;
       border: 1.5px solid #e7d9c8; background: #fdfaf6;
-      color: #2d2a26; outline: none;
+      color: var(--ink); outline: none;
       transition: border-color 0.15s;
     }
     .pin-input::placeholder { letter-spacing: 12px; color: #d6c9b8; }
-    .pin-input:focus { border-color: #f59e0b; }
+    .pin-input:focus { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(245,158,11,0.16); }
     .pin-input.error { border-color: #ef4444; animation: shake 0.35s; }
     @keyframes shake {
       0%,100% { transform: translateX(0); }
@@ -51,7 +81,7 @@
     .gate-btn {
       width: 100%; margin-top: 16px;
       font-size: 15px; font-weight: 600;
-      background: #2d2a26; color: #fff;
+      background: var(--ink); color: #fff;
       padding: 14px; border-radius: 14px;
       border: none; cursor: pointer; font-family: inherit;
       transition: background 0.15s;
@@ -61,100 +91,168 @@
     .gate-error { font-size: 13px; color: #ef4444; margin-top: 14px; min-height: 16px; }
 
     /* ===== Workspace ===== */
-    .workspace { display: none; max-width: 760px; margin: 0 auto; padding: 40px 18px 64px; }
-    .ws-header { margin-bottom: 28px; }
-    .ws-header h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-    .ws-header p { font-size: 14px; color: #78716c; margin-top: 6px; }
+    .workspace { display: none; max-width: 720px; margin: 0 auto; padding: 24px 14px 56px; }
 
-    .grid {
-      display: grid; gap: 14px;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    .ws-bar {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 12px; margin-bottom: 14px; padding: 0 2px;
     }
+    .ws-title { display: flex; align-items: baseline; gap: 9px; }
+    .ws-title h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1; }
+    .ws-count {
+      font-size: 12px; font-weight: 700; color: var(--amber-deep);
+      background: var(--amber-wash); padding: 2px 8px; border-radius: 999px;
+    }
+    .lock-btn {
+      background: none; border: 1px solid var(--line); cursor: pointer;
+      font-family: inherit; font-size: 12px; font-weight: 600; color: var(--muted);
+      padding: 5px 12px; border-radius: 999px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .lock-btn:hover { background: var(--amber-wash); color: var(--amber-deep); }
+
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search {
+      flex: 1; min-width: 0;
+      font-size: 14px; font-family: inherit; color: var(--ink);
+      padding: 9px 12px 9px 32px; border-radius: 12px;
+      border: 1.5px solid #ecdfd0; background: var(--card);
+      outline: none; transition: border-color 0.15s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 11px center;
+    }
+    .search:focus { border-color: var(--amber); }
+    .search::placeholder { color: var(--faint); }
+    .chips { display: flex; gap: 6px; }
+    .chip {
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      color: var(--muted); background: var(--card);
+      border: 1.5px solid #ecdfd0; border-radius: 12px;
+      padding: 0 12px; cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+    .chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+    .grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 600px) { .grid { grid-template-columns: 1fr 1fr; } }
+
     .tile {
       display: flex; flex-direction: column;
-      background: #fff; border: 1px solid rgba(217,189,160,0.3);
-      border-radius: 16px; padding: 20px;
-      box-shadow: 0 1px 3px rgba(180,140,100,0.08);
+      background: var(--card); border: 1px solid var(--line-soft);
+      border-radius: 14px; padding: 12px;
+      box-shadow: var(--shadow);
       transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
-    .tile:hover, .tile:active {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(180,140,100,0.16);
+    .tile:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(180,140,100,0.15); }
+
+    .tile-main {
+      display: flex; gap: 12px; align-items: flex-start;
+      text-decoration: none; color: inherit;
     }
-    .tile-main { text-decoration: none; color: inherit; display: block; }
     .tile-thumb {
-      display: block; width: calc(100% + 40px); margin: -20px -20px 14px;
-      aspect-ratio: 1200 / 630; object-fit: cover;
-      border-radius: 16px 16px 0 0; background: #f5ede3;
+      flex-shrink: 0; width: 64px; height: 64px;
+      border-radius: 10px; object-fit: cover;
+      background: #f5ede3; border: 1px solid var(--line-soft);
     }
-    .tile-top {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; margin-bottom: 10px;
+    .tile-thumb.fallback {
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 26px; font-weight: 700; color: var(--amber-deep);
+      background: var(--amber-wash); border: none;
     }
-    .tag {
-      font-size: 10px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: #92400e; background: #fdecd2;
-      padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+    .tile-body { flex: 1; min-width: 0; }
+    .tile-head { display: flex; align-items: center; gap: 8px; }
+    .tile h2 {
+      font-size: 15px; font-weight: 700; line-height: 1.25;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .tile-date { font-size: 11px; color: #a8a29e; white-space: nowrap; }
-    .tile h2 { font-size: 16px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
-    .tile p { font-size: 13px; color: #57534e; line-height: 1.5; }
-    .tile-foot {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; margin-top: 16px; padding-top: 12px;
-      border-top: 1px solid rgba(217,189,160,0.25);
+    .tile-meta {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--faint); margin-top: 3px;
     }
-    .access-badge {
+    .tile-meta .cat { color: var(--amber-deep); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; }
+    .tile p {
+      font-size: 12.5px; color: #57534e; line-height: 1.45; margin-top: 5px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .badge {
       display: inline-flex; align-items: center; gap: 5px;
-      font-size: 11px; font-weight: 600; white-space: nowrap;
+      font-size: 10.5px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+      flex-shrink: 0;
     }
-    .access-badge.public { color: #15803d; }
-    .access-badge.protected { color: #b45309; }
-    .copy-link {
-      font-size: 12px; font-weight: 600; color: #78716c;
-      background: none; border: none; cursor: pointer; font-family: inherit;
-      padding: 4px 6px; border-radius: 8px; transition: background 0.12s, color 0.12s;
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .badge.public { color: var(--green); background: var(--green-wash); }
+    .badge.public::before { background: var(--green); }
+    .badge.protected { color: var(--amber-deep); background: var(--amber-wash); }
+    .badge.protected::before { background: var(--amber); }
+
+    .tile-actions {
+      display: flex; gap: 6px; margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--line-soft);
     }
-    .copy-link:hover { background: #f5ede3; color: #57534e; }
-    .copy-link.copied { color: #15803d; }
+    .act {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 12.5px; font-weight: 600; font-family: inherit;
+      color: var(--muted); background: #faf5ee;
+      border: 1px solid var(--line-soft); border-radius: 10px;
+      padding: 7px 4px; cursor: pointer; text-decoration: none;
+      transition: background 0.12s, color 0.12s, transform 0.08s;
+      min-height: 38px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .act:hover { background: var(--amber-wash); color: var(--amber-deep); }
+    .act:active { transform: scale(0.96); }
+    .act.copied { background: var(--green-wash); color: var(--green); border-color: transparent; }
+    .act.manage-btn {
+      flex: 1.2;
+      background: var(--ink); border-color: var(--ink); color: #fff8ef;
+    }
+    .act.manage-btn:hover { background: #44403c; color: #fff; }
 
     .empty, .loading {
-      text-align: center; color: #a8a29e; font-size: 14px;
+      grid-column: 1 / -1;
+      text-align: center; color: var(--faint); font-size: 14px;
       padding: 48px 0;
     }
     .ws-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-top: 36px; font-size: 12px; color: #a8a29e;
+      text-align: center; margin-top: 32px;
+      font-size: 12px; color: var(--faint);
     }
-    .logout {
-      background: none; border: none; cursor: pointer;
-      font-family: inherit; font-size: 12px; color: #a8a29e;
-      text-decoration: underline;
-    }
-    .logout:hover { color: #78716c; }
 
-    .tile-actions { display: inline-flex; align-items: center; gap: 4px; }
-    .manage-btn {
-      font-size: 12px; font-weight: 600; color: #b45309;
-      background: none; border: none; cursor: pointer; font-family: inherit;
-      padding: 4px 6px; border-radius: 8px; transition: background 0.12s;
-    }
-    .manage-btn:hover { background: #fdecd2; }
-
-    /* Modal */
+    /* Modal — bottom sheet on phones, centered card on larger screens */
     .overlay {
       display: none; position: fixed; inset: 0;
       background: rgba(45,42,38,0.45);
-      align-items: center; justify-content: center; padding: 20px; z-index: 50;
+      backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+      align-items: flex-end; justify-content: center; z-index: 50;
     }
     .overlay.open { display: flex; }
     .modal {
-      width: 100%; max-width: 380px;
-      background: #fff; border-radius: 20px; padding: 28px 24px;
-      box-shadow: 0 16px 48px rgba(45,42,38,0.25);
+      width: 100%; max-width: 420px;
+      background: var(--card); border-radius: 22px 22px 0 0;
+      padding: 14px 22px calc(24px + env(safe-area-inset-bottom));
+      box-shadow: 0 -16px 48px rgba(45,42,38,0.25);
+      animation: sheet 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes sheet {
+      from { transform: translateY(40px); opacity: 0; }
+      to   { transform: none; opacity: 1; }
+    }
+    .modal-grip {
+      width: 38px; height: 4px; border-radius: 999px;
+      background: #e3d5c1; margin: 0 auto 16px;
+    }
+    @media (min-width: 600px) {
+      .overlay { align-items: center; padding: 20px; }
+      .modal { max-width: 380px; border-radius: 22px; padding: 28px 24px; }
+      .modal-grip { display: none; }
     }
     .modal h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-    .modal-sub { font-size: 13px; color: #78716c; margin-top: 4px; margin-bottom: 18px; }
+    .modal-sub { font-size: 13px; color: var(--muted); margin-top: 4px; margin-bottom: 18px; }
     .seg {
       display: flex; gap: 6px; background: #f5ede3;
       padding: 4px; border-radius: 12px; margin-bottom: 16px;
@@ -162,26 +260,26 @@
     .seg-btn {
       flex: 1; font-size: 13px; font-weight: 600; font-family: inherit;
       padding: 9px; border-radius: 9px; border: none; cursor: pointer;
-      background: transparent; color: #78716c; transition: background 0.12s, color 0.12s;
+      background: transparent; color: var(--muted); transition: background 0.12s, color 0.12s;
     }
-    .seg-btn.active { background: #fff; color: #2d2a26; box-shadow: 0 1px 2px rgba(180,140,100,0.12); }
+    .seg-btn.active { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(180,140,100,0.12); }
     .field { margin-bottom: 14px; }
     .field label {
       display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: #78716c; margin-bottom: 6px;
+      letter-spacing: 0.05em; color: var(--muted); margin-bottom: 6px;
     }
     .modal-input {
       width: 100%; font-size: 15px; padding: 11px 12px; border-radius: 12px;
-      border: 1.5px solid #e7d9c8; background: #fdfaf6; color: #2d2a26;
+      border: 1.5px solid #e7d9c8; background: #fdfaf6; color: var(--ink);
       outline: none; transition: border-color 0.15s; font-family: inherit;
     }
-    .modal-input:focus { border-color: #f59e0b; }
+    .modal-input:focus { border-color: var(--amber); }
     .modal-msg { font-size: 13px; min-height: 18px; margin: 4px 0 10px; }
     .modal-msg.err { color: #ef4444; }
-    .modal-msg.ok { color: #15803d; }
+    .modal-msg.ok { color: var(--green); }
     .modal-close {
       width: 100%; margin-top: 8px; background: none; border: none;
-      font-family: inherit; font-size: 13px; color: #78716c;
+      font-family: inherit; font-size: 13px; color: var(--muted);
       cursor: pointer; text-decoration: underline; padding: 8px;
     }
     .modal-close:hover { color: #57534e; }
@@ -192,7 +290,7 @@
   <div class="gate" id="gate">
     <div class="gate-card">
       <div class="gate-icon">&#x1F512;</div>
-      <h1>Projects</h1>
+      <h1 class="display">Projects</h1>
       <p>Enter your PIN to continue</p>
       <input
         id="pin"
@@ -211,22 +309,31 @@
 
   <!-- Workspace -->
   <div class="workspace" id="workspace">
-    <div class="ws-header">
-      <h1>Projects</h1>
-      <p>Live projects and experiences, built and published by Claude.</p>
+    <div class="ws-bar">
+      <div class="ws-title">
+        <h1 class="display">Projects</h1>
+        <span class="ws-count" id="count"></span>
+      </div>
+      <button class="lock-btn" id="logout">Lock</button>
+    </div>
+    <div class="toolbar">
+      <input type="search" class="search" id="search" placeholder="Search projects&hellip;" autocomplete="off">
+      <div class="chips" id="chips">
+        <button type="button" class="chip active" data-filter="all">All</button>
+        <button type="button" class="chip" data-filter="public">Public</button>
+        <button type="button" class="chip" data-filter="protected">Protected</button>
+      </div>
     </div>
     <div class="grid" id="grid">
       <div class="loading">Loading&hellip;</div>
     </div>
-    <div class="ws-footer">
-      <span>sameer.us/projects</span>
-      <button class="logout" id="logout">Lock</button>
-    </div>
+    <div class="ws-footer">sameer.us/projects &mdash; built and published by Claude</div>
   </div>
 
   <!-- Manage access modal -->
   <div class="overlay" id="overlay">
     <div class="modal">
+      <div class="modal-grip"></div>
       <h3 id="mTitle">Manage access</h3>
       <p class="modal-sub">Change who can open this artifact.</p>
 
@@ -316,7 +423,10 @@
     pinInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') tryUnlock();
     });
-    pinInput.addEventListener('input', () => { errorEl.textContent = ''; });
+    pinInput.addEventListener('input', () => {
+      errorEl.textContent = '';
+      if (pinInput.value.length === 4) tryUnlock();
+    });
 
     document.getElementById('logout').addEventListener('click', () => {
       clearCookie(COOKIE);
@@ -333,90 +443,130 @@
       });
     }
 
-    async function loadArtifacts() {
-      const grid = document.getElementById('grid');
-      try {
-        const res = await fetch('/projects/manifest.json', { cache: 'no-store' });
-        const data = await res.json();
-        const items = (data.artifacts || []).slice().sort((a, b) =>
-          (b.date || '').localeCompare(a.date || '')
-        );
-        if (!items.length) {
-          grid.innerHTML = '<div class="empty">Nothing here yet. Check back soon.</div>';
-          return;
-        }
-        grid.innerHTML = items.map(a => {
-          const tag = a.category
-            ? `<span class="tag">${escapeHtml(a.category)}</span>`
-            : '<span></span>';
-          const isProtected = a.access === 'protected';
-          const isExternal = !!a.url; // external pages (e.g. /babypool) aren't viewer-managed
-          const badge = isProtected
-            ? '<span class="access-badge protected">&#x1F512; Protected</span>'
-            : '<span class="access-badge public">&#x1F310; Public</span>';
-          // Artifacts live at the root: /<id>. External entries use their own url.
-          const path = isExternal ? a.url : `/${encodeURIComponent(a.id)}`;
-          const manageBtn = isExternal
-            ? ''
-            : `<button class="manage-btn"
-                    data-id="${escapeHtml(a.id)}"
-                    data-title="${escapeHtml(a.title || a.id)}"
-                    data-access="${isProtected ? 'protected' : 'public'}">Manage</button>`;
-          const thumb = a.image
-            ? `<img class="tile-thumb" src="/projects/images/${encodeURIComponent(a.image)}" alt="" loading="lazy">`
-            : '';
-          return `
-            <div class="tile">
-              <a class="tile-main" href="${escapeHtml(path)}">
-                ${thumb}
-                <div class="tile-top">
-                  ${tag}
-                  <span class="tile-date">${formatDate(a.date)}</span>
-                </div>
-                <h2>${escapeHtml(a.title || 'Untitled')}</h2>
-                <p>${escapeHtml(a.description || '')}</p>
-              </a>
-              <div class="tile-foot">
-                ${badge}
-                <div class="tile-actions">
-                  <button class="copy-link" data-path="${escapeHtml(path)}">Copy link</button>
-                  ${manageBtn}
-                </div>
-              </div>
-            </div>`;
-        }).join('');
-
-        grid.querySelectorAll('.copy-link').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const url = `${location.origin}${btn.dataset.path}`;
-            try {
-              await navigator.clipboard.writeText(url);
-            } catch (e) {
-              // Fallback for non-secure contexts
-              const t = document.createElement('textarea');
-              t.value = url; document.body.appendChild(t); t.select();
-              document.execCommand('copy'); t.remove();
-            }
-            const original = btn.textContent;
-            btn.textContent = 'Copied!';
-            btn.classList.add('copied');
-            setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
-          });
-        });
-
-        grid.querySelectorAll('.manage-btn').forEach(btn => {
-          btn.addEventListener('click', () => openManage(btn.dataset));
-        });
-      } catch (e) {
-        grid.innerHTML = '<div class="empty">Could not load artifacts.</div>';
-      }
-    }
-
     function escapeHtml(s) {
       return String(s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
+
+    // ---- List state: full set + search/filter applied at render ----
+    let allItems = [];
+    let filterAccess = 'all';
+    let filterQuery = '';
+
+    async function loadArtifacts() {
+      const grid = document.getElementById('grid');
+      try {
+        const res = await fetch('/projects/manifest.json', { cache: 'no-store' });
+        const data = await res.json();
+        allItems = (data.artifacts || []).slice().sort((a, b) =>
+          (b.date || '').localeCompare(a.date || '')
+        );
+        document.getElementById('count').textContent = allItems.length;
+        renderGrid();
+      } catch (e) {
+        grid.innerHTML = '<div class="empty">Could not load artifacts.</div>';
+      }
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      const q = filterQuery.toLowerCase();
+      const items = allItems.filter(a => {
+        const access = a.access === 'protected' ? 'protected' : 'public';
+        if (filterAccess !== 'all' && access !== filterAccess) return false;
+        if (!q) return true;
+        return [a.title, a.description, a.category, a.id]
+          .some(v => (v || '').toLowerCase().includes(q));
+      });
+
+      if (!allItems.length) {
+        grid.innerHTML = '<div class="empty">Nothing here yet. Check back soon.</div>';
+        return;
+      }
+      if (!items.length) {
+        grid.innerHTML = '<div class="empty">No projects match.</div>';
+        return;
+      }
+
+      grid.innerHTML = items.map(a => {
+        const isProtected = a.access === 'protected';
+        const isExternal = !!a.url; // external pages (e.g. /babypool) aren't viewer-managed
+        const badge = isProtected
+          ? '<span class="badge protected">Protected</span>'
+          : '<span class="badge public">Public</span>';
+        // Artifacts live at the root: /<id>. External entries use their own url.
+        const path = isExternal ? a.url : `/${encodeURIComponent(a.id)}`;
+        const manageBtn = isExternal
+          ? ''
+          : `<button class="act manage-btn"
+                  data-id="${escapeHtml(a.id)}"
+                  data-title="${escapeHtml(a.title || a.id)}"
+                  data-access="${isProtected ? 'protected' : 'public'}">Manage</button>`;
+        const thumb = a.image
+          ? `<img class="tile-thumb" src="/projects/images/${encodeURIComponent(a.image)}" alt="" loading="lazy">`
+          : `<div class="tile-thumb fallback">${escapeHtml((a.title || a.id || '?').charAt(0).toUpperCase())}</div>`;
+        const meta = [
+          a.category ? `<span class="cat">${escapeHtml(a.category)}</span>` : '',
+          a.category ? '<span>&middot;</span>' : '',
+          `<span>${formatDate(a.date)}</span>`,
+        ].join('');
+        return `
+          <div class="tile">
+            <a class="tile-main" href="${escapeHtml(path)}">
+              ${thumb}
+              <div class="tile-body">
+                <div class="tile-head">
+                  <h2>${escapeHtml(a.title || 'Untitled')}</h2>
+                  ${badge}
+                </div>
+                <div class="tile-meta">${meta}</div>
+                <p>${escapeHtml(a.description || '')}</p>
+              </div>
+            </a>
+            <div class="tile-actions">
+              <a class="act" href="${escapeHtml(path)}">Open &#x2197;</a>
+              <button class="act copy-link" data-path="${escapeHtml(path)}">Copy link</button>
+              ${manageBtn}
+            </div>
+          </div>`;
+      }).join('');
+
+      grid.querySelectorAll('.copy-link').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const url = `${location.origin}${btn.dataset.path}`;
+          try {
+            await navigator.clipboard.writeText(url);
+          } catch (e) {
+            // Fallback for non-secure contexts
+            const t = document.createElement('textarea');
+            t.value = url; document.body.appendChild(t); t.select();
+            document.execCommand('copy'); t.remove();
+          }
+          const original = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+        });
+      });
+
+      grid.querySelectorAll('.manage-btn').forEach(btn => {
+        btn.addEventListener('click', () => openManage(btn.dataset));
+      });
+    }
+
+    document.getElementById('search').addEventListener('input', (e) => {
+      filterQuery = e.target.value.trim();
+      renderGrid();
+    });
+    document.querySelectorAll('#chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterAccess = chip.dataset.filter;
+        document.querySelectorAll('#chips .chip').forEach(c =>
+          c.classList.toggle('active', c === chip));
+        renderGrid();
+      });
+    });
 
     // ---- Manage access modal ----
     const overlay = document.getElementById('overlay');
@@ -453,6 +603,7 @@
       mCurrent.value = ''; mNew.value = ''; mPin.value = '';
       setMsg('', '');
       mSave.disabled = false; mSave.textContent = 'Save';
+      document.getElementById('mCancel').textContent = 'Cancel';
       updateModalFields();
       overlay.classList.add('open');
     }
