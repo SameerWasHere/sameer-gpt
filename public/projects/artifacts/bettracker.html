@@ -219,6 +219,22 @@
       color: var(--faint); text-transform: uppercase; margin-top: 5px; }
     .slip[data-state="live"] .unit .num { color: var(--gold); text-shadow: 0 0 16px var(--gold-glow); }
 
+    /* win rule banner */
+    .win-rule {
+      display: flex; align-items: center; gap: 10px; margin: 16px 0 4px;
+      padding: 13px 15px; border-radius: 11px;
+      font-family: 'Anton', sans-serif; font-size: clamp(15px, 4.4vw, 18px);
+      letter-spacing: 0.03em; text-transform: uppercase; line-height: 1.05;
+    }
+    .win-rule svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .win-rule.live { color: var(--gold); background: rgba(255,192,70,0.09);
+      border: 1px solid rgba(255,192,70,0.32); box-shadow: inset 0 0 24px rgba(255,192,70,0.06); }
+    .win-rule.won { color: var(--green); background: rgba(0,230,118,0.09);
+      border: 1px solid rgba(0,230,118,0.32); box-shadow: inset 0 0 24px rgba(0,230,118,0.06); }
+    .win-rule.lost { color: var(--red); background: rgba(255,59,86,0.09);
+      border: 1px solid rgba(255,59,86,0.3); box-shadow: inset 0 0 24px rgba(255,59,86,0.06); }
+    .legs-progress .need { color: var(--faint); }
+
     /* legs */
     .legs { padding: 6px 22px 4px; }
     .legs-head {
@@ -341,8 +357,11 @@
     {
       "id": "QPL-0001",
       "title": "Q's Parlay: Sea Dweller Edition",
-      "type": "4-Leg Parlay",
+      "type": "4 Legs · Any 1 Hits",
       "expires": "2029-01-01T00:00:00",
+      "winThreshold": 1,
+      "winnerName": "Q",
+      "winRule": "Q WINS IF ANY 1 OF 4 HITS",
       "playerA": { "name": "Q", "initials": "Q", "role": "The Believer" },
       "playerB": { "name": "Mitch", "initials": "M", "role": "The Fader" },
       "stakeA": {
@@ -378,10 +397,15 @@
       return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
 
-    // A parlay wins only if every leg hits; it's dead the moment one leg is impossible.
-    function betState(legs) {
-      if (legs.some(l => l.status === 'impossible')) return 'lost';
-      if (legs.every(l => l.status === 'hit')) return 'won';
+    // Win rule: the bet is WON the moment `threshold` legs hit (default: any 1 of N).
+    // It's only LOST once it's mathematically impossible to reach the threshold —
+    // i.e. there aren't enough non-dead legs left to get there.
+    function betState(legs, threshold) {
+      const need = threshold || 1;
+      const hits = legs.filter(l => l.status === 'hit').length;
+      const stillAlive = legs.filter(l => l.status !== 'impossible').length;
+      if (hits >= need) return 'won';
+      if (stillAlive < need) return 'lost';
       return 'live';
     }
 
@@ -395,7 +419,8 @@
 
     let openCount = 0;
     bets.forEach((bet, idx) => {
-      const state = betState(bet.legs);
+      const need = bet.winThreshold || 1;
+      const state = betState(bet.legs, need);
       if (state === 'live') openCount++;
 
       const hitCount = bet.legs.filter(l => l.status === 'hit').length;
@@ -450,9 +475,13 @@
         </div>
 
         <div class="legs">
+          ${bet.winRule ? `<div class="win-rule ${progressClass}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+            <span>${escapeHtml(bet.winRule)}</span>
+          </div>` : ''}
           <div class="legs-head">
-            <span>PARLAY LEGS</span>
-            <span class="legs-progress"><span class="${progressClass}">${hitCount}/${total} HIT</span></span>
+            <span>THE LEGS</span>
+            <span class="legs-progress"><span class="${progressClass}">${hitCount}/${total} HIT</span><span class="need"> &middot; NEED ${need}</span></span>
           </div>
           ${legsHtml}
         </div>
