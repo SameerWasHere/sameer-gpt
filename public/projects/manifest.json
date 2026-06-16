@@ -1,6 +1,16 @@
 {
   "artifacts": [
     {
+      "id": "bettracker",
+      "title": "Bet Tracker",
+      "description": "A live ledger of standing wagers, styled like a real sportsbook. Bet slips, stakes, and countdowns.",
+      "category": "Tracker",
+      "date": "2026-06-16",
+      "access": "public",
+      "filename": "bettracker.html",
+      "image": "bettracker.png"
+    },
+    {
       "id": "qmeter",
       "title": "Q Meter",
       "description": "How unhinged is Q right now? A live, doomsday-clock-style meter.",

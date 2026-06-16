@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Bet Tracker</title>
+  <meta name="description" content="Live ledger of standing wagers. Sportsbook-style bet slips, real stakes, real countdowns.">
+  <meta property="og:title" content="Bet Tracker">
+  <meta property="og:description" content="Live ledger of standing wagers. Sportsbook-style bet slips, real stakes, real countdowns.">
+  <meta property="og:image" content="/projects/images/bettracker.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #06090f;
+      --bg-2:      #0a0f17;
+      --panel:     #10161f;
+      --panel-2:   #141b26;
+      --line:      #1e2733;
+      --line-soft: #19212c;
+      --text:      #eef3f8;
+      --muted:     #8190a3;
+      --faint:     #5a6878;
+
+      --green:     #00e676;
+      --green-dim: #0c8f4d;
+      --green-glow: rgba(0,230,118,0.45);
+      --red:       #ff3b56;
+      --red-dim:   #b3243a;
+      --red-glow:  rgba(255,59,86,0.40);
+      --gold:      #ffc046;
+      --gold-dim:  #c9921f;
+      --gold-glow: rgba(255,192,70,0.40);
+
+      --ease: cubic-bezier(.22,1,.36,1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ===== Atmosphere ===== */
+    .bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .bg::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(900px 600px at 80% -10%, rgba(0,230,118,0.10), transparent 60%),
+        radial-gradient(800px 600px at 10% 5%, rgba(255,192,70,0.07), transparent 55%),
+        radial-gradient(1000px 800px at 50% 120%, rgba(255,59,86,0.06), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    }
+    .grid {
+      position: absolute; inset: -2px;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 35%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 120% 80% at 50% 0%, #000 35%, transparent 80%);
+    }
+    .noise { position: absolute; inset: 0; opacity: 0.04; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+    /* ===== Shell ===== */
+    .wrap { position: relative; z-index: 1; max-width: 620px; margin: 0 auto; padding: 22px 16px 80px; }
+
+    /* ===== Top bar ===== */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 18px; margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(145deg, #0f1722, #0a0f17);
+      border: 1px solid var(--line);
+      display: grid; place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 0 24px rgba(0,230,118,0.12);
+      position: relative; overflow: hidden;
+    }
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name {
+      font-family: 'Anton', sans-serif; font-size: 21px; letter-spacing: 0.04em;
+      line-height: 1; text-transform: uppercase;
+    }
+    .brand-name span { color: var(--green); }
+    .brand-sub {
+      font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.32em;
+      color: var(--faint); text-transform: uppercase; margin-top: 3px;
+    }
+    .live-pill {
+      display: flex; align-items: center; gap: 7px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; color: var(--green); text-transform: uppercase;
+      padding: 7px 12px; border-radius: 999px;
+      background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25);
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+      box-shadow: 0 0 0 0 var(--green-glow); animation: pulse 2s infinite; }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 var(--green-glow); }
+      70% { box-shadow: 0 0 0 7px rgba(0,230,118,0); }
+      100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); }
+    }
+
+    /* ===== Ledger heading ===== */
+    .ledger-head { margin-bottom: 18px; }
+    .ledger-head h1 {
+      font-family: 'Anton', sans-serif; font-weight: 400; line-height: 0.92;
+      font-size: clamp(40px, 13vw, 64px); letter-spacing: 0.005em; text-transform: uppercase;
+    }
+    .ledger-head h1 em {
+      font-style: normal; color: transparent;
+      -webkit-text-stroke: 1.4px var(--gold); text-stroke: 1.4px var(--gold);
+    }
+    .ledger-meta {
+      display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);
+    }
+    .ledger-meta b { color: var(--text); font-weight: 700; }
+
+    /* ===== Bet slip card ===== */
+    .feed { display: flex; flex-direction: column; gap: 22px; }
+    .slip {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+      border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+      position: relative;
+      box-shadow: 0 24px 60px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04);
+      opacity: 0; transform: translateY(22px);
+      animation: rise 0.7s var(--ease) forwards;
+    }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+
+    /* status accent bar */
+    .slip::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    }
+    .slip[data-state="live"]::before { background: linear-gradient(180deg, var(--gold), var(--gold-dim)); box-shadow: 0 0 22px var(--gold-glow); }
+    .slip[data-state="won"]::before { background: linear-gradient(180deg, var(--green), var(--green-dim)); box-shadow: 0 0 22px var(--green-glow); }
+    .slip[data-state="lost"]::before { background: linear-gradient(180deg, var(--red), var(--red-dim)); box-shadow: 0 0 22px var(--red-glow); }
+
+    .slip-head { padding: 18px 20px 16px 22px; border-bottom: 1px solid var(--line-soft); }
+    .slip-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+    .ticket-id {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em;
+      color: var(--faint); text-transform: uppercase;
+    }
+    .state-pill {
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      padding: 5px 11px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .state-pill .pdot { width: 6px; height: 6px; border-radius: 50%; }
+    .state-pill.live { color: var(--gold); background: rgba(255,192,70,0.10); border: 1px solid rgba(255,192,70,0.3); }
+    .state-pill.live .pdot { background: var(--gold); }
+    .state-pill.won { color: var(--green); background: rgba(0,230,118,0.10); border: 1px solid rgba(0,230,118,0.3); }
+    .state-pill.won .pdot { background: var(--green); }
+    .state-pill.lost { color: var(--red); background: rgba(255,59,86,0.10); border: 1px solid rgba(255,59,86,0.3); }
+    .state-pill.lost .pdot { background: var(--red); }
+
+    .slip-title {
+      font-family: 'Anton', sans-serif; font-weight: 400; line-height: 1.0;
+      font-size: clamp(24px, 6.6vw, 31px); letter-spacing: 0.01em; text-transform: uppercase;
+    }
+    .bet-type {
+      display: inline-block; margin-top: 9px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--green);
+      padding: 4px 9px; border-radius: 5px; background: rgba(0,230,118,0.07);
+      border: 1px solid rgba(0,230,118,0.18);
+    }
+
+    /* matchup */
+    .matchup { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+    .player { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; }
+    .player.right { flex-direction: row-reverse; text-align: right; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center;
+      font-family: 'Anton', sans-serif; font-size: 15px; letter-spacing: 0.02em;
+      border: 1px solid var(--line); color: var(--text);
+    }
+    .avatar.a { background: radial-gradient(circle at 35% 30%, #14352a, #0c1f18); box-shadow: 0 0 18px rgba(0,230,118,0.18); border-color: rgba(0,230,118,0.3); }
+    .avatar.b { background: radial-gradient(circle at 35% 30%, #2a1417, #1f0c10); box-shadow: 0 0 18px rgba(255,59,86,0.16); border-color: rgba(255,59,86,0.28); }
+    .player-name { font-weight: 800; font-size: 15px; letter-spacing: 0.01em; }
+    .player-role { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--faint); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 2px; }
+    .vs {
+      font-family: 'Anton', sans-serif; font-size: 13px; color: var(--faint);
+      letter-spacing: 0.08em; flex-shrink: 0; padding: 0 2px;
+    }
+
+    /* countdown */
+    .countdown { padding: 16px 22px; border-bottom: 1px solid var(--line-soft); background: rgba(0,0,0,0.18); }
+    .countdown-label {
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 11px;
+    }
+    .countdown-label .expdate { color: var(--text); font-weight: 700; }
+    .clock { display: flex; gap: 8px; }
+    .unit { flex: 1; text-align: center; background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 10px; padding: 9px 4px 7px; position: relative; overflow: hidden; }
+    .unit .num {
+      font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: clamp(20px, 6vw, 26px);
+      line-height: 1; color: var(--text); font-variant-numeric: tabular-nums;
+    }
+    .unit .lab { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.12em;
+      color: var(--faint); text-transform: uppercase; margin-top: 5px; }
+    .slip[data-state="live"] .unit .num { color: var(--gold); text-shadow: 0 0 16px var(--gold-glow); }
+
+    /* legs */
+    .legs { padding: 6px 22px 4px; }
+    .legs-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      letter-spacing: 0.16em; color: var(--muted); text-transform: uppercase;
+    }
+    .legs-progress { color: var(--text); font-weight: 700; }
+    .legs-progress .live { color: var(--gold); }
+    .legs-progress .won { color: var(--green); }
+    .legs-progress .lost { color: var(--red); }
+
+    .leg {
+      display: flex; align-items: flex-start; gap: 12px; padding: 13px 0;
+      border-top: 1px solid var(--line-soft); position: relative;
+    }
+    .leg-icon {
+      width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0; margin-top: 1px;
+      display: grid; place-items: center;
+    }
+    .leg-icon svg { width: 15px; height: 15px; }
+    .leg-icon.pending { background: rgba(255,192,70,0.10); border: 1px solid rgba(255,192,70,0.3); color: var(--gold); }
+    .leg-icon.hit { background: rgba(0,230,118,0.12); border: 1px solid rgba(0,230,118,0.35); color: var(--green); }
+    .leg-icon.impossible { background: rgba(255,59,86,0.10); border: 1px solid rgba(255,59,86,0.3); color: var(--red); }
+    .leg-body { flex: 1; min-width: 0; }
+    .leg-text { font-size: 14.5px; font-weight: 600; line-height: 1.32; }
+    .leg.impossible .leg-text { text-decoration: line-through; text-decoration-color: var(--red);
+      text-decoration-thickness: 2px; color: var(--muted); }
+    .leg-tag {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5px; display: inline-block;
+    }
+    .leg.pending .leg-tag { color: var(--gold); }
+    .leg.hit .leg-tag { color: var(--green); }
+    .leg.impossible .leg-tag { color: var(--red); }
+
+    /* stakes */
+    .stakes { padding: 16px 22px 20px; }
+    .stakes-head {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 11px; padding-top: 4px;
+      border-top: 1px solid var(--line-soft);
+      padding-top: 16px;
+    }
+    .stake-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stake {
+      background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px;
+      padding: 13px 13px 14px; position: relative; overflow: hidden;
+    }
+    .stake::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+    .stake.a::after { background: linear-gradient(90deg, var(--green), transparent); }
+    .stake.b::after { background: linear-gradient(90deg, var(--red), transparent); }
+    .stake-who {
+      display: flex; align-items: center; gap: 7px; margin-bottom: 9px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .stake.a .stake-who { color: var(--green); }
+    .stake.b .stake-who { color: var(--red); }
+    .stake-who .chip { width: 6px; height: 6px; border-radius: 50%; }
+    .stake.a .stake-who .chip { background: var(--green); }
+    .stake.b .stake-who .chip { background: var(--red); }
+    .stake-text { font-size: 13.5px; font-weight: 600; line-height: 1.36; color: var(--text); }
+    .stake-cap { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em;
+      color: var(--faint); text-transform: uppercase; margin-top: 9px; }
+
+    /* footer note */
+    .foot {
+      text-align: center; margin-top: 40px;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em;
+      color: var(--faint); text-transform: uppercase;
+    }
+    .foot a { color: var(--green); text-decoration: none; }
+
+    @media (max-width: 380px) {
+      .clock { gap: 6px; }
+      .unit { padding: 8px 2px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"><div class="grid"></div><div class="noise"></div></div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M3 12h18M3 18h18"/><path d="M8 3v18M16 3v18" opacity="0.45"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">BET<span>TRACKER</span></div>
+          <div class="brand-sub">THE STANDING WAGERS</div>
+        </div>
+      </div>
+      <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+    </header>
+
+    <div class="ledger-head">
+      <h1>THE <em>BOOK</em></h1>
+      <div class="ledger-meta">
+        <span><b id="stat-open">0</b> OPEN</span>
+        <span><b id="stat-total">0</b> TOTAL</span>
+        <span>STAKES&nbsp;<b>SETTLED IN FULL</b></span>
+      </div>
+    </div>
+
+    <main class="feed" id="feed"></main>
+
+    <div class="foot">NO REFUNDS &middot; NO MERCY &middot; <a href="/projects">BACK TO PROJECTS</a></div>
+  </div>
+
+  <!-- ============================================================
+       BETS DATA — add a new object to this array for each wager.
+       leg status: "hit" | "impossible" | "pending"
+       ============================================================ -->
+  <script id="bets-data" type="application/json">
+  [
+    {
+      "id": "QPL-0001",
+      "title": "Q's Parlay: Sea Dweller Edition",
+      "type": "4-Leg Parlay",
+      "expires": "2029-01-01T00:00:00",
+      "playerA": { "name": "Q", "initials": "Q", "role": "The Believer" },
+      "playerB": { "name": "Mitch", "initials": "M", "role": "The Fader" },
+      "stakeA": {
+        "who": "If Q loses",
+        "text": "Sells Mitch a Rolex Sea-Dweller at a 20% discount.",
+        "caption": "Q's collateral"
+      },
+      "stakeB": {
+        "who": "If Mitch loses",
+        "text": "Wears a Packers jersey to Football Sunday — 4 weeks straight.",
+        "caption": "Mitch's collateral"
+      },
+      "legs": [
+        { "text": "Wembanyama wins a unanimous MVP before 2029", "status": "pending" },
+        { "text": "Orioles take zero shutout losses in 2026", "status": "pending" },
+        { "text": "Mendoza is out of the league within 2 years", "status": "pending" },
+        { "text": "Packers win the Super Bowl by 2029", "status": "pending" }
+      ]
+    }
+  ]
+  </script>
+
+  <script>
+  (function () {
+    const ICONS = {
+      hit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+      impossible: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+      pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+    };
+    const TAG = { hit: 'HIT', impossible: 'IMPOSSIBLE', pending: 'PENDING' };
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    // A parlay wins only if every leg hits; it's dead the moment one leg is impossible.
+    function betState(legs) {
+      if (legs.some(l => l.status === 'impossible')) return 'lost';
+      if (legs.every(l => l.status === 'hit')) return 'won';
+      return 'live';
+    }
+
+    function fmtDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+    }
+
+    const bets = JSON.parse(document.getElementById('bets-data').textContent);
+    const feed = document.getElementById('feed');
+
+    let openCount = 0;
+    bets.forEach((bet, idx) => {
+      const state = betState(bet.legs);
+      if (state === 'live') openCount++;
+
+      const hitCount = bet.legs.filter(l => l.status === 'hit').length;
+      const total = bet.legs.length;
+      const progressClass = state === 'won' ? 'won' : state === 'lost' ? 'lost' : 'live';
+      const stateLabel = state === 'won' ? 'CASHED' : state === 'lost' ? 'BUSTED' : 'LIVE';
+
+      const slip = document.createElement('article');
+      slip.className = 'slip';
+      slip.dataset.state = state;
+      slip.dataset.expires = bet.expires;
+      slip.style.animationDelay = (idx * 0.09 + 0.05) + 's';
+
+      const legsHtml = bet.legs.map((leg, i) => `
+        <div class="leg ${leg.status}">
+          <div class="leg-icon ${leg.status}">${ICONS[leg.status]}</div>
+          <div class="leg-body">
+            <div class="leg-text">${escapeHtml(leg.text)}</div>
+            <span class="leg-tag">LEG ${i + 1} &middot; ${TAG[leg.status]}</span>
+          </div>
+        </div>`).join('');
+
+      slip.innerHTML = `
+        <div class="slip-head">
+          <div class="slip-top">
+            <span class="ticket-id">TICKET #${escapeHtml(bet.id)}</span>
+            <span class="state-pill ${progressClass}"><span class="pdot"></span>${stateLabel}</span>
+          </div>
+          <h2 class="slip-title">${escapeHtml(bet.title)}</h2>
+          <span class="bet-type">${escapeHtml(bet.type)}</span>
+          <div class="matchup">
+            <div class="player">
+              <div class="avatar a">${escapeHtml(bet.playerA.initials)}</div>
+              <div><div class="player-name">${escapeHtml(bet.playerA.name)}</div><div class="player-role">${escapeHtml(bet.playerA.role)}</div></div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="player right">
+              <div class="avatar b">${escapeHtml(bet.playerB.initials)}</div>
+              <div><div class="player-name">${escapeHtml(bet.playerB.name)}</div><div class="player-role">${escapeHtml(bet.playerB.role)}</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="countdown">
+          <div class="countdown-label"><span>${state === 'live' ? 'SETTLES IN' : 'SETTLED'}</span><span class="expdate">${fmtDate(bet.expires)}</span></div>
+          <div class="clock" data-clock>
+            <div class="unit"><div class="num" data-d>--</div><div class="lab">Days</div></div>
+            <div class="unit"><div class="num" data-h>--</div><div class="lab">Hrs</div></div>
+            <div class="unit"><div class="num" data-m>--</div><div class="lab">Min</div></div>
+            <div class="unit"><div class="num" data-s>--</div><div class="lab">Sec</div></div>
+          </div>
+        </div>
+
+        <div class="legs">
+          <div class="legs-head">
+            <span>PARLAY LEGS</span>
+            <span class="legs-progress"><span class="${progressClass}">${hitCount}/${total} HIT</span></span>
+          </div>
+          ${legsHtml}
+        </div>
+
+        <div class="stakes">
+          <div class="stakes-head">THE STAKES &middot; WINNER TAKES ALL</div>
+          <div class="stake-grid">
+            <div class="stake a">
+              <div class="stake-who"><span class="chip"></span>${escapeHtml(bet.stakeA.who)}</div>
+              <div class="stake-text">${escapeHtml(bet.stakeA.text)}</div>
+              <div class="stake-cap">${escapeHtml(bet.stakeA.caption)}</div>
+            </div>
+            <div class="stake b">
+              <div class="stake-who"><span class="chip"></span>${escapeHtml(bet.stakeB.who)}</div>
+              <div class="stake-text">${escapeHtml(bet.stakeB.text)}</div>
+              <div class="stake-cap">${escapeHtml(bet.stakeB.caption)}</div>
+            </div>
+          </div>
+        </div>`;
+
+      feed.appendChild(slip);
+    });
+
+    document.getElementById('stat-open').textContent = String(openCount).padStart(2, '0');
+    document.getElementById('stat-total').textContent = String(bets.length).padStart(2, '0');
+
+    // ===== Live countdowns =====
+    const clocks = Array.from(document.querySelectorAll('.slip')).map(slip => ({
+      el: slip.querySelector('[data-clock]'),
+      target: new Date(slip.dataset.expires).getTime(),
+      d: slip.querySelector('[data-d]'), h: slip.querySelector('[data-h]'),
+      m: slip.querySelector('[data-m]'), s: slip.querySelector('[data-s]')
+    }));
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      const now = Date.now();
+      clocks.forEach(c => {
+        let diff = Math.max(0, c.target - now);
+        const days = Math.floor(diff / 86400000); diff -= days * 86400000;
+        const hrs = Math.floor(diff / 3600000); diff -= hrs * 3600000;
+        const mins = Math.floor(diff / 60000); diff -= mins * 60000;
+        const secs = Math.floor(diff / 1000);
+        c.d.textContent = String(days);
+        c.h.textContent = pad(hrs);
+        c.m.textContent = pad(mins);
+        c.s.textContent = pad(secs);
+      });
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+  </script>
+</body>
+</html>
