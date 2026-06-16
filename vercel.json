@@ -9,6 +9,7 @@
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
     { "source": "/qmeter", "destination": "/projects/artifacts/qmeter.html" },
     { "source": "/bettracker", "destination": "/projects/artifacts/bettracker.html" },
+    { "source": "/bettracker/:slug", "destination": "/projects/artifacts/bettracker-view.html" },
     { "source": "/projects", "destination": "/projects/projects.html" }
   ]
 }

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Bet Tracker</title>
+  <meta name="description" content="A standing wager, settled in full. View the full ticket — legs, stakes, and countdown.">
+  <!-- Default OG (sea-dweller). Updated client-side per-bet where the crawler runs JS. -->
+  <meta property="og:title" content="Q's Parlay: Sea Dweller Edition">
+  <meta property="og:description" content="Q vs Mitch · Q wins if any 1 of 4 hits · Settles Jan 1, 2029. A Rolex Sea-Dweller and a Packers jersey are on the line.">
+  <meta property="og:image" content="/projects/images/bettracker.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/projects/artifacts/bettracker.css">
+</head>
+<body>
+  <div class="bg"><div class="grid"></div><div class="noise"></div></div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="/bettracker">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18M3 12h18M3 18h18"/><path d="M8 3v18M16 3v18" opacity="0.45"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">BET<span>TRACKER</span></div>
+          <div class="brand-sub">THE STANDING WAGERS</div>
+        </div>
+      </a>
+      <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+    </header>
+
+    <a class="backlink" href="/bettracker">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      ALL BETS
+    </a>
+
+    <main id="detail"></main>
+
+    <div class="foot">NO REFUNDS &middot; NO MERCY</div>
+  </div>
+
+  <script src="/projects/artifacts/bettracker-data.js"></script>
+  <script>
+  (function () {
+    var BT = window.BetTracker;
+    var detail = document.getElementById('detail');
+
+    // Slug comes from the path (/bettracker/{slug}) via Vercel rewrite,
+    // with ?bet= / ?id= as a fallback for direct file access.
+    function getSlug() {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('bet')) return qs.get('bet');
+      if (qs.get('id')) return qs.get('id');
+      var parts = location.pathname.replace(/\/+$/, '').split('/');
+      var last = parts[parts.length - 1];
+      if (last && last !== 'bettracker' && last !== 'bettracker-view' && last !== 'bettracker-view.html') return last;
+      return null;
+    }
+
+    var slug = getSlug();
+    var bet = slug ? BT.bySlug(slug) : null;
+
+    // Default to the first bet if no slug resolves (e.g. /bettracker-view.html direct hit)
+    if (!bet && !slug) bet = window.BETTRACKER_BETS[0];
+
+    if (!bet) {
+      detail.innerHTML =
+        '<div class="notfound"><h2>No Such Ticket</h2>' +
+        '<p>That bet doesn\'t exist (or got voided). <a href="/bettracker">Back to the book &rarr;</a></p></div>';
+      return;
+    }
+
+    var need = bet.winThreshold || 1;
+    var state = BT.betState(bet.legs, need);
+    var hitCount = bet.legs.filter(function (l) { return l.status === 'hit'; }).length;
+    var total = bet.legs.length;
+
+    // ----- update title + OG tags client-side -----
+    document.title = bet.title + ' — Bet Tracker';
+    var ogDesc = bet.playerA.name + ' vs ' + bet.playerB.name + ' · ' +
+      (bet.winRule || (need + ' of ' + total + ' to win')) + ' · Settles ' + BT.fmtDate(bet.expires) + '.';
+    function setMeta(sel, val) { var m = document.querySelector(sel); if (m) m.setAttribute('content', val); }
+    setMeta('meta[property="og:title"]', bet.title);
+    setMeta('meta[property="og:description"]', ogDesc);
+    setMeta('meta[name="description"]', ogDesc);
+
+    var legsHtml = bet.legs.map(function (leg, i) {
+      return '<div class="leg ' + leg.status + '">' +
+        '<div class="leg-icon ' + leg.status + '">' + BT.ICONS[leg.status] + '</div>' +
+        '<div class="leg-body">' +
+          '<div class="leg-text">' + BT.escapeHtml(leg.text) + '</div>' +
+          '<span class="leg-tag">LEG ' + (i + 1) + ' &middot; ' + BT.TAG[leg.status] + '</span>' +
+        '</div></div>';
+    }).join('');
+
+    var slip = document.createElement('article');
+    slip.className = 'slip';
+    slip.dataset.state = state;
+    slip.dataset.expires = bet.expires;
+
+    slip.innerHTML =
+      '<div class="slip-head">' +
+        '<div class="slip-top">' +
+          '<span class="ticket-id">TICKET #' + BT.escapeHtml(bet.id) + '</span>' +
+          '<span class="state-pill ' + state + '"><span class="pdot"></span>' + BT.stateLabel(state) + '</span>' +
+        '</div>' +
+        '<h1 class="slip-title">' + BT.escapeHtml(bet.title) + '</h1>' +
+        '<span class="bet-type">' + BT.escapeHtml(bet.type) + '</span>' +
+        '<div class="matchup">' +
+          '<div class="player"><div class="avatar a">' + BT.escapeHtml(bet.playerA.initials) + '</div>' +
+            '<div><div class="player-name">' + BT.escapeHtml(bet.playerA.name) + '</div><div class="player-role">' + BT.escapeHtml(bet.playerA.role) + '</div></div></div>' +
+          '<div class="vs">VS</div>' +
+          '<div class="player right"><div class="avatar b">' + BT.escapeHtml(bet.playerB.initials) + '</div>' +
+            '<div><div class="player-name">' + BT.escapeHtml(bet.playerB.name) + '</div><div class="player-role">' + BT.escapeHtml(bet.playerB.role) + '</div></div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="countdown">' +
+        '<div class="countdown-label"><span>' + (state === 'live' ? 'SETTLES IN' : 'SETTLED') + '</span><span class="expdate">' + BT.fmtDate(bet.expires) + '</span></div>' +
+        '<div class="clock" data-clock>' +
+          '<div class="unit"><div class="num" data-d>--</div><div class="lab">Days</div></div>' +
+          '<div class="unit"><div class="num" data-h>--</div><div class="lab">Hrs</div></div>' +
+          '<div class="unit"><div class="num" data-m>--</div><div class="lab">Min</div></div>' +
+          '<div class="unit"><div class="num" data-s>--</div><div class="lab">Sec</div></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="legs">' +
+        (bet.winRule ? '<div class="win-rule ' + state + '">' + BT.TROPHY + '<span>' + BT.escapeHtml(bet.winRule) + '</span></div>' : '') +
+        '<div class="legs-head"><span>THE LEGS</span>' +
+          '<span class="legs-progress"><span class="' + state + '">' + hitCount + '/' + total + ' HIT</span><span class="need"> &middot; NEED ' + need + '</span></span></div>' +
+        legsHtml +
+      '</div>' +
+
+      '<div class="stakes">' +
+        '<div class="stakes-head">THE STAKES &middot; WINNER TAKES ALL</div>' +
+        '<div class="stake-grid">' +
+          '<div class="stake a"><div class="stake-who"><span class="chip"></span>' + BT.escapeHtml(bet.stakeA.who) + '</div>' +
+            '<div class="stake-text">' + BT.escapeHtml(bet.stakeA.text) + '</div><div class="stake-cap">' + BT.escapeHtml(bet.stakeA.caption) + '</div></div>' +
+          '<div class="stake b"><div class="stake-who"><span class="chip"></span>' + BT.escapeHtml(bet.stakeB.who) + '</div>' +
+            '<div class="stake-text">' + BT.escapeHtml(bet.stakeB.text) + '</div><div class="stake-cap">' + BT.escapeHtml(bet.stakeB.caption) + '</div></div>' +
+        '</div>' +
+      '</div>';
+
+    detail.appendChild(slip);
+
+    // ----- live countdown -----
+    var d = slip.querySelector('[data-d]'), h = slip.querySelector('[data-h]'),
+        m = slip.querySelector('[data-m]'), s = slip.querySelector('[data-s]');
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      var r = BT.remaining(bet.expires);
+      d.textContent = String(r.d); h.textContent = pad(r.h); m.textContent = pad(r.m); s.textContent = pad(r.s);
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+  </script>
+</body>
+</html>
