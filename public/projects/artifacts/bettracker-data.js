@@ -32,7 +32,7 @@ window.BETTRACKER_BETS = [
     },
     legs: [
       { text: "Wembanyama wins a unanimous MVP before 2029", status: "pending" },
-      { text: "Orioles take zero shutout losses in 2026", status: "pending" },
+      { text: "Orioles take zero shutout losses in 2026", status: "impossible" },
       { text: "Mendoza is out of the league within 2 years", status: "pending" },
       { text: "Packers win the Super Bowl by 2029", status: "pending" }
     ]
