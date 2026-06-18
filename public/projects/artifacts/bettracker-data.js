@@ -33,12 +33,12 @@ window.BETTRACKER_BETS = [
     legs: [
       { text: "Wembanyama wins a unanimous MVP before 2029", status: "pending" },
       { text: "Orioles take zero shutout losses in 2026", status: "impossible" },
-      { text: "Mendoza is out of the league within 2 years", status: "pending" },
+      { text: "Fernando Mendoza out of the NFL within 2 years", status: "pending" },
       { text: "Packers win the Super Bowl by 2029", status: "pending" }
     ],
     odds: {
-      overall: "-150",
-      overallPct: "~60%",
+      overall: "-105",
+      overallPct: "~51%",
       overallNote: "Q to win the bet",
       legs: [
         {
@@ -54,10 +54,10 @@ window.BETTRACKER_BETS = [
           analysis: "This leg died on June 16, 2026. Poured one out for Q's most ambitious leg. In hindsight, betting that a baseball team wouldn't get shut out for an entire 162-game season was always unhinged. Very on-brand for Q."
         },
         {
-          pct: "15%",
+          pct: "7%",
           status: "pending",
-          title: "Mendoza — Out of the League in 2 Years",
-          analysis: "This one's vague enough to be dangerous. Which Mendoza? If it's a fringe player, guys wash out all the time. If it's someone established, two years is a long time to fall off a cliff. The ambiguity here actually works in Q's favor — but 'out of the league' is a high bar. Injured reserve doesn't count."
+          title: "Mendoza — Out of the NFL in 2 Years",
+          analysis: "Q is betting against a Heisman-winning, undefeated national champion who went #1 overall to the Raiders. Even JaMarcus Russell — the gold standard for QB busts — lasted 3 years. For Mendoza to be OUT of the league by 2028, he'd need to make JaMarcus look like a success story. Raiders gonna Raider, but this is a reach."
         },
         {
           pct: "30%",
@@ -66,7 +66,7 @@ window.BETTRACKER_BETS = [
           analysis: "Green Bay is +1400 for the 2027 Super Bowl — tied for 7th best. Jordan Love has the weapons, the division is winnable, and they get 3 shots at it (2027, 2028, 2029 seasons). Historically, any top-10 team has roughly a 10-12% shot per year. Over 3 years that compounds to about 30%. This is Q's best live leg."
         }
       ],
-      verdict: "With one leg already dead, Q needs to hit 1 of 3. The Packers alone give him a ~30% shot, and Wemby adds another 25%. Combined probability of hitting at least one: roughly 60%. Q is the favorite here — but Mitch isn't drawing dead."
+      verdict: "With one leg already dead, Q needs to hit 1 of 3. The Packers carry him at ~30% and Wemby adds another 25%, but the Mendoza leg has quietly collapsed — betting a #1 overall Heisman QB washes out in two years is worth maybe 7%. Combined probability of hitting at least one: roughly 51%. Q is still the favorite, but this has slipped from a comfortable -150 to basically a coin flip. Mitch is right back in it."
     }
   }
 ];
