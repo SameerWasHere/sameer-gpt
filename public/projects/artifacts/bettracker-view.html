@@ -150,6 +150,41 @@
 
     detail.appendChild(slip);
 
+    // ----- odds & analysis card -----
+    if (bet.odds) {
+      var o = bet.odds;
+      var oddsLegsHtml = o.legs.map(function (l) {
+        var isBust = l.status === 'impossible';
+        return '<div class="olg ' + l.status + '">' +
+          '<div class="olg-pct"><span class="n">' + BT.escapeHtml(l.pct) + '</span>' +
+            '<span class="lab">' + (isBust ? 'DEAD' : 'TO HIT') + '</span></div>' +
+          '<div class="olg-body">' +
+            '<div class="olg-title">' + BT.escapeHtml(l.title) + '</div>' +
+            '<div class="olg-analysis">' + BT.escapeHtml(l.analysis) + '</div>' +
+          '</div></div>';
+      }).join('');
+
+      var odds = document.createElement('section');
+      odds.className = 'odds';
+      odds.innerHTML =
+        '<div class="odds-head"><span class="ico">📊</span>HOUSE ODDS &amp; ANALYSIS<span class="by">THE BOOK</span></div>' +
+        '<div class="odds-overall">' +
+          '<div class="big">' + BT.escapeHtml(o.overall) + '</div>' +
+          '<div class="meta">' +
+            '<div class="who">' + BT.escapeHtml(o.overallNote) + '</div>' +
+            '<div class="imp"><b>' + BT.escapeHtml(o.overallPct) + '</b> IMPLIED</div>' +
+            '<div class="tagline">Q is the favorite to take it down.</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="odds-legs">' + oddsLegsHtml + '</div>' +
+        (o.verdict ?
+          '<div class="odds-verdict"><div class="vh">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>' +
+            'THE VERDICT</div><p>' + BT.escapeHtml(o.verdict) + '</p></div>' : '');
+
+      detail.appendChild(odds);
+    }
+
     // ----- live countdown -----
     var d = slip.querySelector('[data-d]'), h = slip.querySelector('[data-h]'),
         m = slip.querySelector('[data-m]'), s = slip.querySelector('[data-s]');

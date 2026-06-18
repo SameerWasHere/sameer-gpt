@@ -298,6 +298,92 @@ body {
 .stake-cap { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; letter-spacing: 0.1em;
   color: var(--faint); text-transform: uppercase; margin-top: 9px; }
 
+/* ===== Odds & analysis card (detail page) ===== */
+.odds {
+  margin-top: 22px;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(0,230,118,0.06), transparent 55%),
+    linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line); border-radius: 18px; overflow: hidden;
+  position: relative;
+  box-shadow: 0 24px 60px -28px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04);
+  opacity: 0; transform: translateY(22px);
+  animation: rise 0.7s var(--ease) 0.12s forwards;
+}
+.odds-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 16px 22px; border-bottom: 1px solid var(--line-soft);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+  background: rgba(0,0,0,0.18);
+}
+.odds-head .ico { font-size: 14px; line-height: 1; }
+.odds-head .by { margin-left: auto; color: var(--faint); letter-spacing: 0.12em; font-weight: 700; }
+
+/* prominent overall line */
+.odds-overall {
+  display: flex; align-items: center; gap: 16px;
+  padding: 20px 22px; border-bottom: 1px solid var(--line-soft);
+}
+.odds-overall .big {
+  font-family: 'Anton', sans-serif; font-size: clamp(44px, 13vw, 60px); line-height: 0.9;
+  color: var(--green); text-shadow: 0 0 26px var(--green-glow); letter-spacing: 0.01em;
+}
+.odds-overall .meta { min-width: 0; }
+.odds-overall .meta .who {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint);
+}
+.odds-overall .meta .imp {
+  font-family: 'Anton', sans-serif; font-size: clamp(22px, 6vw, 28px); line-height: 1;
+  text-transform: uppercase; margin-top: 6px; color: var(--text);
+}
+.odds-overall .meta .imp b { color: var(--green); }
+.odds-overall .meta .tagline {
+  font-size: 12px; color: var(--muted); margin-top: 7px; line-height: 1.4; font-weight: 500;
+}
+
+/* per-leg odds rows */
+.odds-legs { padding: 4px 22px 6px; }
+.olg {
+  display: flex; align-items: flex-start; gap: 16px; padding: 16px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.olg:first-child { border-top: none; }
+.olg-pct {
+  flex-shrink: 0; width: 78px; text-align: center;
+  font-family: 'Anton', sans-serif; line-height: 0.92; letter-spacing: 0.005em;
+}
+.olg-pct .n { font-size: clamp(30px, 9vw, 40px); display: block; }
+.olg-pct .lab {
+  font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5px; display: block; color: var(--faint);
+}
+.olg.pending .olg-pct .n { color: var(--gold); text-shadow: 0 0 18px var(--gold-glow); }
+.olg.hit .olg-pct .n { color: var(--green); text-shadow: 0 0 18px var(--green-glow); }
+.olg.impossible .olg-pct .n { font-size: clamp(15px, 4.6vw, 18px); color: var(--red); padding-top: 6px; }
+.olg-body { flex: 1; min-width: 0; }
+.olg-title {
+  font-weight: 800; font-size: 14px; letter-spacing: 0.01em; line-height: 1.25;
+}
+.olg.impossible .olg-title { color: var(--muted); }
+.olg-analysis {
+  font-size: 12.5px; line-height: 1.5; color: var(--muted); font-weight: 400; margin-top: 7px;
+}
+
+/* verdict */
+.odds-verdict {
+  margin: 4px 16px 18px; padding: 15px 16px; border-radius: 12px;
+  background: rgba(0,230,118,0.06); border: 1px solid rgba(0,230,118,0.22);
+}
+.odds-verdict .vh {
+  display: flex; align-items: center; gap: 7px; margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--green);
+}
+.odds-verdict .vh svg { width: 14px; height: 14px; }
+.odds-verdict p { font-size: 13.5px; line-height: 1.55; color: var(--text); font-weight: 500; }
+
 /* ===== Summary card (home feed) ===== */
 .summary {
   display: block; text-decoration: none; color: inherit;
