@@ -189,16 +189,30 @@
     /* ---------- Edit controls (only visible when unlocked) ---------- */
     body:not(.unlocked) .edit-only { display: none !important; }
 
-    .card-edit { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
-    .grip { display: inline-flex; color: var(--ink-3); cursor: grab; flex: 0 0 auto; }
-    .grip svg { width: 15px; height: 15px; }
+    .card-edit { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+    .reorder { display: inline-flex; gap: 5px; flex: 0 0 auto; }
+    .move-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 30px; border: 1px solid var(--line); border-radius: 8px;
+      background: rgba(255,255,255,0.5); color: var(--ink-2); cursor: pointer;
+      transition: color .2s, border-color .2s, background .2s; -webkit-tap-highlight-color: transparent;
+    }
+    .move-btn svg { width: 15px; height: 15px; }
+    .move-btn:hover { color: var(--ink); border-color: var(--gold-soft); }
+    .move-btn:active { background: rgba(154,118,58,0.14); }
+    .move-btn[disabled] { opacity: 0.3; cursor: default; pointer-events: none; }
+    /* grip = desktop drag handle; touch devices reorder with the arrows */
+    .grip { display: inline-flex; margin-left: auto; color: var(--ink-3); cursor: grab; flex: 0 0 auto; -webkit-tap-highlight-color: transparent; }
+    .grip svg { width: 16px; height: 16px; }
+    .grip:active { cursor: grabbing; }
+    @media (hover: none) and (pointer: coarse) { .grip { display: none; } }
     .promote-btn {
       font-family: var(--mono); font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
       color: var(--gold-deep); background: none; border: 1px solid var(--gold-soft); border-radius: 100px;
       padding: 6px 12px; cursor: pointer; transition: background .25s, color .25s;
     }
     .promote-btn:hover { background: rgba(154,118,58,0.12); color: var(--ink); }
-    .remove-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; transition: color .2s; }
+    .remove-btn { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; transition: color .2s; }
     .remove-btn svg { width: 14px; height: 14px; }
     .remove-btn:hover { color: var(--danger); }
 
@@ -210,8 +224,6 @@
     /* drag states */
     .card.dragging { opacity: 0.94; pointer-events: none; box-shadow: var(--shadow-hover); transform: scale(1.015) rotate(-0.4deg); z-index: 6; cursor: grabbing; }
     body.reordering { -webkit-user-select: none; user-select: none; }
-    body.unlocked .grid .card { cursor: grab; }
-    body.unlocked .grid .card.pending { cursor: grab; }
 
     /* ---------- Add-by-link form ---------- */
     .add-watch { margin-top: 20px; }
@@ -385,6 +397,8 @@
     var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
     var GRIP = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
     var XMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    var ARROW_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
+    var ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
     function lockIcon(open) {
       return open
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-1.9"/></svg>'
@@ -441,8 +455,12 @@
     }
     function editBar(isPending) {
       return '<div class="card-edit edit-only">' +
-        '<span class="grip" aria-hidden="true">' + GRIP + '</span>' +
+        '<div class="reorder">' +
+          '<button class="move-btn move-up" type="button" aria-label="Move up">' + ARROW_UP + '</button>' +
+          '<button class="move-btn move-down" type="button" aria-label="Move down">' + ARROW_DOWN + '</button>' +
+        '</div>' +
         '<button class="promote-btn" type="button">Add to Collection</button>' +
+        '<span class="grip" aria-hidden="true" title="Drag to reorder">' + GRIP + '</span>' +
         (isPending ? '<button class="remove-btn" type="button" aria-label="Remove">' + XMARK + '</button>' : '') +
       '</div>';
     }
@@ -523,6 +541,26 @@
         holder.innerHTML = cardHtml(w, false);
         wishGrid.appendChild(holder.firstChild);
       });
+      updateMoveButtons();
+    }
+    function updateMoveButtons() {
+      var cards = wishGrid.querySelectorAll('.card');
+      Array.prototype.forEach.call(cards, function (c, i) {
+        var up = c.querySelector('.move-up'), dn = c.querySelector('.move-down');
+        if (up) up.disabled = (i === 0);
+        if (dn) dn.disabled = (i === cards.length - 1);
+      });
+    }
+    function moveCard(id, delta) {
+      var ids = Array.prototype.map.call(wishGrid.querySelectorAll('.card'), function (c) { return c.dataset.id; });
+      var i = ids.indexOf(id);
+      if (i < 0) return;
+      var j = i + delta;
+      if (j < 0 || j >= ids.length) return;
+      var t = ids[i]; ids[i] = ids[j]; ids[j] = t;
+      state.wishlistOrder = ids;
+      saveState();
+      render();
     }
     function setStats(coll, wish, animate) {
       var ownedTotal = coll.reduce(function (s, w) { return s + (w.price || 0); }, 0);
@@ -651,6 +689,8 @@
       if (!unlocked) return;
       var card = e.target.closest('.card'); if (!card) return;
       var id = card.dataset.id;
+      if (e.target.closest('.move-up')) { moveCard(id, -1); return; }
+      if (e.target.closest('.move-down')) { moveCard(id, 1); return; }
       if (e.target.closest('.promote-btn')) {
         var model = card.querySelector('.model');
         var name = model ? model.textContent.trim() : 'this watch';
@@ -675,14 +715,13 @@
       }
     });
 
-    // ---------- drag to reorder (pointer + long-press) ----------
+    // ---------- desktop drag to reorder (grip handle, mouse/pen only) ----------
+    // Touch devices reorder with the up/down arrow buttons, which avoids the
+    // long-press-vs-scroll conflict entirely.
     (function () {
-      var dragEl = null, dragging = false, pointerId = null, isTouch = false;
-      var startX = 0, startY = 0, pressTimer = null;
+      var dragEl = null, dragging = false, pointerId = null, startX = 0, startY = 0;
 
-      function clearPress() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
       function reset() {
-        clearPress();
         document.removeEventListener('pointermove', onMove);
         document.removeEventListener('pointerup', onUp);
         document.removeEventListener('pointercancel', onUp);
@@ -692,7 +731,6 @@
       }
       function activate() {
         if (dragging || !dragEl) return;
-        clearPress();
         dragging = true;
         try { dragEl.setPointerCapture(pointerId); } catch (e) {}
         dragEl.classList.add('dragging');
@@ -712,35 +750,30 @@
       function onMove(e) {
         if (!dragEl) return;
         if (!dragging) {
-          var dx = Math.abs(e.clientX - startX), dy = Math.abs(e.clientY - startY);
-          if (isTouch) { if (dx > 10 || dy > 10) reset(); return; } // moved before long-press → it's a scroll
-          if (dx > 6 || dy > 6) activate(); else return;
+          if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) activate();
+          else return;
         }
         e.preventDefault();
         reorderTo(e.clientX, e.clientY);
       }
       function onUp() {
         if (dragging) {
-          var ids = [].slice.call(wishGrid.querySelectorAll('.card')).map(function (c) { return c.dataset.id; });
-          state.wishlistOrder = ids;
+          state.wishlistOrder = [].slice.call(wishGrid.querySelectorAll('.card')).map(function (c) { return c.dataset.id; });
           saveState();
         }
         reset();
       }
       wishGrid.addEventListener('pointerdown', function (e) {
-        if (!unlocked || e.button === 1 || e.button === 2) return;
+        if (!unlocked || e.pointerType === 'touch' || e.button !== 0) return;
+        if (!e.target.closest('.grip')) return; // drag only from the grip handle
         var card = e.target.closest('.card');
         if (!card || !wishGrid.contains(card)) return;
-        if (e.target.closest('button, a, input, textarea, select, .no-drag')) return;
         dragEl = card; pointerId = e.pointerId; startX = e.clientX; startY = e.clientY;
-        isTouch = (e.pointerType === 'touch');
-        if (isTouch) pressTimer = setTimeout(activate, 320);
+        e.preventDefault();
         document.addEventListener('pointermove', onMove);
         document.addEventListener('pointerup', onUp);
         document.addEventListener('pointercancel', onUp);
       });
-      // block native touch scrolling only while a drag is actually active
-      document.addEventListener('touchmove', function (e) { if (dragging) e.preventDefault(); }, { passive: false });
     })();
 
     // ---------- boot ----------
