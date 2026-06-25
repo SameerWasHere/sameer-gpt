@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>The Watch Box — Collection &amp; Wishlist</title>
-  <meta name="description" content="An elegant ledger of watches owned and watches wanted. Specs, references, and the damage.">
+  <meta name="description" content="An elegant ledger of watches owned and watches wanted — a chronological collection timeline and a running wishlist.">
   <meta property="og:title" content="The Watch Box — Collection &amp; Wishlist">
-  <meta property="og:description" content="An elegant ledger of watches owned and watches wanted. Specs, references, and the damage.">
+  <meta property="og:description" content="An elegant ledger of watches owned and watches wanted — a chronological collection timeline and a running wishlist.">
   <meta property="og:image" content="/projects/images/watches.png">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #0a0e16;
@@ -33,7 +33,6 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     html { -webkit-text-size-adjust: 100%; }
 
     body {
@@ -56,238 +55,177 @@
       content: ""; position: absolute; inset: 0;
       background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
       background-size: 22px 22px;
-      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
+              mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
     }
 
-    .wrap {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 0 20px 80px;
-    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px 90px; }
 
     /* ---------- Top bar ---------- */
     .topbar {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 26px 0 22px;
-      border-bottom: 1px solid var(--line-soft);
+      padding: 26px 0 22px; border-bottom: 1px solid var(--line-soft);
     }
     .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
     .brand-mark {
       width: 40px; height: 40px; border-radius: 50%;
-      border: 1px solid var(--gold-dim);
-      display: grid; place-items: center;
+      border: 1px solid var(--gold-dim); display: grid; place-items: center;
       background: radial-gradient(circle at 35% 30%, rgba(197,167,110,0.22), transparent 70%);
     }
     .brand-mark svg { width: 22px; height: 22px; }
-    .brand-name {
-      font-family: var(--serif); font-size: 21px; font-weight: 600;
-      letter-spacing: 0.5px; color: var(--ink);
-    }
+    .brand-name { font-family: var(--serif); font-size: 21px; font-weight: 600; letter-spacing: 0.5px; color: var(--ink); }
     .brand-name span { color: var(--gold); }
-    .brand-sub {
-      font-family: var(--mono); font-size: 9.5px; letter-spacing: 2.4px;
-      color: var(--ink-3); text-transform: uppercase; margin-top: 1px;
-    }
+    .brand-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: 2.4px; color: var(--ink-3); text-transform: uppercase; margin-top: 1px; }
     .crown-pill {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px;
-      color: var(--gold); text-transform: uppercase;
-      border: 1px solid var(--line); border-radius: 100px;
-      padding: 6px 12px; white-space: nowrap;
+      font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px; color: var(--gold);
+      text-transform: uppercase; border: 1px solid var(--line); border-radius: 100px; padding: 6px 12px; white-space: nowrap;
     }
 
     /* ---------- Hero ---------- */
-    .hero { text-align: center; padding: 64px 0 48px; }
-    .hero .eyebrow {
-      font-family: var(--mono); font-size: 11px; letter-spacing: 4px;
-      color: var(--gold); text-transform: uppercase; margin-bottom: 20px;
-    }
-    .hero h1 {
-      font-family: var(--serif); font-weight: 500;
-      font-size: clamp(42px, 12vw, 84px); line-height: 0.98;
-      letter-spacing: -0.5px;
-    }
+    .hero { text-align: center; padding: 60px 0 44px; }
+    .hero .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 4px; color: var(--gold); text-transform: uppercase; margin-bottom: 20px; }
+    .hero h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(42px, 12vw, 84px); line-height: 0.98; letter-spacing: -0.5px; }
     .hero h1 em { font-style: italic; color: var(--gold-bright); }
-    .hero .lede {
-      max-width: 480px; margin: 22px auto 0;
-      color: var(--ink-2); font-size: 15px; font-weight: 300;
-    }
-    .rule {
-      width: 60px; height: 1px; margin: 34px auto 0;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    }
+    .hero .lede { max-width: 490px; margin: 22px auto 0; color: var(--ink-2); font-size: 15px; font-weight: 300; }
+    .rule { width: 60px; height: 1px; margin: 34px auto 0; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 
     /* ---------- Stats ---------- */
-    .stats {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-      margin-top: 44px;
-    }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 44px; }
     .stat {
       border: 1px solid var(--line); border-radius: 16px;
       background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      padding: 24px 22px; text-align: center;
-      position: relative; overflow: hidden;
+      padding: 24px 22px; text-align: center; position: relative; overflow: hidden;
     }
-    .stat::before {
-      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
-    }
-    .stat .label {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 2.4px;
-      color: var(--ink-3); text-transform: uppercase;
-    }
-    .stat .value {
-      font-family: var(--serif); font-weight: 600;
-      font-size: clamp(30px, 9vw, 46px); color: var(--ink);
-      margin-top: 8px; letter-spacing: -0.5px;
-    }
+    .stat::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-dim), transparent); }
+    .stat .label { font-family: var(--mono); font-size: 10px; letter-spacing: 2.4px; color: var(--ink-3); text-transform: uppercase; }
+    .stat .value { font-family: var(--serif); font-weight: 600; font-size: clamp(30px, 9vw, 46px); color: var(--ink); margin-top: 8px; letter-spacing: -0.5px; }
     .stat .value .cur { color: var(--gold); font-size: 0.62em; vertical-align: super; }
-    .stat .sub {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 1.2px;
-      color: var(--ink-3); margin-top: 6px; text-transform: uppercase;
-    }
+    .stat .sub { font-family: var(--mono); font-size: 10px; letter-spacing: 1.2px; color: var(--ink-3); margin-top: 6px; text-transform: uppercase; }
 
     /* ---------- Section heads ---------- */
-    .section { margin-top: 72px; }
-    .section-head {
-      display: flex; align-items: baseline; gap: 16px;
-      padding-bottom: 22px; margin-bottom: 30px;
-      border-bottom: 1px solid var(--line);
-    }
-    .section-head .idx {
-      font-family: var(--mono); font-size: 12px; color: var(--gold);
-      letter-spacing: 1px;
-    }
-    .section-head h2 {
-      font-family: var(--serif); font-weight: 500;
-      font-size: clamp(26px, 7vw, 38px); letter-spacing: -0.3px;
-    }
-    .section-head .count {
-      margin-left: auto; font-family: var(--mono); font-size: 11px;
-      letter-spacing: 1.6px; color: var(--ink-3); text-transform: uppercase;
-    }
+    .section { margin-top: 76px; }
+    .section-head { display: flex; align-items: baseline; gap: 16px; padding-bottom: 22px; margin-bottom: 38px; border-bottom: 1px solid var(--line); }
+    .section-head .idx { font-family: var(--mono); font-size: 12px; color: var(--gold); letter-spacing: 1px; }
+    .section-head h2 { font-family: var(--serif); font-weight: 500; font-size: clamp(26px, 7vw, 38px); letter-spacing: -0.3px; }
+    .section-head .count { margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: 1.6px; color: var(--ink-3); text-transform: uppercase; }
 
-    /* ---------- Grid + cards ---------- */
-    .grid {
-      display: grid; grid-template-columns: 1fr; gap: 16px;
-    }
-
+    /* ---------- Card ---------- */
     .card {
-      position: relative;
+      position: relative; display: flex; gap: 18px; text-align: left;
       border: 1px solid var(--line-soft); border-radius: 18px;
       background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%);
-      padding: 26px 24px 22px; overflow: hidden;
+      padding: 22px; overflow: hidden;
       transition: transform .5s cubic-bezier(.16,1,.3,1), border-color .4s, box-shadow .5s;
-      opacity: 0; transform: translateY(26px);
     }
-    .card.in { opacity: 1; transform: translateY(0); }
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: var(--line);
-      box-shadow: 0 24px 50px -28px rgba(0,0,0,0.8), 0 0 0 1px var(--line);
-    }
-    .card::before {
-      content: ""; position: absolute; left: 0; top: 22px; bottom: 22px; width: 2px;
-      background: linear-gradient(180deg, var(--gold), transparent);
-      opacity: 0; transition: opacity .4s;
-    }
+    .card:hover { border-color: var(--line); box-shadow: 0 24px 50px -28px rgba(0,0,0,0.8); }
+    .card::before { content: ""; position: absolute; left: 0; top: 22px; bottom: 22px; width: 2px; background: linear-gradient(180deg, var(--gold), transparent); opacity: 0; transition: opacity .4s; }
     .card:hover::before { opacity: 1; }
 
-    /* watch-face flourish in the corner */
-    .face {
-      position: absolute; top: -28px; right: -28px;
-      width: 130px; height: 130px; opacity: 0.10;
-      pointer-events: none;
+    .shot {
+      flex: 0 0 104px; align-self: stretch; min-height: 150px;
+      display: grid; place-items: center; position: relative;
     }
-    .card:hover .face { opacity: 0.18; }
-    .face svg { width: 100%; height: 100%; }
+    .shot::before {
+      content: ""; position: absolute; inset: 8% 0; border-radius: 50%;
+      background: radial-gradient(circle at 50% 42%, rgba(197,167,110,0.20), transparent 65%);
+    }
+    .shot img {
+      position: relative; max-width: 100%; max-height: 168px; width: auto;
+      object-fit: contain; filter: drop-shadow(0 14px 22px rgba(0,0,0,0.55));
+    }
+    .shot .placeholder { position: relative; width: 78px; height: 78px; opacity: 0.5; }
+    .shot .placeholder svg { width: 100%; height: 100%; }
 
-    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-    .brand-line {
-      font-family: var(--mono); font-size: 10.5px; letter-spacing: 2.6px;
-      color: var(--gold); text-transform: uppercase;
-    }
-    .ref {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px;
-      color: var(--ink-3);
-      border: 1px solid var(--line-soft); border-radius: 6px;
-      padding: 4px 8px; white-space: nowrap;
-    }
-    .model {
-      font-family: var(--serif); font-weight: 600;
-      font-size: clamp(26px, 7vw, 34px); line-height: 1.04;
-      margin-top: 10px; letter-spacing: -0.4px;
-      position: relative; z-index: 2;
-      max-width: 78%;
-    }
+    .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .brand-line { font-family: var(--mono); font-size: 10px; letter-spacing: 2.4px; color: var(--gold); text-transform: uppercase; }
+    .ref { font-family: var(--mono); font-size: 9px; letter-spacing: 0.3px; color: var(--ink-3); border: 1px solid var(--line-soft); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+    .model { font-family: var(--serif); font-weight: 600; font-size: clamp(23px, 5.5vw, 29px); line-height: 1.05; margin-top: 8px; letter-spacing: -0.3px; }
 
-    .swatch-row { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
-    .swatch {
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.22);
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.25);
-    }
-    .dial-label {
-      font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
-      color: var(--ink-3); text-transform: uppercase;
-    }
-    .type-tag {
-      margin-left: auto;
-      font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.6px;
-      color: var(--gold-dim); text-transform: uppercase;
-      border: 1px solid var(--line); border-radius: 100px; padding: 4px 10px;
-    }
+    .swatch-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .swatch { width: 13px; height: 13px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.22); box-shadow: inset 0 1px 2px rgba(255,255,255,0.25); flex: 0 0 auto; }
+    .dial-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.2px; color: var(--ink-3); text-transform: uppercase; }
+    .type-tag { font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; color: var(--gold-dim); text-transform: uppercase; border: 1px solid var(--line); border-radius: 100px; padding: 3px 9px; }
 
-    .specs {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-      margin-top: 20px; padding-top: 18px;
-      border-top: 1px solid var(--line-soft);
-    }
-    .spec .k {
-      font-family: var(--mono); font-size: 9px; letter-spacing: 1.6px;
-      color: var(--ink-3); text-transform: uppercase;
-    }
-    .spec .v {
-      font-size: 13px; color: var(--ink); margin-top: 4px; font-weight: 500;
-      line-height: 1.25;
-    }
+    .meta-line { font-family: var(--mono); font-size: 11px; letter-spacing: 0.4px; color: var(--ink-2); margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
+    .meta-line .dot { color: var(--gold-dim); margin: 0 6px; }
 
-    .card-foot {
-      display: flex; align-items: flex-end; justify-content: space-between;
-      margin-top: 20px;
-    }
-    .price {
-      font-family: var(--serif); font-weight: 600; font-size: 26px;
-      color: var(--ink); letter-spacing: -0.3px;
-    }
+    .card-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 16px; }
+    .price { font-family: var(--serif); font-weight: 600; font-size: 24px; color: var(--ink); letter-spacing: -0.3px; white-space: nowrap; }
     .price .cur { color: var(--gold); font-size: 0.62em; vertical-align: super; margin-right: 1px; }
-    .price-label {
-      font-family: var(--mono); font-size: 9px; letter-spacing: 1.6px;
-      color: var(--ink-3); text-transform: uppercase; margin-bottom: 4px;
+    .price.poa { font-size: 15px; font-family: var(--mono); font-weight: 400; letter-spacing: 1px; color: var(--gold-dim); text-transform: uppercase; }
+    .price-label { font-family: var(--mono); font-size: 8.5px; letter-spacing: 1.5px; color: var(--ink-3); text-transform: uppercase; margin-bottom: 4px; }
+    .owned-mark { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; color: var(--gold); text-transform: uppercase; }
+    .owned-mark svg { width: 12px; height: 12px; }
+
+    /* ---------- Timeline ---------- */
+    .timeline { position: relative; margin-top: 4px; }
+    .timeline::before {
+      content: ""; position: absolute; top: 6px; bottom: 6px; left: 50%; width: 1px;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, transparent, var(--gold-dim) 6%, var(--gold-dim) 94%, transparent);
     }
 
-    /* tiny gold corner mark for owned pieces */
-    .owned-mark {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.6px;
-      color: var(--gold); text-transform: uppercase;
-    }
-    .owned-mark svg { width: 13px; height: 13px; }
+    .tl-item { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 70px minmax(0,1fr); align-items: center; margin-bottom: 30px; }
+    .tl-item:last-child { margin-bottom: 0; }
+    .tl-axis { grid-column: 2; display: flex; justify-content: center; }
+    .tl-dot { position: relative; width: 14px; height: 14px; border-radius: 50%; background: var(--bg-2); border: 1px solid var(--gold); box-shadow: 0 0 0 4px rgba(10,14,22,1), 0 0 14px rgba(197,167,110,0.5); }
+    .tl-dot::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold); }
+    /* horizontal connector from dot toward the card */
+    .tl-dot::after { content: ""; position: absolute; top: 50%; height: 1px; width: 28px; background: linear-gradient(90deg, var(--gold-dim), transparent); }
+    .tl-item[data-side="left"]  .tl-dot::after { right: 100%; background: linear-gradient(270deg, var(--gold-dim), transparent); }
+    .tl-item[data-side="right"] .tl-dot::after { left: 100%; }
 
-    .foot {
-      text-align: center; margin-top: 70px; padding-top: 28px;
-      border-top: 1px solid var(--line-soft);
-      font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
-      color: var(--ink-3); text-transform: uppercase;
-    }
+    .tl-content { display: flex; flex-direction: column; gap: 14px; padding: 0 30px;
+      opacity: 0; transform: translateY(26px); transition: opacity .6s ease, transform .6s cubic-bezier(.16,1,.3,1); }
+    .tl-item.in .tl-content { opacity: 1; transform: translateY(0); }
+    .tl-item[data-side="left"]  .tl-content { grid-column: 1; align-items: flex-end; }
+    .tl-item[data-side="right"] .tl-content { grid-column: 3; align-items: flex-start; }
+    .tl-content .card { width: 100%; }
+    .tl-item:hover .card { transform: translateY(-4px); }
+
+    .tl-date { display: flex; flex-direction: column; }
+    .tl-item[data-side="left"] .tl-date { align-items: flex-end; text-align: right; }
+    .tl-date .acq { font-family: var(--mono); font-size: 8.5px; letter-spacing: 2.2px; color: var(--ink-3); text-transform: uppercase; margin-bottom: 3px; }
+    .tl-date .day { font-family: var(--serif); font-weight: 600; font-size: 34px; line-height: 0.9; color: var(--gold-bright); }
+    .tl-date .my { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--ink-2); text-transform: uppercase; margin-top: 4px; }
+
+    /* ---------- Wishlist grid ---------- */
+    .grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 16px; }
+    .grid .card { opacity: 0; transform: translateY(26px); }
+    .grid .card.in { opacity: 1; transform: translateY(0); }
+    .grid .card.in:hover { transform: translateY(-4px); }
+
+    .foot { text-align: center; margin-top: 78px; padding-top: 28px; border-top: 1px solid var(--line-soft); font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--ink-3); text-transform: uppercase; }
     .foot a { color: var(--gold-dim); text-decoration: none; }
     .foot a:hover { color: var(--gold); }
 
     @media (min-width: 720px) {
-      .grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+      .grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; }
+    }
+
+    /* ---------- Mobile timeline: single rail on the left ---------- */
+    @media (max-width: 719px) {
+      .timeline::before { left: 19px; transform: none; }
+      .tl-item { grid-template-columns: 34px minmax(0,1fr); column-gap: 0; margin-bottom: 26px; }
+      .tl-axis { grid-column: 1; justify-content: flex-start; }
+      .tl-content { grid-column: 2 !important; align-items: stretch !important; padding: 0 0 0 8px; min-width: 0; }
+      /* stack every card on phones: image banner on top, details full-width below */
+      .card { flex-direction: column; gap: 14px; padding: 18px; }
+      .shot { flex: none; width: 100%; align-self: center; min-height: 150px; }
+      .shot::before { inset: 6% 26%; }
+      .shot img { max-height: 158px; }
+      .model { font-size: 25px; }
+      .tl-item .tl-dot::after { left: 100% !important; right: auto !important; background: linear-gradient(90deg, var(--gold-dim), transparent) !important; width: 12px; }
+      .tl-date { flex-direction: row; align-items: baseline !important; gap: 9px; text-align: left !important; }
+      .tl-date .acq { margin-bottom: 0; }
+      .tl-date .day { font-size: 22px; }
+      .tl-date .my { margin-top: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .card { transition: none; opacity: 1; transform: none; }
+      .card, .tl-content { transition: none; }
+      .grid .card, .tl-content { opacity: 1; transform: none; }
     }
   </style>
 </head>
@@ -315,7 +253,7 @@
     <section class="hero">
       <div class="eyebrow">Horology · No.&nbsp;01</div>
       <h1>Time, well<br><em>kept</em>.</h1>
-      <p class="lede">A small collection of mechanical things — the ones on the wrist, and the ones still on the list.</p>
+      <p class="lede">A small collection of mechanical things, told in order — the pieces on the wrist, and the ones still on the list.</p>
       <div class="rule"></div>
 
       <div class="stats">
@@ -338,7 +276,7 @@
         <h2>My Collection</h2>
         <span class="count" id="ownedHeadCount"></span>
       </div>
-      <div class="grid" id="ownedGrid"></div>
+      <div class="timeline" id="timeline"></div>
     </section>
 
     <section class="section">
@@ -358,17 +296,18 @@
   <script id="watch-data" type="application/json">
   {
     "collection": [
-      { "brand": "Hamilton", "model": "Khaki Pilot Day Date", "ref": "H64615135", "size": "42mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Black", "dialHex": "#1a1a1c", "type": "Pilot", "price": 1135 },
-      { "brand": "Seiko", "model": "Prospex Alpinist", "ref": "SPB121", "size": "39.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Green", "dialHex": "#2f4a32", "type": "Field", "price": 599 },
-      { "brand": "Casio", "model": "Vintage Multifinish", "ref": "A130WEG-9A", "size": "40.5mm", "movement": "Quartz", "material": "Resin / Gold", "dial": "Digital", "dialHex": "#c8b06a", "type": "Digital", "price": 92 },
-      { "brand": "Rolex", "model": "Submariner Date", "ref": "126610LN", "size": "41mm", "movement": "Automatic", "material": "Ceramic / Oystersteel", "dial": "Black", "dialHex": "#101012", "type": "Diver", "price": 12400 }
+      { "brand": "Hamilton", "model": "Khaki Pilot Day Date", "ref": "H64615135", "size": "42mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Black", "dialHex": "#1a1a1c", "type": "Pilot", "price": 1135, "img": "hamilton-pilot.png", "acquired": "2025-10-30" },
+      { "brand": "Seiko", "model": "Prospex Alpinist", "ref": "SPB121", "size": "39.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Green", "dialHex": "#2f4a32", "type": "Field", "price": 599, "img": "seiko-alpinist.png", "acquired": "2025-12-01" },
+      { "brand": "Casio", "model": "Vintage Multifinish", "ref": "A130WEG-9A", "size": "40.5mm", "movement": "Quartz", "material": "Steel / Gold", "dial": "Digital", "dialHex": "#c8b06a", "type": "Digital", "price": 92, "img": "casio-vintage.png", "acquired": "2025-12-07" },
+      { "brand": "Rolex", "model": "Submariner Date", "ref": "126610LN", "size": "41mm", "movement": "Automatic", "material": "Ceramic / Oystersteel", "dial": "Black", "dialHex": "#101012", "type": "Diver", "price": 10250, "img": "rolex-sub.png", "acquired": "2026-03-29" },
+      { "brand": "Seiko", "model": "Visually Impaired", "ref": "S23159", "size": "36mm", "movement": "Quartz", "material": "Steel · Leather Strap", "dial": "White", "dialHex": "#ece9e2", "type": "Classic", "price": null, "img": null, "acquired": "2026-04-02" }
     ],
     "wishlist": [
-      { "brand": "Omega", "model": "Speedmaster Moonwatch", "ref": "—", "size": "42mm", "movement": "Manual Wind", "material": "Stainless Steel", "dial": "Black", "dialHex": "#141416", "type": "Chronograph", "price": 6550 },
-      { "brand": "Tudor", "model": "Black Bay 58", "ref": "—", "size": "39mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Blue", "dialHex": "#1e3a63", "type": "Diver", "price": 3575 },
-      { "brand": "Grand Seiko", "model": "Shunbun", "ref": "SBGA413", "size": "40mm", "movement": "Automatic", "material": "Titanium", "dial": "Pink", "dialHex": "#e7c3c9", "type": "Dress", "price": 6300 },
-      { "brand": "Nomos Glashütte", "model": "Tangente 2date", "ref": "—", "size": "37.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": 2780 },
-      { "brand": "Oris", "model": "Pointer Date", "ref": "—", "size": "40mm", "movement": "Automatic", "material": "Steel / Bronze", "dial": "Blue", "dialHex": "#27466b", "type": "Field", "price": 2400 }
+      { "brand": "Omega", "model": "Speedmaster Moonwatch", "sub": "Silver Dial", "ref": "310.30.42.50.04.001", "size": "42mm", "movement": "Manual Wind", "material": "Stainless Steel", "dial": "Silver", "dialHex": "#c9ccd1", "type": "Chronograph", "price": 11100, "img": "omega-speedy.png" },
+      { "brand": "Grand Seiko", "model": "White Birch Bark", "ref": "SLGW003", "size": "39mm", "movement": "Automatic", "material": "Titanium", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": null, "img": null },
+      { "brand": "Cartier", "model": "Tank Louis Cartier", "ref": "WGTA0357", "size": "38mm", "movement": "Quartz", "material": "Solid Gold", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": null, "img": null },
+      { "brand": "Nomos Glashütte", "model": "Tangente 2date", "ref": "135", "size": "37.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": 2780, "img": "nomos-tangente.png" },
+      { "brand": "Grand Seiko", "model": "Shunbun", "ref": "SBGA413", "size": "40mm", "movement": "Spring Drive", "material": "Stainless Steel", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": 6300, "img": "grand-seiko-shunbun.png" }
     ]
   }
   </script>
@@ -376,69 +315,99 @@
   <script>
   (function () {
     var DATA = JSON.parse(document.getElementById('watch-data').textContent);
+    var IMG_BASE = '/projects/artifacts/watch-images/';
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    var FACE = '<svg viewBox="0 0 100 100" fill="none" stroke="#c5a76e" stroke-width="1">' +
-      '<circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="38" stroke-opacity="0.5"/>' +
-      '<path d="M50 50V24M50 50l16 9" stroke-width="1.4" stroke-linecap="round"/>' +
-      '<g stroke-opacity="0.7">' +
-      '<path d="M50 12v6M50 82v6M12 50h6M82 50h6"/>' +
-      '<path d="M79 29l-4 3M21 71l4-3M79 71l-4-3M21 29l4 3"/>' +
-      '</g></svg>';
-
+    var FACE = '<svg viewBox="0 0 100 100" fill="none" stroke="#c5a76e" stroke-width="1.4">' +
+      '<circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="36" stroke-opacity="0.5"/>' +
+      '<path d="M50 50V26M50 50l14 8" stroke-width="1.8" stroke-linecap="round"/>' +
+      '<g stroke-opacity="0.7"><path d="M50 12v6M50 82v6M12 50h6M82 50h6"/></g></svg>';
     var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 
-    function card(w, owned) {
-      var el = document.createElement('article');
-      el.className = 'card';
-      el.innerHTML =
-        '<div class="face">' + FACE + '</div>' +
-        '<div class="card-top">' +
-          '<div class="brand-line">' + w.brand + '</div>' +
-          '<div class="ref">' + (w.ref && w.ref !== '—' ? 'REF ' + w.ref : 'NO REF') + '</div>' +
-        '</div>' +
-        '<h3 class="model">' + w.model + '</h3>' +
-        '<div class="swatch-row">' +
-          '<span class="swatch" style="background:' + w.dialHex + '"></span>' +
-          '<span class="dial-label">' + w.dial + ' Dial</span>' +
-          '<span class="type-tag">' + w.type + '</span>' +
-        '</div>' +
-        '<div class="specs">' +
-          '<div class="spec"><div class="k">Case</div><div class="v">' + w.size + '</div></div>' +
-          '<div class="spec"><div class="k">Movement</div><div class="v">' + w.movement + '</div></div>' +
-          '<div class="spec"><div class="k">Material</div><div class="v">' + w.material + '</div></div>' +
-        '</div>' +
-        '<div class="card-foot">' +
-          (owned
-            ? '<span class="owned-mark">' + CHECK + ' In the Box</span>'
-            : '<div><div class="price-label">Target Price</div></div>') +
-          '<div style="text-align:right">' +
-            (owned ? '<div class="price-label">Paid</div>' : '') +
-            '<div class="price"><span class="cur">$</span>' + fmt(w.price) + '</div>' +
-          '</div>' +
-        '</div>';
-      return el;
+    function shotHtml(w) {
+      if (w.img) {
+        return '<div class="shot"><img src="' + IMG_BASE + esc(w.img) + '" alt="' + esc(w.brand + ' ' + w.model) + '" loading="lazy"></div>';
+      }
+      return '<div class="shot"><div class="placeholder">' + FACE + '</div></div>';
     }
 
-    var ownedGrid = document.getElementById('ownedGrid');
+    function priceHtml(w, owned) {
+      if (w.price == null) {
+        return owned
+          ? '<div style="text-align:right"><div class="price-label">Value</div><div class="price poa">In Hand</div></div>'
+          : '<div style="text-align:right"><div class="price-label">Price</div><div class="price poa">On Request</div></div>';
+      }
+      return '<div style="text-align:right">' +
+        '<div class="price-label">' + (owned ? 'Paid' : 'Target') + '</div>' +
+        '<div class="price"><span class="cur">$</span>' + fmt(w.price) + '</div></div>';
+    }
+
+    function cardHtml(w, owned) {
+      var footLead = owned
+        ? '<span class="owned-mark">' + CHECK + ' In the Box</span>'
+        : '<span class="owned-mark" style="color:var(--ink-3)">On the List</span>';
+      return '<article class="card">' +
+        shotHtml(w) +
+        '<div class="info">' +
+          '<div class="card-top">' +
+            '<span class="brand-line">' + esc(w.brand) + '</span>' +
+            '<span class="ref">' + (w.ref && w.ref !== '—' ? 'REF ' + esc(w.ref) : 'NO REF') + '</span>' +
+          '</div>' +
+          '<h3 class="model">' + esc(w.model) + (w.sub ? ' <span style="color:var(--gold-dim);font-style:italic;font-size:0.7em">“' + esc(w.sub) + '”</span>' : '') + '</h3>' +
+          '<div class="swatch-row">' +
+            '<span class="swatch" style="background:' + esc(w.dialHex) + '"></span>' +
+            '<span class="dial-label">' + esc(w.dial) + ' Dial</span>' +
+            '<span class="type-tag">' + esc(w.type) + '</span>' +
+          '</div>' +
+          '<div class="meta-line">' + esc(w.size) + '<span class="dot">·</span>' + esc(w.movement) + '<span class="dot">·</span>' + esc(w.material) + '</div>' +
+          '<div class="card-foot">' + footLead + priceHtml(w, owned) + '</div>' +
+        '</div>' +
+      '</article>';
+    }
+
+    // ----- Collection timeline -----
+    var timeline = document.getElementById('timeline');
+    DATA.collection.forEach(function (w, i) {
+      var side = (i % 2 === 0) ? 'left' : 'right';
+      var d = new Date(w.acquired + 'T00:00:00');
+      var item = document.createElement('div');
+      item.className = 'tl-item';
+      item.dataset.side = side;
+      item.innerHTML =
+        '<div class="tl-axis"><span class="tl-dot"></span></div>' +
+        '<div class="tl-content">' +
+          '<div class="tl-date">' +
+            '<span class="acq">Acquired</span>' +
+            '<span class="day">' + d.getDate() + '</span>' +
+            '<span class="my">' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</span>' +
+          '</div>' +
+          cardHtml(w, true) +
+        '</div>';
+      timeline.appendChild(item);
+    });
+
+    // ----- Wishlist grid -----
     var wishGrid = document.getElementById('wishGrid');
+    DATA.wishlist.forEach(function (w) {
+      var holder = document.createElement('div');
+      holder.innerHTML = cardHtml(w, false);
+      wishGrid.appendChild(holder.firstChild);
+    });
 
-    DATA.collection.forEach(function (w) { ownedGrid.appendChild(card(w, true)); });
-    DATA.wishlist.forEach(function (w) { wishGrid.appendChild(card(w, false)); });
-
-    var ownedTotal = DATA.collection.reduce(function (s, w) { return s + w.price; }, 0);
-    var wishTotal = DATA.wishlist.reduce(function (s, w) { return s + w.price; }, 0);
-
+    // ----- Stats -----
+    var ownedTotal = DATA.collection.reduce(function (s, w) { return s + (w.price || 0); }, 0);
+    var wishTotal = DATA.wishlist.reduce(function (s, w) { return s + (w.price || 0); }, 0);
     document.getElementById('ownedCount').textContent = DATA.collection.length;
     document.getElementById('wishCount').textContent = DATA.wishlist.length;
     document.getElementById('ownedHeadCount').textContent = DATA.collection.length + ' Pieces';
     document.getElementById('wishHeadCount').textContent = DATA.wishlist.length + ' Pieces';
 
-    // animated count-up for the value stats — with a guaranteed final value
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     function countUp(el, target) {
-      el.textContent = fmt(target); // fallback if rAF never fires (hidden tab, reduced motion)
+      el.textContent = fmt(target);
       if (reduceMotion || document.hidden) return;
       var start = null, dur = 1100;
       function step(ts) {
@@ -453,22 +422,17 @@
     countUp(document.getElementById('ownedVal'), ownedTotal);
     countUp(document.getElementById('wishVal'), wishTotal);
 
-    // reveal cards on scroll
-    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
-    if ('IntersectionObserver' in window) {
+    // ----- Scroll reveal -----
+    var reveal = [].slice.call(document.querySelectorAll('.tl-item, .grid .card'));
+    if ('IntersectionObserver' in window && !reduceMotion) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            var i = cards.indexOf(e.target);
-            e.target.style.transitionDelay = (Math.max(0, i % 2) * 0.08) + 's';
-            e.target.classList.add('in');
-            io.unobserve(e.target);
-          }
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
         });
-      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-      cards.forEach(function (c) { io.observe(c); });
+      }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
+      reveal.forEach(function (el) { io.observe(el); });
     } else {
-      cards.forEach(function (c) { c.classList.add('in'); });
+      reveal.forEach(function (el) { el.classList.add('in'); });
     }
   })();
   </script>
