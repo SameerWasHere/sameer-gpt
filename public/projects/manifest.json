@@ -1,6 +1,16 @@
 {
   "artifacts": [
     {
+      "id": "watches",
+      "title": "The Watch Box",
+      "description": "An elegant ledger of watches owned and watches wanted. Specs, references, and the damage.",
+      "category": "Collection",
+      "date": "2026-06-25",
+      "access": "public",
+      "filename": "watches.html",
+      "image": "watches.png"
+    },
+    {
       "id": "bettracker",
       "title": "Bet Tracker",
       "description": "A live ledger of standing wagers, styled like a real sportsbook. Bet slips, stakes, and countdowns.",

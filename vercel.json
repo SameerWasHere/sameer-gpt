@@ -10,6 +10,7 @@
     { "source": "/qmeter", "destination": "/projects/artifacts/qmeter.html" },
     { "source": "/bettracker", "destination": "/projects/artifacts/bettracker.html" },
     { "source": "/bettracker/:slug", "destination": "/projects/artifacts/bettracker-view.html" },
+    { "source": "/watches", "destination": "/projects/artifacts/watches.html" },
     { "source": "/projects", "destination": "/projects/projects.html" }
   ]
 }

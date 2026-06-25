@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>The Watch Box — Collection &amp; Wishlist</title>
+  <meta name="description" content="An elegant ledger of watches owned and watches wanted. Specs, references, and the damage.">
+  <meta property="og:title" content="The Watch Box — Collection &amp; Wishlist">
+  <meta property="og:description" content="An elegant ledger of watches owned and watches wanted. Specs, references, and the damage.">
+  <meta property="og:image" content="/projects/images/watches.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e16;
+      --bg-2: #0d1320;
+      --panel: #111927;
+      --panel-2: #0f1622;
+      --line: rgba(197, 167, 110, 0.16);
+      --line-soft: rgba(255, 255, 255, 0.06);
+      --gold: #c5a76e;
+      --gold-bright: #e6cd97;
+      --gold-dim: rgba(197, 167, 110, 0.55);
+      --ink: #eef2f8;
+      --ink-2: #aab4c4;
+      --ink-3: #6b7689;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .bg {
+      position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(1100px 600px at 50% -10%, rgba(197,167,110,0.10), transparent 60%),
+        radial-gradient(900px 700px at 100% 100%, rgba(45,72,120,0.18), transparent 55%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    }
+    .bg::after {
+      content: ""; position: absolute; inset: 0;
+      background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.025) 1px, transparent 0);
+      background-size: 22px 22px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000, transparent 75%);
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 26px 0 22px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-mark {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--gold-dim);
+      display: grid; place-items: center;
+      background: radial-gradient(circle at 35% 30%, rgba(197,167,110,0.22), transparent 70%);
+    }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .brand-name {
+      font-family: var(--serif); font-size: 21px; font-weight: 600;
+      letter-spacing: 0.5px; color: var(--ink);
+    }
+    .brand-name span { color: var(--gold); }
+    .brand-sub {
+      font-family: var(--mono); font-size: 9.5px; letter-spacing: 2.4px;
+      color: var(--ink-3); text-transform: uppercase; margin-top: 1px;
+    }
+    .crown-pill {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 1.6px;
+      color: var(--gold); text-transform: uppercase;
+      border: 1px solid var(--line); border-radius: 100px;
+      padding: 6px 12px; white-space: nowrap;
+    }
+
+    /* ---------- Hero ---------- */
+    .hero { text-align: center; padding: 64px 0 48px; }
+    .hero .eyebrow {
+      font-family: var(--mono); font-size: 11px; letter-spacing: 4px;
+      color: var(--gold); text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-family: var(--serif); font-weight: 500;
+      font-size: clamp(42px, 12vw, 84px); line-height: 0.98;
+      letter-spacing: -0.5px;
+    }
+    .hero h1 em { font-style: italic; color: var(--gold-bright); }
+    .hero .lede {
+      max-width: 480px; margin: 22px auto 0;
+      color: var(--ink-2); font-size: 15px; font-weight: 300;
+    }
+    .rule {
+      width: 60px; height: 1px; margin: 34px auto 0;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    /* ---------- Stats ---------- */
+    .stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-top: 44px;
+    }
+    .stat {
+      border: 1px solid var(--line); border-radius: 16px;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      padding: 24px 22px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .stat::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    }
+    .stat .label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 2.4px;
+      color: var(--ink-3); text-transform: uppercase;
+    }
+    .stat .value {
+      font-family: var(--serif); font-weight: 600;
+      font-size: clamp(30px, 9vw, 46px); color: var(--ink);
+      margin-top: 8px; letter-spacing: -0.5px;
+    }
+    .stat .value .cur { color: var(--gold); font-size: 0.62em; vertical-align: super; }
+    .stat .sub {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 1.2px;
+      color: var(--ink-3); margin-top: 6px; text-transform: uppercase;
+    }
+
+    /* ---------- Section heads ---------- */
+    .section { margin-top: 72px; }
+    .section-head {
+      display: flex; align-items: baseline; gap: 16px;
+      padding-bottom: 22px; margin-bottom: 30px;
+      border-bottom: 1px solid var(--line);
+    }
+    .section-head .idx {
+      font-family: var(--mono); font-size: 12px; color: var(--gold);
+      letter-spacing: 1px;
+    }
+    .section-head h2 {
+      font-family: var(--serif); font-weight: 500;
+      font-size: clamp(26px, 7vw, 38px); letter-spacing: -0.3px;
+    }
+    .section-head .count {
+      margin-left: auto; font-family: var(--mono); font-size: 11px;
+      letter-spacing: 1.6px; color: var(--ink-3); text-transform: uppercase;
+    }
+
+    /* ---------- Grid + cards ---------- */
+    .grid {
+      display: grid; grid-template-columns: 1fr; gap: 16px;
+    }
+
+    .card {
+      position: relative;
+      border: 1px solid var(--line-soft); border-radius: 18px;
+      background: linear-gradient(165deg, var(--panel) 0%, var(--panel-2) 100%);
+      padding: 26px 24px 22px; overflow: hidden;
+      transition: transform .5s cubic-bezier(.16,1,.3,1), border-color .4s, box-shadow .5s;
+      opacity: 0; transform: translateY(26px);
+    }
+    .card.in { opacity: 1; transform: translateY(0); }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--line);
+      box-shadow: 0 24px 50px -28px rgba(0,0,0,0.8), 0 0 0 1px var(--line);
+    }
+    .card::before {
+      content: ""; position: absolute; left: 0; top: 22px; bottom: 22px; width: 2px;
+      background: linear-gradient(180deg, var(--gold), transparent);
+      opacity: 0; transition: opacity .4s;
+    }
+    .card:hover::before { opacity: 1; }
+
+    /* watch-face flourish in the corner */
+    .face {
+      position: absolute; top: -28px; right: -28px;
+      width: 130px; height: 130px; opacity: 0.10;
+      pointer-events: none;
+    }
+    .card:hover .face { opacity: 0.18; }
+    .face svg { width: 100%; height: 100%; }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .brand-line {
+      font-family: var(--mono); font-size: 10.5px; letter-spacing: 2.6px;
+      color: var(--gold); text-transform: uppercase;
+    }
+    .ref {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px;
+      color: var(--ink-3);
+      border: 1px solid var(--line-soft); border-radius: 6px;
+      padding: 4px 8px; white-space: nowrap;
+    }
+    .model {
+      font-family: var(--serif); font-weight: 600;
+      font-size: clamp(26px, 7vw, 34px); line-height: 1.04;
+      margin-top: 10px; letter-spacing: -0.4px;
+      position: relative; z-index: 2;
+      max-width: 78%;
+    }
+
+    .swatch-row { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
+    .swatch {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.25);
+    }
+    .dial-label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px;
+      color: var(--ink-3); text-transform: uppercase;
+    }
+    .type-tag {
+      margin-left: auto;
+      font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.6px;
+      color: var(--gold-dim); text-transform: uppercase;
+      border: 1px solid var(--line); border-radius: 100px; padding: 4px 10px;
+    }
+
+    .specs {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+      margin-top: 20px; padding-top: 18px;
+      border-top: 1px solid var(--line-soft);
+    }
+    .spec .k {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 1.6px;
+      color: var(--ink-3); text-transform: uppercase;
+    }
+    .spec .v {
+      font-size: 13px; color: var(--ink); margin-top: 4px; font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .card-foot {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-top: 20px;
+    }
+    .price {
+      font-family: var(--serif); font-weight: 600; font-size: 26px;
+      color: var(--ink); letter-spacing: -0.3px;
+    }
+    .price .cur { color: var(--gold); font-size: 0.62em; vertical-align: super; margin-right: 1px; }
+    .price-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 1.6px;
+      color: var(--ink-3); text-transform: uppercase; margin-bottom: 4px;
+    }
+
+    /* tiny gold corner mark for owned pieces */
+    .owned-mark {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.6px;
+      color: var(--gold); text-transform: uppercase;
+    }
+    .owned-mark svg { width: 13px; height: 13px; }
+
+    .foot {
+      text-align: center; margin-top: 70px; padding-top: 28px;
+      border-top: 1px solid var(--line-soft);
+      font-family: var(--mono); font-size: 10px; letter-spacing: 2px;
+      color: var(--ink-3); text-transform: uppercase;
+    }
+    .foot a { color: var(--gold-dim); text-decoration: none; }
+    .foot a:hover { color: var(--gold); }
+
+    @media (min-width: 720px) {
+      .grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="/projects">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c5a76e" stroke-width="1.6">
+            <circle cx="12" cy="13" r="7"/>
+            <path d="M12 13V9M12 13l2.6 1.6" stroke-linecap="round"/>
+            <path d="M9 3h6M12 3v2.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">The Watch <span>Box</span></div>
+          <div class="brand-sub">Owned &amp; Wanted</div>
+        </div>
+      </a>
+      <div class="crown-pill">A Private Ledger</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Horology · No.&nbsp;01</div>
+      <h1>Time, well<br><em>kept</em>.</h1>
+      <p class="lede">A small collection of mechanical things — the ones on the wrist, and the ones still on the list.</p>
+      <div class="rule"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Collection Value</div>
+          <div class="value"><span class="cur">$</span><span id="ownedVal">0</span></div>
+          <div class="sub"><span id="ownedCount">0</span> Pieces Owned</div>
+        </div>
+        <div class="stat">
+          <div class="label">The Wishlist</div>
+          <div class="value"><span class="cur">$</span><span id="wishVal">0</span></div>
+          <div class="sub"><span id="wishCount">0</span> Pieces Wanted</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="idx">I</span>
+        <h2>My Collection</h2>
+        <span class="count" id="ownedHeadCount"></span>
+      </div>
+      <div class="grid" id="ownedGrid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <span class="idx">II</span>
+        <h2>The Wishlist</h2>
+        <span class="count" id="wishHeadCount"></span>
+      </div>
+      <div class="grid" id="wishGrid"></div>
+    </section>
+
+    <div class="foot">
+      Curated by hand · <a href="/projects">Back to Projects</a>
+    </div>
+  </div>
+
+  <script id="watch-data" type="application/json">
+  {
+    "collection": [
+      { "brand": "Hamilton", "model": "Khaki Pilot Day Date", "ref": "H64615135", "size": "42mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Black", "dialHex": "#1a1a1c", "type": "Pilot", "price": 1135 },
+      { "brand": "Seiko", "model": "Prospex Alpinist", "ref": "SPB121", "size": "39.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Green", "dialHex": "#2f4a32", "type": "Field", "price": 599 },
+      { "brand": "Casio", "model": "Vintage Multifinish", "ref": "A130WEG-9A", "size": "40.5mm", "movement": "Quartz", "material": "Resin / Gold", "dial": "Digital", "dialHex": "#c8b06a", "type": "Digital", "price": 92 },
+      { "brand": "Rolex", "model": "Submariner Date", "ref": "126610LN", "size": "41mm", "movement": "Automatic", "material": "Ceramic / Oystersteel", "dial": "Black", "dialHex": "#101012", "type": "Diver", "price": 12400 }
+    ],
+    "wishlist": [
+      { "brand": "Omega", "model": "Speedmaster Moonwatch", "ref": "—", "size": "42mm", "movement": "Manual Wind", "material": "Stainless Steel", "dial": "Black", "dialHex": "#141416", "type": "Chronograph", "price": 6550 },
+      { "brand": "Tudor", "model": "Black Bay 58", "ref": "—", "size": "39mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Blue", "dialHex": "#1e3a63", "type": "Diver", "price": 3575 },
+      { "brand": "Grand Seiko", "model": "Shunbun", "ref": "SBGA413", "size": "40mm", "movement": "Automatic", "material": "Titanium", "dial": "Pink", "dialHex": "#e7c3c9", "type": "Dress", "price": 6300 },
+      { "brand": "Nomos Glashütte", "model": "Tangente 2date", "ref": "—", "size": "37.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": 2780 },
+      { "brand": "Oris", "model": "Pointer Date", "ref": "—", "size": "40mm", "movement": "Automatic", "material": "Steel / Bronze", "dial": "Blue", "dialHex": "#27466b", "type": "Field", "price": 2400 }
+    ]
+  }
+  </script>
+
+  <script>
+  (function () {
+    var DATA = JSON.parse(document.getElementById('watch-data').textContent);
+
+    function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+    var FACE = '<svg viewBox="0 0 100 100" fill="none" stroke="#c5a76e" stroke-width="1">' +
+      '<circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="38" stroke-opacity="0.5"/>' +
+      '<path d="M50 50V24M50 50l16 9" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<g stroke-opacity="0.7">' +
+      '<path d="M50 12v6M50 82v6M12 50h6M82 50h6"/>' +
+      '<path d="M79 29l-4 3M21 71l4-3M79 71l-4-3M21 29l4 3"/>' +
+      '</g></svg>';
+
+    var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+
+    function card(w, owned) {
+      var el = document.createElement('article');
+      el.className = 'card';
+      el.innerHTML =
+        '<div class="face">' + FACE + '</div>' +
+        '<div class="card-top">' +
+          '<div class="brand-line">' + w.brand + '</div>' +
+          '<div class="ref">' + (w.ref && w.ref !== '—' ? 'REF ' + w.ref : 'NO REF') + '</div>' +
+        '</div>' +
+        '<h3 class="model">' + w.model + '</h3>' +
+        '<div class="swatch-row">' +
+          '<span class="swatch" style="background:' + w.dialHex + '"></span>' +
+          '<span class="dial-label">' + w.dial + ' Dial</span>' +
+          '<span class="type-tag">' + w.type + '</span>' +
+        '</div>' +
+        '<div class="specs">' +
+          '<div class="spec"><div class="k">Case</div><div class="v">' + w.size + '</div></div>' +
+          '<div class="spec"><div class="k">Movement</div><div class="v">' + w.movement + '</div></div>' +
+          '<div class="spec"><div class="k">Material</div><div class="v">' + w.material + '</div></div>' +
+        '</div>' +
+        '<div class="card-foot">' +
+          (owned
+            ? '<span class="owned-mark">' + CHECK + ' In the Box</span>'
+            : '<div><div class="price-label">Target Price</div></div>') +
+          '<div style="text-align:right">' +
+            (owned ? '<div class="price-label">Paid</div>' : '') +
+            '<div class="price"><span class="cur">$</span>' + fmt(w.price) + '</div>' +
+          '</div>' +
+        '</div>';
+      return el;
+    }
+
+    var ownedGrid = document.getElementById('ownedGrid');
+    var wishGrid = document.getElementById('wishGrid');
+
+    DATA.collection.forEach(function (w) { ownedGrid.appendChild(card(w, true)); });
+    DATA.wishlist.forEach(function (w) { wishGrid.appendChild(card(w, false)); });
+
+    var ownedTotal = DATA.collection.reduce(function (s, w) { return s + w.price; }, 0);
+    var wishTotal = DATA.wishlist.reduce(function (s, w) { return s + w.price; }, 0);
+
+    document.getElementById('ownedCount').textContent = DATA.collection.length;
+    document.getElementById('wishCount').textContent = DATA.wishlist.length;
+    document.getElementById('ownedHeadCount').textContent = DATA.collection.length + ' Pieces';
+    document.getElementById('wishHeadCount').textContent = DATA.wishlist.length + ' Pieces';
+
+    // animated count-up for the value stats — with a guaranteed final value
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function countUp(el, target) {
+      el.textContent = fmt(target); // fallback if rAF never fires (hidden tab, reduced motion)
+      if (reduceMotion || document.hidden) return;
+      var start = null, dur = 1100;
+      function step(ts) {
+        if (!start) start = ts;
+        var p = Math.min((ts - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(Math.round(target * eased));
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    countUp(document.getElementById('ownedVal'), ownedTotal);
+    countUp(document.getElementById('wishVal'), wishTotal);
+
+    // reveal cards on scroll
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            var i = cards.indexOf(e.target);
+            e.target.style.transitionDelay = (Math.max(0, i % 2) * 0.08) + 's';
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      cards.forEach(function (c) { io.observe(c); });
+    } else {
+      cards.forEach(function (c) { c.classList.add('in'); });
+    }
+  })();
+  </script>
+</body>
+</html>
