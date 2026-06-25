@@ -27,6 +27,7 @@
       --ink: #2c2620;
       --ink-2: #6a5d4d;
       --ink-3: #9a8b76;
+      --danger: #a8472c;
       --serif: 'Cormorant Garamond', Georgia, serif;
       --sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --mono: 'JetBrains Mono', monospace;
@@ -67,11 +68,20 @@
     /* ---------- Masthead (quiet journal title) ---------- */
     .mast-top {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 30px 0 0;
+      padding: 26px 0 0;
     }
     .mast-label { font-family: var(--mono); font-size: 9.5px; letter-spacing: 2.6px; color: var(--ink-3); text-transform: uppercase; }
-    .mast-back { font-family: var(--mono); font-size: 9.5px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; text-decoration: none; }
-    .mast-back:hover { color: var(--gold-deep); }
+
+    .lockbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 100px;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.4);
+      color: var(--ink-3); cursor: pointer; transition: color .25s, border-color .25s, background .25s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .lockbtn svg { width: 16px; height: 16px; }
+    .lockbtn:hover { color: var(--ink); }
+    .lockbtn.on { color: var(--gold-deep); border-color: var(--gold-soft); background: rgba(154,118,58,0.10); }
 
     .masthead { padding: 38px 0 30px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
     .mast-title { font-family: var(--serif); font-weight: 600; font-size: clamp(38px, 9vw, 60px); line-height: 1; letter-spacing: -0.5px; color: var(--ink); }
@@ -112,6 +122,7 @@
     .shot img {
       position: relative; max-width: 100%; max-height: 168px; width: auto;
       object-fit: contain; filter: drop-shadow(0 12px 18px rgba(70, 50, 22, 0.24));
+      pointer-events: none;
     }
     .shot .placeholder { position: relative; width: 76px; height: 76px; opacity: 0.45; }
     .shot .placeholder svg { width: 100%; height: 100%; }
@@ -151,7 +162,6 @@
     .tl-axis { grid-column: 2; display: flex; justify-content: center; }
     .tl-dot { position: relative; width: 13px; height: 13px; border-radius: 50%; background: var(--panel); border: 1px solid var(--gold); box-shadow: 0 0 0 5px var(--bg); }
     .tl-dot::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold); }
-    /* horizontal connector from dot toward the card */
     .tl-dot::after { content: ""; position: absolute; top: 50%; height: 1px; width: 28px; background: linear-gradient(90deg, var(--gold-soft), transparent); }
     .tl-item[data-side="left"]  .tl-dot::after { right: 100%; background: linear-gradient(270deg, var(--gold-soft), transparent); }
     .tl-item[data-side="right"] .tl-dot::after { left: 100%; }
@@ -176,9 +186,65 @@
     .grid .card.in { opacity: 1; transform: translateY(0); }
     .grid .card.in:hover { transform: translateY(-4px); }
 
+    /* ---------- Edit controls (only visible when unlocked) ---------- */
+    body:not(.unlocked) .edit-only { display: none !important; }
+
+    .card-edit { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+    .grip { display: inline-flex; color: var(--ink-3); cursor: grab; flex: 0 0 auto; }
+    .grip svg { width: 15px; height: 15px; }
+    .promote-btn {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase;
+      color: var(--gold-deep); background: none; border: 1px solid var(--gold-soft); border-radius: 100px;
+      padding: 6px 12px; cursor: pointer; transition: background .25s, color .25s;
+    }
+    .promote-btn:hover { background: rgba(154,118,58,0.12); color: var(--ink); }
+    .remove-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; transition: color .2s; }
+    .remove-btn svg { width: 14px; height: 14px; }
+    .remove-btn:hover { color: var(--danger); }
+
+    .card.pending { border-style: dashed; }
+    .badge-pending { font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--gold-deep); border: 1px solid var(--gold-soft); border-radius: 100px; padding: 3px 9px; background: rgba(154,118,58,0.08); white-space: nowrap; }
+    .pending-url { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2px; color: var(--ink-3); text-decoration: none; margin-top: 10px; word-break: break-all; line-height: 1.5; }
+    .pending-url:hover { color: var(--gold-deep); }
+
+    /* drag states */
+    .card.dragging { opacity: 0.94; pointer-events: none; box-shadow: var(--shadow-hover); transform: scale(1.015) rotate(-0.4deg); z-index: 6; cursor: grabbing; }
+    body.reordering { -webkit-user-select: none; user-select: none; }
+    body.unlocked .grid .card { cursor: grab; }
+    body.unlocked .grid .card.pending { cursor: grab; }
+
+    /* ---------- Add-by-link form ---------- */
+    .add-watch { margin-top: 20px; }
+    .aw-row { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; background: rgba(255,255,255,0.45); transition: border-color .25s; }
+    .aw-row:focus-within { border-color: var(--gold-soft); }
+    .aw-icon { display: inline-flex; color: var(--ink-3); flex: 0 0 auto; }
+    .aw-icon svg { width: 16px; height: 16px; }
+    .aw-row input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-family: var(--mono); font-size: 12px; color: var(--ink); padding: 4px 0; }
+    .aw-row input::placeholder { color: var(--ink-3); }
+    .aw-btn { flex: 0 0 auto; font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; background: var(--gold); border: none; border-radius: 100px; padding: 8px 16px; cursor: pointer; transition: background .25s; }
+    .aw-btn:hover { background: var(--gold-deep); }
+    .aw-note { font-family: var(--mono); font-size: 9px; letter-spacing: 0.8px; color: var(--ink-3); text-transform: uppercase; margin-top: 8px; padding-left: 4px; }
+
     .foot { text-align: center; margin-top: 68px; padding-top: 26px; border-top: 1px solid var(--line-soft); font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-3); }
-    .foot a { color: var(--gold); font-style: normal; text-decoration: none; }
-    .foot a:hover { color: var(--gold-deep); }
+
+    /* ---------- Modal ---------- */
+    .modal-overlay { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 22px;
+      background: rgba(44, 38, 32, 0.45); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+    .modal-overlay.show { display: flex; }
+    .modal { width: min(360px, 94vw); background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 26px 24px; box-shadow: 0 30px 60px -24px rgba(44,30,12,0.5); animation: pop .25s cubic-bezier(.16,1,.3,1); }
+    @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+    .modal-title { font-family: var(--serif); font-weight: 600; font-size: 24px; color: var(--ink); }
+    .modal-desc { font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink-3); margin-top: 8px; }
+    .modal-input { width: 100%; margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font-family: var(--mono); font-size: 15px; outline: none; transition: border-color .2s; }
+    .modal-input:focus { border-color: var(--gold-soft); }
+    .modal-input.shake { animation: shake .4s; border-color: var(--danger); }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+    .modal-msg { min-height: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px; color: var(--danger); margin-top: 8px; }
+    .modal-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 6px; }
+    .m-cancel { background: none; border: none; color: var(--ink-3); font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; padding: 8px 4px; }
+    .m-cancel:hover { color: var(--ink); }
+    .m-ok { background: var(--gold); border: none; color: #fff; font-family: var(--mono); font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; cursor: pointer; padding: 10px 18px; border-radius: 100px; transition: background .25s; }
+    .m-ok:hover { background: var(--gold-deep); }
 
     @media (min-width: 720px) {
       .grid { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; }
@@ -190,7 +256,6 @@
       .tl-item { grid-template-columns: 34px minmax(0,1fr); column-gap: 0; margin-bottom: 26px; }
       .tl-axis { grid-column: 1; justify-content: flex-start; }
       .tl-content { grid-column: 2 !important; align-items: stretch !important; padding: 0 0 0 8px; min-width: 0; }
-      /* stack every card on phones: image banner on top, details full-width below */
       .card { flex-direction: column; gap: 14px; padding: 18px; }
       .shot { flex: none; width: 100%; align-self: center; min-height: 150px; }
       .shot::before { inset: 6% 26%; }
@@ -215,7 +280,7 @@
   <div class="wrap">
     <div class="mast-top">
       <span class="mast-label">Personal Inventory</span>
-      <a class="mast-back" href="/projects">Projects ↗</a>
+      <button class="lockbtn" id="lockBtn" type="button" aria-label="Unlock editing"></button>
     </div>
 
     <header class="masthead">
@@ -243,54 +308,127 @@
         <span class="count" id="wishHeadCount"></span>
       </div>
       <div class="grid" id="wishGrid"></div>
+
+      <form class="add-watch edit-only" id="addWatch" autocomplete="off">
+        <div class="aw-row">
+          <span class="aw-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+          </span>
+          <input id="addUrl" type="text" inputmode="url" placeholder="Paste a link to a watch…" aria-label="Watch link">
+          <button type="submit" class="aw-btn">Add</button>
+        </div>
+        <div class="aw-note">Saved as a pending tile — details filled in later.</div>
+      </form>
     </section>
 
-    <div class="foot">
-      Kept by hand. <a href="/projects">Back to projects</a>
+    <div class="foot">Kept by hand.</div>
+  </div>
+
+  <!-- Modal (PIN / date prompts) -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <input class="modal-input" id="modalInput" autocomplete="off">
+      <div class="modal-msg" id="modalMsg"></div>
+      <div class="modal-actions">
+        <button class="m-cancel" id="modalCancel" type="button">Cancel</button>
+        <button class="m-ok" id="modalOk" type="button">Confirm</button>
+      </div>
     </div>
   </div>
 
   <script id="watch-data" type="application/json">
   {
     "collection": [
-      { "brand": "Hamilton", "model": "Khaki Pilot Day Date", "ref": "H64615135", "size": "42mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Black", "dialHex": "#1a1a1c", "type": "Pilot", "price": 1135, "img": "hamilton-pilot.png", "acquired": "2025-10-30" },
-      { "brand": "Seiko", "model": "Prospex Alpinist", "ref": "SPB121", "size": "39.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Green", "dialHex": "#2f4a32", "type": "Field", "price": 599, "img": "seiko-alpinist.png", "acquired": "2025-12-01" },
-      { "brand": "Casio", "model": "Vintage Multifinish", "ref": "A130WEG-9A", "size": "40.5mm", "movement": "Quartz", "material": "Steel / Gold", "dial": "Digital", "dialHex": "#c8b06a", "type": "Digital", "price": 92, "img": "casio-vintage.png", "acquired": "2025-12-07" },
-      { "brand": "Rolex", "model": "Submariner Date", "ref": "126610LN", "size": "41mm", "movement": "Automatic", "material": "Ceramic / Oystersteel", "dial": "Black", "dialHex": "#101012", "type": "Diver", "price": 10250, "img": "rolex-sub.png", "acquired": "2026-03-29" },
-      { "brand": "Seiko", "model": "Visually Impaired", "ref": "S23159", "size": "36mm", "movement": "Quartz", "material": "Steel · Leather Strap", "dial": "White", "dialHex": "#ece9e2", "type": "Classic", "price": null, "img": "seiko-visually-impaired.png", "acquired": "2026-04-02" }
+      { "id": "hamilton-pilot", "brand": "Hamilton", "model": "Khaki Pilot Day Date", "ref": "H64615135", "size": "42mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Black", "dialHex": "#1a1a1c", "type": "Pilot", "price": 1135, "img": "hamilton-pilot.png", "acquired": "2025-10-30" },
+      { "id": "seiko-alpinist", "brand": "Seiko", "model": "Prospex Alpinist", "ref": "SPB121", "size": "39.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "Green", "dialHex": "#2f4a32", "type": "Field", "price": 599, "img": "seiko-alpinist.png", "acquired": "2025-12-01" },
+      { "id": "casio-vintage", "brand": "Casio", "model": "Vintage Multifinish", "ref": "A130WEG-9A", "size": "40.5mm", "movement": "Quartz", "material": "Steel / Gold", "dial": "Digital", "dialHex": "#c8b06a", "type": "Digital", "price": 92, "img": "casio-vintage.png", "acquired": "2025-12-07" },
+      { "id": "rolex-sub", "brand": "Rolex", "model": "Submariner Date", "ref": "126610LN", "size": "41mm", "movement": "Automatic", "material": "Ceramic / Oystersteel", "dial": "Black", "dialHex": "#101012", "type": "Diver", "price": 10250, "img": "rolex-sub.png", "acquired": "2026-03-29" },
+      { "id": "seiko-vi", "brand": "Seiko", "model": "Visually Impaired", "ref": "S23159", "size": "36mm", "movement": "Quartz", "material": "Steel · Leather Strap", "dial": "White", "dialHex": "#ece9e2", "type": "Classic", "price": null, "img": "seiko-visually-impaired.png", "acquired": "2026-04-02" }
     ],
     "wishlist": [
-      { "brand": "Omega", "model": "Speedmaster Moonwatch", "sub": "Silver Dial", "ref": "310.30.42.50.04.001", "size": "42mm", "movement": "Manual Wind", "material": "Stainless Steel", "dial": "Silver", "dialHex": "#c9ccd1", "type": "Chronograph", "price": 11100, "img": "omega-speedy.png" },
-      { "brand": "Grand Seiko", "model": "White Birch Bark", "ref": "SLGW003", "size": "39mm", "movement": "Automatic", "material": "Titanium", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": null, "img": null },
-      { "brand": "Cartier", "model": "Tank Louis Cartier", "ref": "WGTA0357", "size": "38mm", "movement": "Quartz", "material": "Solid Gold", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": null, "img": null },
-      { "brand": "Nomos Glashütte", "model": "Tangente 2date", "ref": "135", "size": "37.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": 2780, "img": "nomos-tangente.png" },
-      { "brand": "Grand Seiko", "model": "Shunbun", "ref": "SBGA413", "size": "40mm", "movement": "Spring Drive", "material": "Stainless Steel", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": 6300, "img": "grand-seiko-shunbun.png" }
+      { "id": "omega-speedy", "brand": "Omega", "model": "Speedmaster Moonwatch", "sub": "Silver Dial", "ref": "310.30.42.50.04.001", "size": "42mm", "movement": "Manual Wind", "material": "Stainless Steel", "dial": "Silver", "dialHex": "#c9ccd1", "type": "Chronograph", "price": 11100, "img": "omega-speedy.png" },
+      { "id": "gs-whitebirch", "brand": "Grand Seiko", "model": "White Birch Bark", "ref": "SLGW003", "size": "39mm", "movement": "Automatic", "material": "Titanium", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": null, "img": null },
+      { "id": "cartier-tank", "brand": "Cartier", "model": "Tank Louis Cartier", "ref": "WGTA0357", "size": "38mm", "movement": "Quartz", "material": "Solid Gold", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": null, "img": null },
+      { "id": "nomos-tangente", "brand": "Nomos Glashütte", "model": "Tangente 2date", "ref": "135", "size": "37.5mm", "movement": "Automatic", "material": "Stainless Steel", "dial": "White", "dialHex": "#ece9e2", "type": "Dress", "price": 2780, "img": "nomos-tangente.png" },
+      { "id": "gs-shunbun", "brand": "Grand Seiko", "model": "Shunbun", "ref": "SBGA413", "size": "40mm", "movement": "Spring Drive", "material": "Stainless Steel", "dial": "White", "dialHex": "#e8e6df", "type": "Dress", "price": 6300, "img": "grand-seiko-shunbun.png" }
     ]
   }
   </script>
 
   <script>
   (function () {
-    var DATA = JSON.parse(document.getElementById('watch-data').textContent);
+    'use strict';
+    var BASE = JSON.parse(document.getElementById('watch-data').textContent);
     var IMG_BASE = '/projects/artifacts/watch-images/';
     var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var LS_KEY = 'watchbox.v1';
+    var SS_KEY = 'watchbox.unlocked';
+    // SHA-256 of the admin PIN (same PIN as the projects dashboard). Plaintext never stored.
+    var PIN_HASH = 'ad5ef4b29e148afd784de5373b210eb00879dfbf08922c96dc6ce4fc1e064fd9';
 
+    // ---------- utils ----------
     function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
-    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function prettyUrl(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return String(u || '').replace(/^https?:\/\//,'').slice(0, 40) || 'saved link'; } }
+    async function sha256(str) {
+      var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+    }
 
     var FACE = '<svg viewBox="0 0 100 100" fill="none" stroke="#9a763a" stroke-width="1.4">' +
       '<circle cx="50" cy="50" r="44"/><circle cx="50" cy="50" r="36" stroke-opacity="0.5"/>' +
       '<path d="M50 50V26M50 50l14 8" stroke-width="1.8" stroke-linecap="round"/>' +
       '<g stroke-opacity="0.7"><path d="M50 12v6M50 82v6M12 50h6M82 50h6"/></g></svg>';
+    var LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="#9a763a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
     var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-
-    function shotHtml(w) {
-      if (w.img) {
-        return '<div class="shot"><img src="' + IMG_BASE + esc(w.img) + '" alt="' + esc(w.brand + ' ' + w.model) + '" loading="lazy"></div>';
-      }
-      return '<div class="shot"><div class="placeholder">' + FACE + '</div></div>';
+    var GRIP = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+    var XMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    function lockIcon(open) {
+      return open
+        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-1.9"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     }
 
+    // ---------- state ----------
+    var state = (function () {
+      try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
+    })();
+    state.pending = Array.isArray(state.pending) ? state.pending : [];
+    state.promotions = state.promotions && typeof state.promotions === 'object' ? state.promotions : {};
+    state.wishlistOrder = Array.isArray(state.wishlistOrder) ? state.wishlistOrder : [];
+    function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+
+    function pendingWatch(p) {
+      return { id: p.id, brand: 'Saved Link', model: prettyUrl(p.url), url: p.url, pending: true,
+        ref: null, size: '—', movement: '—', material: 'Pending details', dial: 'Link', dialHex: '#cdbfa6',
+        type: 'Link', price: null, img: null, addedAt: p.addedAt };
+    }
+    function allWishlistWatches() {
+      return BASE.wishlist.map(function (w) { return Object.assign({}, w); })
+        .concat(state.pending.map(pendingWatch));
+    }
+    function mergedWishlist() {
+      var all = allWishlistWatches().filter(function (w) { return !state.promotions[w.id]; });
+      var map = {}; all.forEach(function (w) { map[w.id] = w; });
+      var ordered = [];
+      state.wishlistOrder.forEach(function (id) { if (map[id]) { ordered.push(map[id]); delete map[id]; } });
+      all.forEach(function (w) { if (map[w.id]) ordered.push(w); });
+      return ordered;
+    }
+    function mergedCollection() {
+      var coll = BASE.collection.map(function (w) { return Object.assign({}, w); });
+      var pool = allWishlistWatches();
+      Object.keys(state.promotions).forEach(function (id) {
+        var w = pool.filter(function (x) { return x.id === id; })[0];
+        if (w) coll.push(Object.assign({}, w, { acquired: state.promotions[id], promoted: true }));
+      });
+      coll.sort(function (a, b) { return a.acquired < b.acquired ? -1 : a.acquired > b.acquired ? 1 : 0; });
+      return coll;
+    }
+
+    // ---------- card markup ----------
     function priceHtml(w, owned) {
       if (w.price == null) {
         return owned
@@ -301,13 +439,30 @@
         '<div class="price-label">' + (owned ? 'Paid' : 'Target') + '</div>' +
         '<div class="price"><span class="cur">$</span>' + fmt(w.price) + '</div></div>';
     }
-
+    function editBar(isPending) {
+      return '<div class="card-edit edit-only">' +
+        '<span class="grip" aria-hidden="true">' + GRIP + '</span>' +
+        '<button class="promote-btn" type="button">Add to Collection</button>' +
+        (isPending ? '<button class="remove-btn" type="button" aria-label="Remove">' + XMARK + '</button>' : '') +
+      '</div>';
+    }
+    function pendingCard(w, owned) {
+      return '<article class="card pending" data-id="' + esc(w.id) + '">' +
+        '<div class="shot"><div class="placeholder">' + LINK + '</div></div>' +
+        '<div class="info">' +
+          '<div class="card-top"><span class="brand-line">Saved Link</span><span class="badge-pending">Pending</span></div>' +
+          '<h3 class="model">' + esc(prettyUrl(w.url)) + '</h3>' +
+          '<a class="pending-url no-drag" href="' + esc(w.url) + '" target="_blank" rel="noopener">' + esc(w.url) + '</a>' +
+          '<div class="meta-line">Added ' + esc(w.addedAt || '') + '<span class="dot">·</span>awaiting details</div>' +
+          (owned ? '' : editBar(true)) +
+        '</div></article>';
+    }
     function cardHtml(w, owned) {
-      var footLead = owned
-        ? '<span class="owned-mark">' + CHECK + ' In the Box</span>'
-        : '<span class="owned-mark" style="color:var(--ink-3)">On the List</span>';
-      return '<article class="card">' +
-        shotHtml(w) +
+      if (w.pending) return pendingCard(w, owned);
+      return '<article class="card" data-id="' + esc(w.id) + '">' +
+        (w.img
+          ? '<div class="shot"><img src="' + IMG_BASE + esc(w.img) + '" alt="' + esc(w.brand + ' ' + w.model) + '" loading="lazy"></div>'
+          : '<div class="shot"><div class="placeholder">' + FACE + '</div></div>') +
         '<div class="info">' +
           '<div class="card-top">' +
             '<span class="brand-line">' + esc(w.brand) + '</span>' +
@@ -320,77 +475,278 @@
             '<span class="type-tag">' + esc(w.type) + '</span>' +
           '</div>' +
           '<div class="meta-line">' + esc(w.size) + '<span class="dot">·</span>' + esc(w.movement) + '<span class="dot">·</span>' + esc(w.material) + '</div>' +
-          '<div class="card-foot">' + footLead + priceHtml(w, owned) + '</div>' +
-        '</div>' +
-      '</article>';
+          '<div class="card-foot">' +
+            (owned ? '<span class="owned-mark">' + CHECK + ' In the Box</span>' : '<span class="owned-mark" style="color:var(--ink-3)">On the List</span>') +
+            priceHtml(w, owned) +
+          '</div>' +
+          (owned ? '' : editBar(false)) +
+        '</div></article>';
     }
 
-    // ----- Collection timeline -----
+    // ---------- render ----------
     var timeline = document.getElementById('timeline');
-    DATA.collection.forEach(function (w, i) {
-      var side = (i % 2 === 0) ? 'left' : 'right';
-      var d = new Date(w.acquired + 'T00:00:00');
-      var item = document.createElement('div');
-      item.className = 'tl-item';
-      item.dataset.side = side;
-      item.innerHTML =
-        '<div class="tl-axis"><span class="tl-dot"></span></div>' +
-        '<div class="tl-content">' +
-          '<div class="tl-date">' +
-            '<span class="acq">Acquired</span>' +
-            '<span class="day">' + d.getDate() + '</span>' +
-            '<span class="my">' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</span>' +
-          '</div>' +
-          cardHtml(w, true) +
-        '</div>';
-      timeline.appendChild(item);
-    });
-
-    // ----- Wishlist grid -----
     var wishGrid = document.getElementById('wishGrid');
-    DATA.wishlist.forEach(function (w) {
-      var holder = document.createElement('div');
-      holder.innerHTML = cardHtml(w, false);
-      wishGrid.appendChild(holder.firstChild);
-    });
-
-    // ----- Stats -----
-    var ownedTotal = DATA.collection.reduce(function (s, w) { return s + (w.price || 0); }, 0);
-    var wishTotal = DATA.wishlist.reduce(function (s, w) { return s + (w.price || 0); }, 0);
-    document.getElementById('ownedCount').textContent = DATA.collection.length;
-    document.getElementById('wishCount').textContent = DATA.wishlist.length;
-    document.getElementById('ownedHeadCount').textContent = DATA.collection.length + ' Pieces';
-    document.getElementById('wishHeadCount').textContent = DATA.wishlist.length + ' Pieces';
-
     var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    function countUp(el, target) {
-      el.textContent = fmt(target);
-      if (reduceMotion || document.hidden) return;
-      var start = null, dur = 1100;
+    var io = ('IntersectionObserver' in window && !reduceMotion)
+      ? new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' })
+      : null;
+    var firstPaint = true;
+
+    function buildTimeline(coll) {
+      timeline.innerHTML = '';
+      coll.forEach(function (w, i) {
+        var side = (i % 2 === 0) ? 'left' : 'right';
+        var parts = (w.acquired || '').split('-');
+        var d = new Date((w.acquired || '2000-01-01') + 'T00:00:00');
+        var item = document.createElement('div');
+        item.className = 'tl-item';
+        item.dataset.side = side;
+        item.innerHTML =
+          '<div class="tl-axis"><span class="tl-dot"></span></div>' +
+          '<div class="tl-content">' +
+            '<div class="tl-date">' +
+              '<span class="acq">Acquired</span>' +
+              '<span class="day">' + d.getDate() + '</span>' +
+              '<span class="my">' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</span>' +
+            '</div>' +
+            cardHtml(w, true) +
+          '</div>';
+        timeline.appendChild(item);
+      });
+    }
+    function buildWishlist(list) {
+      wishGrid.innerHTML = '';
+      list.forEach(function (w) {
+        var holder = document.createElement('div');
+        holder.innerHTML = cardHtml(w, false);
+        wishGrid.appendChild(holder.firstChild);
+      });
+    }
+    function setStats(coll, wish, animate) {
+      var ownedTotal = coll.reduce(function (s, w) { return s + (w.price || 0); }, 0);
+      var wishTotal = wish.reduce(function (s, w) { return s + (w.price || 0); }, 0);
+      document.getElementById('ownedCount').textContent = coll.length;
+      document.getElementById('wishCount').textContent = wish.length;
+      document.getElementById('ownedHeadCount').textContent = coll.length + (coll.length === 1 ? ' Piece' : ' Pieces');
+      document.getElementById('wishHeadCount').textContent = wish.length + (wish.length === 1 ? ' Piece' : ' Pieces');
+      countUp(document.getElementById('ownedVal'), ownedTotal, animate);
+      countUp(document.getElementById('wishVal'), wishTotal, animate);
+    }
+    function countUp(el, target, animate) {
+      if (!animate || reduceMotion || document.hidden) { el.textContent = fmt(target); return; }
+      var start = null, dur = 1000;
       function step(ts) {
         if (!start) start = ts;
         var p = Math.min((ts - start) / dur, 1);
-        var eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = fmt(Math.round(target * eased));
+        el.textContent = fmt(Math.round(target * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(step);
       }
       requestAnimationFrame(step);
     }
-    countUp(document.getElementById('ownedVal'), ownedTotal);
-    countUp(document.getElementById('wishVal'), wishTotal);
-
-    // ----- Scroll reveal -----
-    var reveal = [].slice.call(document.querySelectorAll('.tl-item, .grid .card'));
-    if ('IntersectionObserver' in window && !reduceMotion) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-        });
-      }, { threshold: 0.12, rootMargin: '0px 0px -50px 0px' });
-      reveal.forEach(function (el) { io.observe(el); });
-    } else {
-      reveal.forEach(function (el) { el.classList.add('in'); });
+    function render() {
+      var coll = mergedCollection(), wish = mergedWishlist();
+      buildTimeline(coll);
+      buildWishlist(wish);
+      setStats(coll, wish, firstPaint);
+      var items = [].slice.call(document.querySelectorAll('.tl-item, #wishGrid .card'));
+      if (firstPaint && io) { items.forEach(function (el) { io.observe(el); }); }
+      else { items.forEach(function (el) { el.classList.add('in'); }); }
+      firstPaint = false;
     }
+
+    // ---------- lock / unlock ----------
+    var unlocked = false;
+    var lockBtn = document.getElementById('lockBtn');
+    function setUnlocked(v) {
+      unlocked = v;
+      document.body.classList.toggle('unlocked', v);
+      lockBtn.innerHTML = lockIcon(v);
+      lockBtn.classList.toggle('on', v);
+      lockBtn.setAttribute('aria-label', v ? 'Lock editing' : 'Unlock editing');
+      try { if (v) sessionStorage.setItem(SS_KEY, '1'); else sessionStorage.removeItem(SS_KEY); } catch (e) {}
+    }
+    lockBtn.addEventListener('click', function () {
+      if (unlocked) setUnlocked(false);
+      else openModal({
+        title: 'Enter PIN', desc: 'Admin actions are protected',
+        type: 'password', inputmode: 'numeric', placeholder: '••••', confirm: 'Unlock',
+        validate: async function (val) { if (!val) return 'Enter the PIN.'; return (await sha256(val)) === PIN_HASH ? true : 'Wrong PIN.'; }
+      }).then(function (val) { if (val !== null) setUnlocked(true); });
+    });
+
+    // ---------- modal ----------
+    var overlay = document.getElementById('modalOverlay');
+    var mTitle = document.getElementById('modalTitle');
+    var mDesc = document.getElementById('modalDesc');
+    var mInput = document.getElementById('modalInput');
+    var mMsg = document.getElementById('modalMsg');
+    var mOk = document.getElementById('modalOk');
+    var mCancel = document.getElementById('modalCancel');
+    function openModal(opts) {
+      return new Promise(function (resolve) {
+        mTitle.textContent = opts.title || '';
+        mDesc.textContent = opts.desc || ''; mDesc.style.display = opts.desc ? 'block' : 'none';
+        mInput.type = opts.type || 'text';
+        mInput.placeholder = opts.placeholder || '';
+        mInput.value = opts.value || '';
+        if (opts.inputmode) mInput.setAttribute('inputmode', opts.inputmode); else mInput.removeAttribute('inputmode');
+        mMsg.textContent = '';
+        mOk.textContent = opts.confirm || 'Confirm';
+        overlay.classList.add('show');
+        setTimeout(function () { mInput.focus(); }, 60);
+
+        async function submit() {
+          var v = mInput.value.trim();
+          if (opts.validate) {
+            var res = opts.validate(v);
+            if (res && typeof res.then === 'function') res = await res;
+            if (res !== true) {
+              mMsg.textContent = typeof res === 'string' ? res : 'Invalid.';
+              mInput.classList.add('shake'); setTimeout(function () { mInput.classList.remove('shake'); }, 400);
+              return;
+            }
+          } else if (!v) { return; }
+          done(v);
+        }
+        function cancel() { done(null); }
+        function done(val) {
+          overlay.classList.remove('show');
+          mOk.removeEventListener('click', submit);
+          mCancel.removeEventListener('click', cancel);
+          mInput.removeEventListener('keydown', onKey);
+          overlay.removeEventListener('mousedown', onOverlay);
+          resolve(val);
+        }
+        function onKey(e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } else if (e.key === 'Escape') cancel(); }
+        function onOverlay(e) { if (e.target === overlay) cancel(); }
+        mOk.addEventListener('click', submit);
+        mCancel.addEventListener('click', cancel);
+        mInput.addEventListener('keydown', onKey);
+        overlay.addEventListener('mousedown', onOverlay);
+      });
+    }
+
+    // ---------- add by link ----------
+    document.getElementById('addWatch').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!unlocked) return;
+      var input = document.getElementById('addUrl');
+      var url = input.value.trim();
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+      var id = 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
+      state.pending.push({ id: id, url: url, addedAt: new Date().toISOString().slice(0, 10) });
+      // If an explicit order already exists, keep the new tile at the end; otherwise
+      // leave it unset so the merge naturally appends it after the base wishlist.
+      if (state.wishlistOrder.length) state.wishlistOrder.push(id);
+      saveState();
+      input.value = '';
+      render();
+    });
+
+    // ---------- promote & remove (delegated) ----------
+    wishGrid.addEventListener('click', function (e) {
+      if (!unlocked) return;
+      var card = e.target.closest('.card'); if (!card) return;
+      var id = card.dataset.id;
+      if (e.target.closest('.promote-btn')) {
+        var model = card.querySelector('.model');
+        var name = model ? model.textContent.trim() : 'this watch';
+        var today = new Date().toISOString().slice(0, 10);
+        openModal({
+          title: 'Add to Collection', desc: 'When did you get the ' + name + '?',
+          type: 'date', value: today, confirm: 'Add to Collection',
+          validate: function (v) { return v ? true : 'Pick a date.'; }
+        }).then(function (date) {
+          if (!date) return;
+          state.promotions[id] = date;
+          state.wishlistOrder = state.wishlistOrder.filter(function (x) { return x !== id; });
+          saveState();
+          render();
+        });
+      } else if (e.target.closest('.remove-btn')) {
+        state.pending = state.pending.filter(function (p) { return p.id !== id; });
+        delete state.promotions[id];
+        state.wishlistOrder = state.wishlistOrder.filter(function (x) { return x !== id; });
+        saveState();
+        render();
+      }
+    });
+
+    // ---------- drag to reorder (pointer + long-press) ----------
+    (function () {
+      var dragEl = null, dragging = false, pointerId = null, isTouch = false;
+      var startX = 0, startY = 0, pressTimer = null;
+
+      function clearPress() { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } }
+      function reset() {
+        clearPress();
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
+        if (dragEl) dragEl.classList.remove('dragging');
+        document.body.classList.remove('reordering');
+        dragEl = null; dragging = false; pointerId = null;
+      }
+      function activate() {
+        if (dragging || !dragEl) return;
+        clearPress();
+        dragging = true;
+        try { dragEl.setPointerCapture(pointerId); } catch (e) {}
+        dragEl.classList.add('dragging');
+        document.body.classList.add('reordering');
+      }
+      function reorderTo(x, y) {
+        var cards = [].slice.call(wishGrid.querySelectorAll('.card:not(.dragging)'));
+        var closest = null, best = Infinity, before = true;
+        cards.forEach(function (c) {
+          var r = c.getBoundingClientRect();
+          var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          var d = Math.hypot(x - cx, y - cy);
+          if (d < best) { best = d; closest = c; before = (y < cy) || (Math.abs(y - cy) < r.height * 0.4 && x < cx); }
+        });
+        if (closest) wishGrid.insertBefore(dragEl, before ? closest : closest.nextSibling);
+      }
+      function onMove(e) {
+        if (!dragEl) return;
+        if (!dragging) {
+          var dx = Math.abs(e.clientX - startX), dy = Math.abs(e.clientY - startY);
+          if (isTouch) { if (dx > 10 || dy > 10) reset(); return; } // moved before long-press → it's a scroll
+          if (dx > 6 || dy > 6) activate(); else return;
+        }
+        e.preventDefault();
+        reorderTo(e.clientX, e.clientY);
+      }
+      function onUp() {
+        if (dragging) {
+          var ids = [].slice.call(wishGrid.querySelectorAll('.card')).map(function (c) { return c.dataset.id; });
+          state.wishlistOrder = ids;
+          saveState();
+        }
+        reset();
+      }
+      wishGrid.addEventListener('pointerdown', function (e) {
+        if (!unlocked || e.button === 1 || e.button === 2) return;
+        var card = e.target.closest('.card');
+        if (!card || !wishGrid.contains(card)) return;
+        if (e.target.closest('button, a, input, textarea, select, .no-drag')) return;
+        dragEl = card; pointerId = e.pointerId; startX = e.clientX; startY = e.clientY;
+        isTouch = (e.pointerType === 'touch');
+        if (isTouch) pressTimer = setTimeout(activate, 320);
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+        document.addEventListener('pointercancel', onUp);
+      });
+      // block native touch scrolling only while a drag is actually active
+      document.addEventListener('touchmove', function (e) { if (dragging) e.preventDefault(); }, { passive: false });
+    })();
+
+    // ---------- boot ----------
+    try { if (sessionStorage.getItem(SS_KEY) === '1') unlocked = true; } catch (e) {}
+    setUnlocked(unlocked);
+    render();
   })();
   </script>
 </body>
