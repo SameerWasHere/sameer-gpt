@@ -212,9 +212,32 @@
       padding: 6px 12px; cursor: pointer; transition: background .25s, color .25s;
     }
     .promote-btn:hover { background: rgba(154,118,58,0.12); color: var(--ink); }
+    .remove-btn { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 4px; transition: color .2s; }
+    .remove-btn svg { width: 14px; height: 14px; }
+    .remove-btn:hover { color: var(--danger); }
+
+    .card.pending { border-style: dashed; }
+    .badge-pending { font-family: var(--mono); font-size: 9px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--gold-deep); border: 1px solid var(--gold-soft); border-radius: 100px; padding: 3px 9px; background: rgba(154,118,58,0.08); white-space: nowrap; }
+    .pending-url { display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.2px; color: var(--ink-3); text-decoration: none; margin-top: 10px; word-break: break-all; line-height: 1.5; }
+    .pending-url:hover { color: var(--gold-deep); }
+
     /* drag states */
     .card.dragging { opacity: 0.94; pointer-events: none; box-shadow: var(--shadow-hover); transform: scale(1.015) rotate(-0.4deg); z-index: 6; cursor: grabbing; }
     body.reordering { -webkit-user-select: none; user-select: none; }
+
+    /* ---------- Add-by-link form ---------- */
+    .add-watch { margin-top: 20px; }
+    .aw-row { display: flex; align-items: center; gap: 10px; border: 1px dashed var(--line); border-radius: 12px; padding: 10px 12px; background: rgba(255,255,255,0.45); transition: border-color .25s; }
+    .aw-row:focus-within { border-color: var(--gold-soft); }
+    .aw-icon { display: inline-flex; color: var(--ink-3); flex: 0 0 auto; }
+    .aw-icon svg { width: 16px; height: 16px; }
+    .aw-row input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-family: var(--mono); font-size: 12px; color: var(--ink); padding: 4px 0; }
+    .aw-row input::placeholder { color: var(--ink-3); }
+    .aw-btn { flex: 0 0 auto; font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase; color: #fff; background: var(--gold); border: none; border-radius: 100px; padding: 8px 16px; cursor: pointer; transition: background .25s; }
+    .aw-btn:hover { background: var(--gold-deep); }
+    .aw-btn:disabled { opacity: 0.5; cursor: default; }
+    .aw-note { font-family: var(--mono); font-size: 9px; letter-spacing: 0.8px; color: var(--ink-3); text-transform: uppercase; margin-top: 8px; padding-left: 4px; transition: color .2s; }
+    .aw-note.err { color: var(--danger); }
 
     .foot { text-align: center; margin-top: 68px; padding-top: 26px; border-top: 1px solid var(--line-soft); font-family: var(--serif); font-style: italic; font-size: 15px; color: var(--ink-3); }
 
@@ -299,6 +322,17 @@
         <span class="count" id="wishHeadCount"></span>
       </div>
       <div class="grid" id="wishGrid"></div>
+
+      <form class="add-watch edit-only" id="addWatch" autocomplete="off">
+        <div class="aw-row">
+          <span class="aw-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+          </span>
+          <input id="addUrl" type="text" inputmode="url" placeholder="Paste a link to a watch…" aria-label="Watch link">
+          <button type="submit" class="aw-btn" id="addBtn">Add</button>
+        </div>
+        <div class="aw-note" id="addNote">Saved to your inbox — Claude fills in the details later.</div>
+      </form>
     </section>
 
     <div class="foot">Kept by hand.</div>
@@ -352,6 +386,7 @@
     // ---------- utils ----------
     function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
     function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function prettyUrl(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return String(u || '').replace(/^https?:\/\//,'').slice(0, 40) || 'saved link'; } }
     async function sha256(str) {
       var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
       return Array.prototype.map.call(new Uint8Array(buf), function (b) { return b.toString(16).padStart(2, '0'); }).join('');
@@ -363,6 +398,8 @@
       '<g stroke-opacity="0.7"><path d="M50 12v6M50 82v6M12 50h6M82 50h6"/></g></svg>';
     var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
     var GRIP = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+    var XMARK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    var LINK = '<svg viewBox="0 0 24 24" fill="none" stroke="#9a763a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
     var ARROW_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
     var ARROW_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
     function lockIcon(open) {
@@ -377,9 +414,16 @@
     })();
     state.promotions = state.promotions && typeof state.promotions === 'object' ? state.promotions : {};
     state.wishlistOrder = Array.isArray(state.wishlistOrder) ? state.wishlistOrder : [];
-    delete state.pending; // the add-by-link feature was removed; drop any stale data
+    delete state.pending; // pending links now live in the API/KV, not localStorage
     function saveState() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
 
+    // Pending watch links come from the API (Vercel KV), shown only when unlocked.
+    var pendingList = [];
+    function pendingWatch(p) {
+      return { id: p.id, brand: 'Saved Link', model: prettyUrl(p.url), url: p.url, pending: true,
+        ref: null, size: '—', movement: '—', material: 'Pending details', dial: 'Link', dialHex: '#cdbfa6',
+        type: 'Link', price: null, img: null, addedAt: p.addedAt };
+    }
     function allWishlistWatches() {
       return BASE.wishlist.map(function (w) { return Object.assign({}, w); });
     }
@@ -389,7 +433,8 @@
       var ordered = [];
       state.wishlistOrder.forEach(function (id) { if (map[id]) { ordered.push(map[id]); delete map[id]; } });
       all.forEach(function (w) { if (map[w.id]) ordered.push(w); });
-      return ordered;
+      // pending link tiles sit at the end (admin-only; pendingList is empty when locked)
+      return ordered.concat(pendingList.map(pendingWatch));
     }
     function mergedCollection() {
       var coll = BASE.collection.map(function (w) { return Object.assign({}, w); });
@@ -423,7 +468,22 @@
         '<span class="grip" aria-hidden="true" title="Drag to reorder">' + GRIP + '</span>' +
       '</div>';
     }
+    function pendingCard(w) {
+      return '<article class="card pending" data-id="' + esc(w.id) + '">' +
+        '<div class="shot"><div class="placeholder">' + LINK + '</div></div>' +
+        '<div class="info">' +
+          '<div class="card-top"><span class="brand-line">Saved Link</span><span class="badge-pending">Pending</span></div>' +
+          '<h3 class="model">' + esc(prettyUrl(w.url)) + '</h3>' +
+          '<a class="pending-url no-drag" href="' + esc(w.url) + '" target="_blank" rel="noopener">' + esc(w.url) + '</a>' +
+          '<div class="meta-line">Added ' + esc(w.addedAt || '') + '<span class="dot">·</span>awaiting details</div>' +
+          '<div class="card-edit edit-only">' +
+            '<span style="font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-3)">In Claude’s inbox</span>' +
+            '<button class="remove-btn" type="button" aria-label="Remove">' + XMARK + '</button>' +
+          '</div>' +
+        '</div></article>';
+    }
     function cardHtml(w, owned) {
+      if (w.pending) return pendingCard(w);
       return '<article class="card" data-id="' + esc(w.id) + '">' +
         (w.img
           ? '<div class="shot"><img src="' + IMG_BASE + esc(w.img) + '" alt="' + esc(w.brand + ' ' + w.model) + '" loading="lazy"></div>'
@@ -491,7 +551,7 @@
       updateMoveButtons();
     }
     function updateMoveButtons() {
-      var cards = wishGrid.querySelectorAll('.card');
+      var cards = wishGrid.querySelectorAll('.card:not(.pending)');
       Array.prototype.forEach.call(cards, function (c, i) {
         var up = c.querySelector('.move-up'), dn = c.querySelector('.move-down');
         if (up) up.disabled = (i === 0);
@@ -499,7 +559,7 @@
       });
     }
     function moveCard(id, delta) {
-      var ids = Array.prototype.map.call(wishGrid.querySelectorAll('.card'), function (c) { return c.dataset.id; });
+      var ids = Array.prototype.map.call(wishGrid.querySelectorAll('.card:not(.pending)'), function (c) { return c.dataset.id; });
       var i = ids.indexOf(id);
       if (i < 0) return;
       var j = i + delta;
@@ -544,13 +604,23 @@
     // ---------- lock / unlock ----------
     var unlocked = false;
     var lockBtn = document.getElementById('lockBtn');
-    function setUnlocked(v) {
+    var PIN_SS = 'claude_pin'; // plaintext PIN kept for the session so API calls can authenticate
+    function getPin() { try { return sessionStorage.getItem(PIN_SS); } catch (e) { return null; } }
+    function applyLockUI(v) {
       unlocked = v;
       document.body.classList.toggle('unlocked', v);
       lockBtn.innerHTML = lockIcon(v);
       lockBtn.classList.toggle('on', v);
       lockBtn.setAttribute('aria-label', v ? 'Lock editing' : 'Unlock editing');
-      try { if (v) sessionStorage.setItem(SS_KEY, '1'); else sessionStorage.removeItem(SS_KEY); } catch (e) {}
+    }
+    function setUnlocked(v, pin) {
+      applyLockUI(v);
+      try {
+        if (v) { sessionStorage.setItem(SS_KEY, '1'); if (pin) sessionStorage.setItem(PIN_SS, pin); }
+        else { sessionStorage.removeItem(SS_KEY); }
+      } catch (e) {}
+      if (v) loadPending();
+      else if (pendingList.length) { pendingList = []; render(); }
     }
     lockBtn.addEventListener('click', function () {
       if (unlocked) setUnlocked(false);
@@ -558,8 +628,17 @@
         title: 'Enter PIN', desc: 'Admin actions are protected',
         type: 'password', inputmode: 'numeric', placeholder: '••••', confirm: 'Unlock',
         validate: async function (val) { if (!val) return 'Enter the PIN.'; return (await sha256(val)) === PIN_HASH ? true : 'Wrong PIN.'; }
-      }).then(function (val) { if (val !== null) setUnlocked(true); });
+      }).then(function (val) { if (val !== null) setUnlocked(true, val); });
     });
+
+    // ---------- pending links API (Vercel KV) ----------
+    var API = '/api/watches';
+    function loadPending() {
+      fetch(API, { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : { pending: [] }; })
+        .then(function (d) { pendingList = Array.isArray(d.pending) ? d.pending : []; render(); })
+        .catch(function () { pendingList = []; render(); });
+    }
 
     // ---------- modal ----------
     var overlay = document.getElementById('modalOverlay');
@@ -613,13 +692,47 @@
       });
     }
 
-    // ---------- promote / reorder (delegated) ----------
+    // ---------- add by link (POST to the API) ----------
+    document.getElementById('addWatch').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!unlocked) return;
+      var input = document.getElementById('addUrl');
+      var note = document.getElementById('addNote');
+      var btn = document.getElementById('addBtn');
+      var url = input.value.trim();
+      if (!url) return;
+      var pin = getPin();
+      if (!pin) { note.classList.add('err'); note.textContent = 'Unlock again to save links.'; return; }
+      btn.disabled = true; note.classList.remove('err'); note.textContent = 'Saving…';
+      fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-claude-pin': pin }, body: JSON.stringify({ url: url }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          btn.disabled = false;
+          if (!res.ok) { note.classList.add('err'); note.textContent = (res.d && res.d.error) || 'Could not save.'; return; }
+          pendingList = Array.isArray(res.d.pending) ? res.d.pending : pendingList;
+          input.value = '';
+          note.classList.remove('err');
+          note.textContent = res.d.duplicate ? 'Already on the list.' : 'Saved to your inbox — Claude fills in the details later.';
+          render();
+        })
+        .catch(function () { btn.disabled = false; note.classList.add('err'); note.textContent = 'Network error.'; });
+    });
+
+    // ---------- promote / reorder / remove (delegated) ----------
     wishGrid.addEventListener('click', function (e) {
       if (!unlocked) return;
       var card = e.target.closest('.card'); if (!card) return;
       var id = card.dataset.id;
       if (e.target.closest('.move-up')) { moveCard(id, -1); return; }
       if (e.target.closest('.move-down')) { moveCard(id, 1); return; }
+      if (e.target.closest('.remove-btn')) {
+        var pin = getPin(); if (!pin) return;
+        fetch(API + '?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { 'x-claude-pin': pin } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) { if (d) { pendingList = Array.isArray(d.pending) ? d.pending : pendingList; render(); } })
+          .catch(function () {});
+        return;
+      }
       if (e.target.closest('.promote-btn')) {
         var model = card.querySelector('.model');
         var name = model ? model.textContent.trim() : 'this watch';
@@ -660,7 +773,7 @@
         document.body.classList.add('reordering');
       }
       function reorderTo(x, y) {
-        var cards = [].slice.call(wishGrid.querySelectorAll('.card:not(.dragging)'));
+        var cards = [].slice.call(wishGrid.querySelectorAll('.card:not(.dragging):not(.pending)'));
         var closest = null, best = Infinity, before = true;
         cards.forEach(function (c) {
           var r = c.getBoundingClientRect();
@@ -681,7 +794,7 @@
       }
       function onUp() {
         if (dragging) {
-          state.wishlistOrder = [].slice.call(wishGrid.querySelectorAll('.card')).map(function (c) { return c.dataset.id; });
+          state.wishlistOrder = [].slice.call(wishGrid.querySelectorAll('.card:not(.pending)')).map(function (c) { return c.dataset.id; });
           saveState();
         }
         reset();
@@ -701,8 +814,9 @@
 
     // ---------- boot ----------
     try { if (sessionStorage.getItem(SS_KEY) === '1') unlocked = true; } catch (e) {}
-    setUnlocked(unlocked);
+    applyLockUI(unlocked);
     render();
+    if (unlocked) loadPending();
   })();
   </script>
 </body>
