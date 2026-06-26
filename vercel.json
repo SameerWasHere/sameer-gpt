@@ -5,6 +5,7 @@
     }
   },
   "rewrites": [
+    { "source": "/api/getContext", "destination": "/api/updateContext" },
     { "source": "/babypool", "destination": "/projects/artifacts/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
     { "source": "/qmeter", "destination": "/projects/artifacts/qmeter.html" },

@@ -14,7 +14,7 @@
 import { kv } from '@vercel/kv';
 import crypto from 'node:crypto';
 
-const KEY = 'watches_pending';
+const KEY = 'watches_pending_links';
 
 const EXPECTED_PIN_HASH =
   process.env.CLAUDE_PIN_HASH ||
