@@ -61,20 +61,9 @@
       background: #fff; border: 1px solid var(--line); border-radius: 16px;
       padding: 16px; overflow: hidden;
     }
-    .eink {
-      width: 100%; aspect-ratio: 800 / 480; background: #fff; color: #000;
-      border: 2px solid #000; border-radius: 6px;
-      display: grid; grid-template-rows: auto 1fr auto;
-      font-family: 'Fraunces', Georgia, serif; overflow: hidden;
-    }
-    .eink .top { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 2px solid #000; }
-    .eink .name { font-size: clamp(14px, 3.2vw, 26px); font-weight: 700; letter-spacing: -0.01em; }
-    .eink .where { font-family: 'IBM Plex Mono', monospace; font-size: clamp(8px, 1.6vw, 12px); text-transform: uppercase; letter-spacing: 0.1em; }
-    .eink .mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-    .eink .big { font-size: clamp(60px, 17vw, 150px); font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; }
-    .eink .unit { font-family: 'IBM Plex Mono', monospace; font-size: clamp(9px, 2vw, 15px); text-transform: uppercase; letter-spacing: 0.3em; }
-    .eink .bottom { display: flex; justify-content: space-between; padding: 12px 20px; border-top: 2px solid #000; font-family: 'IBM Plex Mono', monospace; font-size: clamp(8px, 1.7vw, 13px); }
-    .eink .bottom .lbl { display: block; opacity: 0.55; font-size: 0.8em; }
+    /* The preview renders the real 800x480 template, scaled to fit the page. */
+    .eink-scaler { width: 100%; aspect-ratio: 800 / 480; position: relative; overflow: hidden; border: 2px solid #000; border-radius: 6px; background: #fff; }
+    .eink-stage { position: absolute; top: 0; left: 0; width: 800px; height: 480px; transform-origin: top left; background: #fff; color: #000; }
 
     pre {
       background: #1c1917; color: #e7e5e4; border-radius: 14px;
@@ -119,42 +108,41 @@
 
     <div class="section-label">Live preview</div>
     <div class="preview-frame">
-      <div class="eink">
-        <div class="top">
-          <div class="name" id="p-name">Zain Francisco Bhutani</div>
-          <div class="where" id="p-city">San Francisco</div>
-        </div>
-        <div class="mid">
-          <div class="big" id="p-days">—</div>
-          <div class="unit">days old</div>
-        </div>
-        <div class="bottom">
-          <div><span class="lbl">Born</span><span id="p-born">June 7, 2026</span></div>
-          <div style="text-align:center"><span class="lbl">Age</span><span id="p-age">—</span></div>
-          <div style="text-align:right"><span class="lbl">Next milestone</span><span id="p-next">—</span></div>
-        </div>
+      <div class="eink-scaler" id="scaler">
+        <div class="eink-stage" id="stage"></div>
       </div>
     </div>
-    <p class="note">This preview pulls live numbers from the same feed the display uses, so it matches what's on the panel.</p>
+    <p class="note">This is the actual template rendered at 800×480 with live numbers, so it matches the panel exactly.</p>
 
     <div class="section-label">TRMNL markup (paste into the plugin's Markup field)</div>
     <div class="code-wrap">
       <button class="copy-btn" id="copyBtn">Copy</button>
       <pre id="markup"></pre>
     </div>
-    <p class="note">No TRMNL classes — pure inline-styled flexbox. The device renders HTML to a bitmap, so a single centered flex column with inline styles lays out reliably on the 800×480 BW panel. Birth line is pinned to the bottom via <code class="inline">margin-top: auto</code>. Variables come from <code class="inline">/api/trmnl-zain</code>.</p>
+    <p class="note">No TRMNL classes — pure inline-styled flexbox, built for pure black &amp; white (no gray/opacity, which dithers badly on e-ink). A solid black left panel holds the giant day count in white; the right side stacks the name with stats below. Variables come from <code class="inline">/api/trmnl-zain</code>.</p>
   </div>
 
   <script>
     // The exact Liquid markup to paste into the TRMNL plugin. Kept here as the
     // source of truth so it's always copy-pasteable from the hub.
-    const TRMNL_MARKUP = String.raw`<div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; padding: 20px; box-sizing: border-box;">
-  <p style="font-size: 28px; margin: 0 0 12px 0; font-weight: 400; letter-spacing: 2px;">{{ name }}</p>
-  <p style="font-size: 180px; margin: 0; line-height: 0.9; font-weight: 900;">{{ days_old }}</p>
-  <p style="font-size: 20px; margin: 8px 0 24px 0; letter-spacing: 8px; font-weight: 400;">DAYS OLD</p>
-  <p style="font-size: 22px; margin: 0; font-weight: 300;">{{ weeks_old }} weeks  &middot;  {{ months_old }} months</p>
-  <p style="font-size: 16px; margin: 8px 0 0 0; font-weight: 300; opacity: 0.6;">Next: {{ next_milestone }} in {{ next_milestone_days }} days</p>
-  <p style="font-size: 14px; margin: auto 0 0 0; opacity: 0.5;">Born {{ birth_date }}  &middot;  {{ birth_city }}</p>
+    const TRMNL_MARKUP = String.raw`<div style="width: 800px; height: 480px; font-family: sans-serif; display: flex; overflow: hidden;">
+  <!-- Left side: big number on a solid black panel -->
+  <div style="flex: 1; background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+    <p style="font-size: 200px; margin: 0; line-height: 0.85; font-weight: 900;">{{ days_old }}</p>
+    <p style="font-size: 18px; margin: 10px 0 0 0; letter-spacing: 10px; font-weight: 400;">DAYS OLD</p>
+  </div>
+  <!-- Right side: name stacked large with details -->
+  <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px 35px;">
+    <p style="font-size: 14px; margin: 0 0 4px 0; letter-spacing: 4px; font-weight: 400;">HELLO WORLD, I'M</p>
+    <p style="font-size: 36px; margin: 0 0 4px 0; font-weight: 700; line-height: 1.1;">Zain</p>
+    <p style="font-size: 36px; margin: 0 0 4px 0; font-weight: 700; line-height: 1.1;">Francisco</p>
+    <p style="font-size: 36px; margin: 0 0 20px 0; font-weight: 700; line-height: 1.1;">Bhutani</p>
+    <div style="width: 40px; height: 3px; background: black; margin-bottom: 20px;"></div>
+    <p style="font-size: 18px; margin: 0 0 6px 0;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
+    <p style="font-size: 14px; margin: 0 0 6px 0;">Next: {{ next_milestone }} in {{ next_milestone_days }} days</p>
+    <p style="font-size: 12px; margin: 16px 0 0 0; letter-spacing: 2px;">BORN {{ birth_date | upcase }}</p>
+    <p style="font-size: 12px; margin: 2px 0 0 0; letter-spacing: 2px;">{{ birth_city | upcase }}</p>
+  </div>
 </div>`;
 
     document.getElementById('markup').textContent = TRMNL_MARKUP;
@@ -170,12 +158,15 @@
       }
     });
 
-    // Live preview — recompute from the same birth instant the API uses.
+    // Live preview — recompute the same merge variables the API sends, then
+    // render the actual template (with the variables filled in) at 800x480 and
+    // scale it down to fit the page. Keeps the preview honest.
     const BIRTH = new Date('2026-06-07T16:49:00-07:00');
     const DAY = 86400000;
     function addMonths(d, n) { const x = new Date(d.getTime()); x.setUTCMonth(x.getUTCMonth() + n); return x; }
     function plural(n, u) { return n + ' ' + u + (n === 1 ? '' : 's'); }
-    function render() {
+
+    function mergeVars() {
       const now = new Date();
       const days = Math.max(0, Math.floor((now - BIRTH) / DAY));
       const weeks = Math.floor(days / 7);
@@ -189,11 +180,35 @@
       const up = cands.filter(c => c.date > now).sort((a, b) => a.date - b.date)[0];
       const nextDays = up ? Math.max(0, Math.ceil((up.date - now) / DAY)) : 0;
 
-      document.getElementById('p-days').textContent = days;
-      document.getElementById('p-age').textContent = months >= 1 ? plural(months, 'mo') : plural(weeks, 'wk');
-      document.getElementById('p-next').textContent = up ? up.label + ' · ' + nextDays + 'd' : '—';
+      return {
+        name: 'Zain Francisco Bhutani',
+        days_old: days, weeks_old: weeks, months_old: months,
+        birth_date: 'June 7, 2026', birth_city: 'San Francisco',
+        next_milestone: up ? up.label : '—', next_milestone_days: nextDays,
+      };
     }
-    render();
+
+    // Minimal Liquid fill: {{ var }} and {{ var | upcase }}.
+    function fillTemplate(tpl, vars) {
+      return tpl.replace(/\{\{\s*(\w+)\s*(?:\|\s*upcase\s*)?\}\}/g, (m, key) => {
+        let v = vars[key];
+        if (v === undefined) return m;
+        if (/\|\s*upcase/.test(m)) v = String(v).toUpperCase();
+        return v;
+      });
+    }
+
+    function renderPreview() {
+      const stage = document.getElementById('stage');
+      const scaler = document.getElementById('scaler');
+      stage.innerHTML = fillTemplate(TRMNL_MARKUP, mergeVars());
+      // The injected root is itself 800x480; let it fill the stage.
+      const root = stage.firstElementChild;
+      if (root) { root.style.width = '800px'; root.style.height = '480px'; }
+      stage.style.transform = 'scale(' + (scaler.clientWidth / 800) + ')';
+    }
+    renderPreview();
+    window.addEventListener('resize', renderPreview);
   </script>
 </body>
 </html>
