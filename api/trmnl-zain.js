@@ -123,6 +123,13 @@ export default async function handler(req, res) {
   const now = new Date();
   const days_old = daysOldSF(now);
   const weeks_old = Math.floor(days_old / 7);
+
+  // Age broken into 30-day months, then full weeks, then leftover days.
+  // e.g. 22d -> 0m 3w 1d; 35d -> 1m 0w 5d; 45d -> 1m 2w 1d.
+  const age_months = Math.floor(days_old / 30);
+  const age_after_months = days_old % 30;
+  const age_weeks = Math.floor(age_after_months / 7);
+  const age_days = age_after_months % 7;
   const months_old = completedMonths(BIRTH, now);
   const milestone = nextMilestone(now);
   const feeding = feedingRange(days_old);
@@ -137,6 +144,9 @@ export default async function handler(req, res) {
     birth_city: 'San Francisco',
     next_milestone: milestone.label,
     next_milestone_days: milestone.days,
+    age_months,
+    age_weeks,
+    age_days,
     feeding_oz_min: String(feeding.min),
     feeding_oz_max: String(feeding.max),
     feeding_ml_min: String(Math.round(feeding.min * 30)),

@@ -137,7 +137,7 @@
     <p style="font-size: 36px; margin: 0 0 4px 0; font-weight: 700; line-height: 1.1;">Francisco</p>
     <p style="font-size: 36px; margin: 0 0 18px 0; font-weight: 700; line-height: 1.1;">Bhutani</p>
     <div style="width: 40px; height: 3px; background: black; margin-bottom: 16px;"></div>
-    <p style="font-size: 18px; margin: 0;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
+    <p style="font-size: 18px; margin: 0;">{{ age_months }}m {{ age_weeks }}w {{ age_days }}d</p>
     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid black;">
       <p style="font-size: 13px; margin: 0 0 6px 0; letter-spacing: 3px;">FEEDING</p>
       <p style="font-size: 20px; margin: 0 0 12px 0; font-weight: 700;">{{ feeding_oz_min }}-{{ feeding_oz_max }} oz ({{ feeding_ml_min }}-{{ feeding_ml_max }} ml)</p>
@@ -182,6 +182,10 @@
       const now = new Date();
       const days = daysOldSF(now);
       const weeks = Math.floor(days / 7);
+      const age_months = Math.floor(days / 30);
+      const age_after = days % 30;
+      const age_weeks = Math.floor(age_after / 7);
+      const age_days = age_after % 7;
       let months = (now.getUTCFullYear() - BIRTH.getUTCFullYear()) * 12 + (now.getUTCMonth() - BIRTH.getUTCMonth());
       if (now.getUTCDate() < BIRTH.getUTCDate()) months--;
       months = Math.max(0, months);
@@ -210,6 +214,7 @@
         days_old: days, weeks_old: weeks, months_old: months,
         birth_date: 'June 7, 2026', birth_city: 'San Francisco',
         next_milestone: up ? up.label : '—', next_milestone_days: nextDays,
+        age_months, age_weeks, age_days,
         feeding_oz_min: String(feeding.min), feeding_oz_max: String(feeding.max),
         feeding_ml_min: String(Math.round(feeding.min * 30)), feeding_ml_max: String(Math.round(feeding.max * 30)),
         tummy_min: String(tummy.min), tummy_max: String(tummy.max),
