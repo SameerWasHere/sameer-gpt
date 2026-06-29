@@ -142,44 +142,31 @@
       <button class="copy-btn" id="copyBtn">Copy</button>
       <pre id="markup"></pre>
     </div>
-    <p class="note">Layout + title_bar only — TRMNL adds the <code class="inline">screen</code>/<code class="inline">view</code> wrappers automatically. Built for the 800×480 BW panel with Framework 3.1 classes (<code class="inline">layout</code>, <code class="inline">flex</code>, <code class="inline">title</code>, <code class="inline">value</code>, <code class="inline">label</code>). Uses the merge variables sent by <code class="inline">/api/trmnl-zain</code>.</p>
+    <p class="note">Layout + title_bar only — TRMNL adds the <code class="inline">screen</code>/<code class="inline">view</code> wrappers automatically. Uses the core TRMNL classes (<code class="inline">layout</code>, <code class="inline">columns</code>, <code class="inline">markdown</code>, <code class="inline">content</code>, <code class="inline">title</code>) with inline font sizing for the big number, so it renders reliably on the 800×480 BW panel. Variables come from <code class="inline">/api/trmnl-zain</code>.</p>
   </div>
 
   <script>
     // The exact Liquid markup to paste into the TRMNL plugin. Kept here as the
     // source of truth so it's always copy-pasteable from the hub.
-    const TRMNL_MARKUP = String.raw`<div class="layout layout--col layout--center gap--large">
-
-  <!-- Name -->
-  <div class="title title--large text--center">{{ name }}</div>
-
-  <!-- Big number -->
-  <div class="layout layout--col layout--center gap--none">
-    <span class="value value--xxlarge">{{ days_old }}</span>
-    <span class="label label--small label--gray-3">DAYS OLD</span>
-  </div>
-
-  <!-- Secondary stats -->
-  <div class="flex flex--row flex--center gap--xlarge text--center">
-    <div class="layout layout--col layout--center gap--none">
-      <span class="value value--large">{{ weeks_old }}</span>
-      <span class="label label--small label--gray-3">WEEKS</span>
-    </div>
-    <div class="layout layout--col layout--center gap--none">
-      <span class="value value--large">{{ months_old }}</span>
-      <span class="label label--small label--gray-3">MONTHS</span>
-    </div>
-    <div class="layout layout--col layout--center gap--none">
-      <span class="value value--large">{{ next_milestone_days }}</span>
-      <span class="label label--small label--gray-3">DAYS TO {{ next_milestone | upcase }}</span>
+    const TRMNL_MARKUP = String.raw`<div class="layout">
+  <div class="columns">
+    <div class="column">
+      <div class="markdown">
+        <span class="title title--large">{{ name }}</span>
+        <div class="content content--center">
+          <p style="font-size: 120px; font-weight: 700; line-height: 1; margin: 12px 0;">{{ days_old }}</p>
+          <p style="font-size: 24px; letter-spacing: 4px; margin: 0;">DAYS OLD</p>
+          <br>
+          <p style="font-size: 30px; margin: 8px 0;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
+          <p style="font-size: 22px; margin: 8px 0;">Next: {{ next_milestone }} in {{ next_milestone_days }} day{% if next_milestone_days != 1 %}s{% endif %}</p>
+        </div>
+      </div>
     </div>
   </div>
-
 </div>
 
 <div class="title_bar">
-  <span class="title">Born {{ birth_date }} · {{ birth_city }}</span>
-  <span class="instance">Next milestone: {{ next_milestone }} in {{ next_milestone_days }} day{% if next_milestone_days != 1 %}s{% endif %}</span>
+  <span class="title">Born {{ birth_date }} &middot; {{ birth_city }}</span>
 </div>`;
 
     document.getElementById('markup').textContent = TRMNL_MARKUP;
