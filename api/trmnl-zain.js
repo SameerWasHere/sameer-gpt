@@ -1,0 +1,102 @@
+// TRMNL e-ink display feed for Baby Zain.
+//
+// Computes Zain's current age and pushes it to a TRMNL custom-plugin webhook so
+// an 800x480 e-ink display always shows his live stats. Callable via GET so a
+// Vercel cron (see vercel.json) or a manual hit triggers the push.
+//
+// GET /api/trmnl-zain -> pushes to TRMNL, returns JSON of what was sent.
+
+// Zain was born June 7, 2026 at 4:49 PM in San Francisco. June is Pacific
+// Daylight Time (UTC-7), so that instant is 23:49 UTC on June 7, 2026.
+const BIRTH = new Date('2026-06-07T16:49:00-07:00');
+
+const TRMNL_WEBHOOK =
+  process.env.TRMNL_ZAIN_WEBHOOK ||
+  'https://trmnl.com/api/custom_plugins/bb5ee47d-51e2-40e9-ac87-0f38e08cc7c5';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function addUTCMonths(date, n) {
+  const d = new Date(date.getTime());
+  d.setUTCMonth(d.getUTCMonth() + n);
+  return d;
+}
+
+// Completed calendar months between two dates.
+function completedMonths(from, to) {
+  let months =
+    (to.getUTCFullYear() - from.getUTCFullYear()) * 12 +
+    (to.getUTCMonth() - from.getUTCMonth());
+  if (to.getUTCDate() < from.getUTCDate()) months -= 1;
+  return Math.max(0, months);
+}
+
+const plural = (n, unit) => `${n} ${unit}${n === 1 ? '' : 's'}`;
+
+// The next age milestone after `now`: weekly through 4 weeks, then monthly
+// through a year. Returns the label and whole days until it lands.
+function nextMilestone(now) {
+  const candidates = [];
+  for (let w = 1; w <= 4; w++) {
+    candidates.push({ label: plural(w, 'week'), date: new Date(BIRTH.getTime() + w * 7 * DAY_MS) });
+  }
+  for (let m = 1; m <= 12; m++) {
+    candidates.push({ label: m === 12 ? '1 year' : plural(m, 'month'), date: addUTCMonths(BIRTH, m) });
+  }
+  const upcoming = candidates
+    .filter((c) => c.date.getTime() > now.getTime())
+    .sort((a, b) => a.date - b.date)[0];
+
+  if (!upcoming) return { label: null, days: null };
+  const days = Math.max(0, Math.ceil((upcoming.date.getTime() - now.getTime()) / DAY_MS));
+  return { label: upcoming.label, days };
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const now = new Date();
+  const days_old = Math.max(0, Math.floor((now.getTime() - BIRTH.getTime()) / DAY_MS));
+  const weeks_old = Math.floor(days_old / 7);
+  const months_old = completedMonths(BIRTH, now);
+  const milestone = nextMilestone(now);
+
+  const merge_variables = {
+    name: 'Zain Francisco Bhutani',
+    days_old,
+    weeks_old,
+    months_old,
+    birth_date: 'June 7, 2026',
+    birth_city: 'San Francisco',
+    next_milestone: milestone.label,
+    next_milestone_days: milestone.days,
+  };
+
+  try {
+    const resp = await fetch(TRMNL_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ merge_variables }),
+    });
+
+    const text = await resp.text();
+    if (!resp.ok) {
+      return res.status(502).json({
+        ok: false,
+        error: `TRMNL responded ${resp.status}`,
+        detail: text.slice(0, 500),
+        sent: merge_variables,
+      });
+    }
+
+    return res.status(200).json({ ok: true, pushedTo: 'TRMNL', sent: merge_variables });
+  } catch (error) {
+    console.error('TRMNL push failed:', error.message);
+    return res.status(500).json({ ok: false, error: error.message, sent: merge_variables });
+  }
+}

@@ -1,6 +1,15 @@
 {
   "artifacts": [
     {
+      "id": "eink",
+      "title": "TRMNL Displays",
+      "description": "The hub for my TRMNL e-ink displays. Live stats pushed on a schedule — first up, Baby Zain's age. Configs and paste-ready markup.",
+      "category": "Hardware",
+      "date": "2026-06-28",
+      "access": "public",
+      "filename": "eink.html"
+    },
+    {
       "id": "watches",
       "title": "The Watch Box",
       "description": "A collection told as a chronological timeline, plus a running wishlist. Specs, references, and the damage.",

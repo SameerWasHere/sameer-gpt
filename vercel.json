@@ -4,14 +4,19 @@
       "maxDuration": 30
     }
   },
+  "crons": [
+    { "path": "/api/trmnl-zain", "schedule": "0 8 * * *" }
+  ],
   "rewrites": [
     { "source": "/api/getContext", "destination": "/api/updateContext" },
+    { "source": "/api/deleteConversations", "destination": "/api/getConversations" },
     { "source": "/babypool", "destination": "/projects/artifacts/babypool.html" },
     { "source": "/babypool/admin", "destination": "/babypool-admin.html" },
     { "source": "/qmeter", "destination": "/projects/artifacts/qmeter.html" },
     { "source": "/bettracker", "destination": "/projects/artifacts/bettracker.html" },
     { "source": "/bettracker/:slug", "destination": "/projects/artifacts/bettracker-view.html" },
     { "source": "/watches", "destination": "/projects/artifacts/watches.html" },
+    { "source": "/eink", "destination": "/projects/artifacts/eink.html" },
     { "source": "/projects", "destination": "/projects/projects.html" }
   ]
 }

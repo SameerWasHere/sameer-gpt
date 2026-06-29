@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRMNL Displays — Sameer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f3ef;
+      --ink: #1c1917;
+      --muted: #78716c;
+      --line: #e7e2da;
+      --card: #ffffff;
+      --accent: #1c1917;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Fraunces', Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 48px 24px 96px; }
+    a.back {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); text-decoration: none; font-size: 14px;
+      font-family: 'IBM Plex Mono', monospace; margin-bottom: 36px;
+    }
+    a.back:hover { color: var(--ink); }
+    header h1 { font-size: 42px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.02em; }
+    header p { color: var(--muted); font-size: 17px; margin: 0 0 8px; max-width: 60ch; }
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--muted); margin: 48px 0 16px;
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 24px; margin-bottom: 16px;
+    }
+    .card .row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    .card h2 { font-size: 24px; margin: 0; font-weight: 600; }
+    .pill {
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;
+      padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    }
+    .kv { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); margin-top: 14px; }
+    .kv div { padding: 4px 0; border-top: 1px dashed var(--line); }
+    .kv div:first-child { border-top: none; }
+    .kv b { color: var(--ink); font-weight: 500; }
+
+    /* Live e-ink preview (mimics the 800x480 BW panel) */
+    .preview-frame {
+      background: #fff; border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px; overflow: hidden;
+    }
+    .eink {
+      width: 100%; aspect-ratio: 800 / 480; background: #fff; color: #000;
+      border: 2px solid #000; border-radius: 6px;
+      display: grid; grid-template-rows: auto 1fr auto;
+      font-family: 'Fraunces', Georgia, serif; overflow: hidden;
+    }
+    .eink .top { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 2px solid #000; }
+    .eink .name { font-size: clamp(14px, 3.2vw, 26px); font-weight: 700; letter-spacing: -0.01em; }
+    .eink .where { font-family: 'IBM Plex Mono', monospace; font-size: clamp(8px, 1.6vw, 12px); text-transform: uppercase; letter-spacing: 0.1em; }
+    .eink .mid { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+    .eink .big { font-size: clamp(60px, 17vw, 150px); font-weight: 700; line-height: 0.9; letter-spacing: -0.04em; }
+    .eink .unit { font-family: 'IBM Plex Mono', monospace; font-size: clamp(9px, 2vw, 15px); text-transform: uppercase; letter-spacing: 0.3em; }
+    .eink .bottom { display: flex; justify-content: space-between; padding: 12px 20px; border-top: 2px solid #000; font-family: 'IBM Plex Mono', monospace; font-size: clamp(8px, 1.7vw, 13px); }
+    .eink .bottom .lbl { display: block; opacity: 0.55; font-size: 0.8em; }
+
+    pre {
+      background: #1c1917; color: #e7e5e4; border-radius: 14px;
+      padding: 20px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px; line-height: 1.6; margin: 0;
+    }
+    .code-wrap { position: relative; }
+    .copy-btn {
+      position: absolute; top: 12px; right: 12px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+      background: #44403c; color: #fafaf9; border: none; border-radius: 8px;
+      padding: 6px 12px; cursor: pointer; letter-spacing: 0.04em;
+    }
+    .copy-btn:hover { background: #57534e; }
+    .note { font-size: 14px; color: var(--muted); margin-top: 10px; }
+    code.inline { font-family: 'IBM Plex Mono', monospace; font-size: 0.85em; background: var(--line); padding: 1px 6px; border-radius: 5px; color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/projects">&larr; back to projects</a>
+
+    <header>
+      <h1>TRMNL Displays</h1>
+      <p>My hub for managing TRMNL e-ink displays. A Vercel cron computes live stats and pushes them to each panel's webhook once a day. First up: Baby Zain's age, counting up from the moment he arrived.</p>
+    </header>
+
+    <div class="section-label">Active displays</div>
+
+    <div class="card">
+      <div class="row">
+        <h2>Baby Zain</h2>
+        <span class="pill" id="status">● live</span>
+      </div>
+      <div class="kv">
+        <div>feed &nbsp; <b>GET /api/trmnl-zain</b></div>
+        <div>cron &nbsp; <b>0 8 * * * (daily, 8:00 UTC)</b></div>
+        <div>panel &nbsp; <b>800 × 480 · black &amp; white</b></div>
+        <div>born &nbsp; <b>June 7, 2026 · San Francisco</b></div>
+      </div>
+    </div>
+
+    <div class="section-label">Live preview</div>
+    <div class="preview-frame">
+      <div class="eink">
+        <div class="top">
+          <div class="name" id="p-name">Zain Francisco Bhutani</div>
+          <div class="where" id="p-city">San Francisco</div>
+        </div>
+        <div class="mid">
+          <div class="big" id="p-days">—</div>
+          <div class="unit">days old</div>
+        </div>
+        <div class="bottom">
+          <div><span class="lbl">Born</span><span id="p-born">June 7, 2026</span></div>
+          <div style="text-align:center"><span class="lbl">Age</span><span id="p-age">—</span></div>
+          <div style="text-align:right"><span class="lbl">Next milestone</span><span id="p-next">—</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note">This preview pulls live numbers from the same feed the display uses, so it matches what's on the panel.</p>
+
+    <div class="section-label">TRMNL markup (paste into the plugin's Markup field)</div>
+    <div class="code-wrap">
+      <button class="copy-btn" id="copyBtn">Copy</button>
+      <pre id="markup"></pre>
+    </div>
+    <p class="note">Built for the 800×480 BW screen using TRMNL's <code class="inline">screen</code> / <code class="inline">layout</code> framework classes. Uses the merge variables sent by <code class="inline">/api/trmnl-zain</code>.</p>
+  </div>
+
+  <script>
+    // The exact Liquid markup to paste into the TRMNL plugin. Kept here as the
+    // source of truth so it's always copy-pasteable from the hub.
+    const TRMNL_MARKUP = String.raw`<div class="screen screen--no-bleed">
+  <div class="view view--full">
+    <div class="layout layout--col layout--center gap--large">
+
+      <!-- Name -->
+      <div class="title title--large text--center">{{ name }}</div>
+
+      <!-- Big number -->
+      <div class="layout layout--col layout--center gap--none">
+        <span class="value value--xxlarge value--tnums">{{ days_old }}</span>
+        <span class="label label--small label--gray-3">DAYS OLD</span>
+      </div>
+
+      <!-- Secondary stats -->
+      <div class="grid grid--cols-3 w--full text--center">
+        <div class="col">
+          <span class="value value--large value--tnums">{{ weeks_old }}</span>
+          <span class="label label--small label--gray-3">WEEKS</span>
+        </div>
+        <div class="col">
+          <span class="value value--large value--tnums">{{ months_old }}</span>
+          <span class="label label--small label--gray-3">MONTHS</span>
+        </div>
+        <div class="col">
+          <span class="value value--large value--tnums">{{ next_milestone_days }}</span>
+          <span class="label label--small label--gray-3">DAYS TO {{ next_milestone | upcase }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="title_bar">
+    <span class="title">Born {{ birth_date }} · {{ birth_city }}</span>
+    <span class="instance">Next milestone: {{ next_milestone }} in {{ next_milestone_days }} day{% if next_milestone_days != 1 %}s{% endif %}</span>
+  </div>
+</div>`;
+
+    document.getElementById('markup').textContent = TRMNL_MARKUP;
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('copyBtn');
+      try {
+        await navigator.clipboard.writeText(TRMNL_MARKUP);
+        btn.textContent = 'Copied!';
+        setTimeout(() => (btn.textContent = 'Copy'), 1600);
+      } catch (e) {
+        btn.textContent = 'Press Ctrl+C';
+      }
+    });
+
+    // Live preview — recompute from the same birth instant the API uses.
+    const BIRTH = new Date('2026-06-07T16:49:00-07:00');
+    const DAY = 86400000;
+    function addMonths(d, n) { const x = new Date(d.getTime()); x.setUTCMonth(x.getUTCMonth() + n); return x; }
+    function plural(n, u) { return n + ' ' + u + (n === 1 ? '' : 's'); }
+    function render() {
+      const now = new Date();
+      const days = Math.max(0, Math.floor((now - BIRTH) / DAY));
+      const weeks = Math.floor(days / 7);
+      let months = (now.getUTCFullYear() - BIRTH.getUTCFullYear()) * 12 + (now.getUTCMonth() - BIRTH.getUTCMonth());
+      if (now.getUTCDate() < BIRTH.getUTCDate()) months--;
+      months = Math.max(0, months);
+
+      const cands = [];
+      for (let w = 1; w <= 4; w++) cands.push({ label: plural(w, 'week'), date: new Date(BIRTH.getTime() + w * 7 * DAY) });
+      for (let m = 1; m <= 12; m++) cands.push({ label: m === 12 ? '1 year' : plural(m, 'month'), date: addMonths(BIRTH, m) });
+      const up = cands.filter(c => c.date > now).sort((a, b) => a.date - b.date)[0];
+      const nextDays = up ? Math.max(0, Math.ceil((up.date - now) / DAY)) : 0;
+
+      document.getElementById('p-days').textContent = days;
+      document.getElementById('p-age').textContent = months >= 1 ? plural(months, 'mo') : plural(weeks, 'wk');
+      document.getElementById('p-next').textContent = up ? up.label + ' · ' + nextDays + 'd' : '—';
+    }
+    render();
+  </script>
+</body>
+</html>

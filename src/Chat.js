@@ -263,7 +263,7 @@ function Chat({ onEditRequest }) {
   const handleDeleteConversations = async () => {
     addSystemMessage("Clearing conversation history...");
     try {
-      await axios.post('/api/deleteConversations', { password: updatePassword });
+      await axios.post('/api/getConversations', { password: updatePassword, action: 'delete' });
       addSystemMessage("Conversation history cleared! Type an update instruction or Cancel to exit.");
     } catch (error) {
       addSystemMessage("Failed to clear history. Try again.");
