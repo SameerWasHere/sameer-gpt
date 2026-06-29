@@ -10,11 +10,38 @@
 // Daylight Time (UTC-7), so that instant is 23:49 UTC on June 7, 2026.
 const BIRTH = new Date('2026-06-07T16:49:00-07:00');
 
+// His birth *calendar date* in San Francisco. Age is counted in whole calendar
+// days in SF, so "days old" ticks over at SF midnight rather than at the
+// 24-hour mark from his 4:49 PM birth time (which would lag by part of a day).
+const BIRTH_SF = { year: 2026, month: 6, day: 7 };
+
 const TRMNL_WEBHOOK =
   process.env.TRMNL_ZAIN_WEBHOOK ||
   'https://trmnl.com/api/custom_plugins/bb5ee47d-51e2-40e9-ac87-0f38e08cc7c5';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Calendar date (Y/M/D) of an instant, as seen in San Francisco.
+function sfDateParts(date) {
+  const [y, m, d] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .format(date)
+    .split('-')
+    .map(Number);
+  return { year: y, month: m, day: d };
+}
+
+// Whole days from the birth date to `now`, both as SF calendar dates.
+function daysOldSF(now) {
+  const t = sfDateParts(now);
+  const birthUTC = Date.UTC(BIRTH_SF.year, BIRTH_SF.month - 1, BIRTH_SF.day);
+  const nowUTC = Date.UTC(t.year, t.month - 1, t.day);
+  return Math.max(0, Math.round((nowUTC - birthUTC) / DAY_MS));
+}
 
 function addUTCMonths(date, n) {
   const d = new Date(date.getTime());
@@ -94,7 +121,7 @@ export default async function handler(req, res) {
   }
 
   const now = new Date();
-  const days_old = Math.max(0, Math.floor((now.getTime() - BIRTH.getTime()) / DAY_MS));
+  const days_old = daysOldSF(now);
   const weeks_old = Math.floor(days_old / 7);
   const months_old = completedMonths(BIRTH, now);
   const milestone = nextMilestone(now);
@@ -112,6 +139,8 @@ export default async function handler(req, res) {
     next_milestone_days: milestone.days,
     feeding_oz_min: String(feeding.min),
     feeding_oz_max: String(feeding.max),
+    feeding_ml_min: String(Math.round(feeding.min * 30)),
+    feeding_ml_max: String(Math.round(feeding.max * 30)),
     tummy_min: String(tummy.min),
     tummy_max: String(tummy.max),
   };
