@@ -142,27 +142,19 @@
       <button class="copy-btn" id="copyBtn">Copy</button>
       <pre id="markup"></pre>
     </div>
-    <p class="note">Layout + title_bar only — TRMNL adds the <code class="inline">screen</code>/<code class="inline">view</code> wrappers automatically. Uses the core TRMNL classes (<code class="inline">layout</code>, <code class="inline">columns</code>, <code class="inline">markdown</code>, <code class="inline">content</code>, <code class="inline">title</code>) with inline font sizing for the big number, so it renders reliably on the 800×480 BW panel. Variables come from <code class="inline">/api/trmnl-zain</code>.</p>
+    <p class="note">No TRMNL classes — pure inline-styled flexbox. The device renders HTML to a bitmap, so a single centered flex column with inline styles lays out reliably on the 800×480 BW panel. Birth line is pinned to the bottom via <code class="inline">margin-top: auto</code>. Variables come from <code class="inline">/api/trmnl-zain</code>.</p>
   </div>
 
   <script>
     // The exact Liquid markup to paste into the TRMNL plugin. Kept here as the
     // source of truth so it's always copy-pasteable from the hub.
-    const TRMNL_MARKUP = String.raw`<div class="layout">
-  <div class="columns">
-    <div class="column">
-      <div class="markdown" style="text-align: center;">
-        <p style="font-size: 28px; letter-spacing: 2px; margin: 0 0 8px 0; font-weight: 400;">{{ name }}</p>
-        <p style="font-size: 160px; font-weight: 900; margin: 0; line-height: 1;">{{ days_old }}</p>
-        <p style="font-size: 22px; letter-spacing: 6px; margin: 4px 0 20px 0; font-weight: 400;">DAYS OLD</p>
-        <p style="font-size: 24px; margin: 0; font-weight: 300;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
-        <p style="font-size: 18px; margin: 8px 0 0 0; font-weight: 300;">Next: {{ next_milestone }} in {{ next_milestone_days }} days</p>
-      </div>
-    </div>
-  </div>
-  <div class="title_bar">
-    <span class="title">Born {{ birth_date }} &middot; {{ birth_city }}</span>
-  </div>
+    const TRMNL_MARKUP = String.raw`<div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; padding: 20px; box-sizing: border-box;">
+  <p style="font-size: 28px; margin: 0 0 12px 0; font-weight: 400; letter-spacing: 2px;">{{ name }}</p>
+  <p style="font-size: 180px; margin: 0; line-height: 0.9; font-weight: 900;">{{ days_old }}</p>
+  <p style="font-size: 20px; margin: 8px 0 24px 0; letter-spacing: 8px; font-weight: 400;">DAYS OLD</p>
+  <p style="font-size: 22px; margin: 0; font-weight: 300;">{{ weeks_old }} weeks  &middot;  {{ months_old }} months</p>
+  <p style="font-size: 16px; margin: 8px 0 0 0; font-weight: 300; opacity: 0.6;">Next: {{ next_milestone }} in {{ next_milestone_days }} days</p>
+  <p style="font-size: 14px; margin: auto 0 0 0; opacity: 0.5;">Born {{ birth_date }}  &middot;  {{ birth_city }}</p>
 </div>`;
 
     document.getElementById('markup').textContent = TRMNL_MARKUP;
