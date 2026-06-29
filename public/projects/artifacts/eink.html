@@ -131,17 +131,20 @@
     <p style="font-size: 200px; margin: 0; line-height: 0.85; font-weight: 900;">{{ days_old }}</p>
     <p style="font-size: 18px; margin: 10px 0 0 0; letter-spacing: 10px; font-weight: 400;">DAYS OLD</p>
   </div>
-  <!-- Right side: name stacked large with details -->
+  <!-- Right side: name stacked large with daily-care details -->
   <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 30px 35px;">
-    <p style="font-size: 14px; margin: 0 0 4px 0; letter-spacing: 4px; font-weight: 400;">HELLO WORLD, I'M</p>
     <p style="font-size: 36px; margin: 0 0 4px 0; font-weight: 700; line-height: 1.1;">Zain</p>
     <p style="font-size: 36px; margin: 0 0 4px 0; font-weight: 700; line-height: 1.1;">Francisco</p>
-    <p style="font-size: 36px; margin: 0 0 20px 0; font-weight: 700; line-height: 1.1;">Bhutani</p>
-    <div style="width: 40px; height: 3px; background: black; margin-bottom: 20px;"></div>
-    <p style="font-size: 18px; margin: 0 0 6px 0;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
-    <p style="font-size: 14px; margin: 0 0 6px 0;">Next: {{ next_milestone }} in {{ next_milestone_days }} days</p>
-    <p style="font-size: 12px; margin: 16px 0 0 0; letter-spacing: 2px;">BORN {{ birth_date | upcase }}</p>
-    <p style="font-size: 12px; margin: 2px 0 0 0; letter-spacing: 2px;">{{ birth_city | upcase }}</p>
+    <p style="font-size: 36px; margin: 0 0 18px 0; font-weight: 700; line-height: 1.1;">Bhutani</p>
+    <div style="width: 40px; height: 3px; background: black; margin-bottom: 16px;"></div>
+    <p style="font-size: 18px; margin: 0;">{{ weeks_old }} weeks &middot; {{ months_old }} months</p>
+    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid black;">
+      <p style="font-size: 13px; margin: 0 0 6px 0; letter-spacing: 3px;">FEEDING</p>
+      <p style="font-size: 20px; margin: 0 0 12px 0; font-weight: 700;">{{ feeding_oz_min }}-{{ feeding_oz_max }} oz per feeding</p>
+      <p style="font-size: 13px; margin: 0 0 6px 0; letter-spacing: 3px;">TUMMY TIME</p>
+      <p style="font-size: 20px; margin: 0; font-weight: 700;">{{ tummy_min }}-{{ tummy_max }} min/day</p>
+    </div>
+    <p style="font-size: 12px; margin: 16px 0 0 0; letter-spacing: 2px;">BORN {{ birth_date | upcase }} &middot; {{ birth_city | upcase }}</p>
   </div>
 </div>`;
 
@@ -180,11 +183,26 @@
       const up = cands.filter(c => c.date > now).sort((a, b) => a.date - b.date)[0];
       const nextDays = up ? Math.max(0, Math.ceil((up.date - now) / DAY)) : 0;
 
+      const pick = (bands) => bands.find(b => days <= b.maxDays) || bands[bands.length - 1];
+      const feeding = pick([
+        { maxDays: 3, min: 0.5, max: 1 }, { maxDays: 7, min: 1, max: 2 },
+        { maxDays: 14, min: 1.5, max: 2.5 }, { maxDays: 28, min: 2, max: 3 },
+        { maxDays: 60, min: 3, max: 4 }, { maxDays: 90, min: 4, max: 5 },
+        { maxDays: 180, min: 4, max: 6 }, { maxDays: Infinity, min: 6, max: 8 },
+      ]);
+      const tummy = pick([
+        { maxDays: 14, min: 3, max: 10 }, { maxDays: 28, min: 10, max: 20 },
+        { maxDays: 60, min: 15, max: 30 }, { maxDays: 90, min: 30, max: 60 },
+        { maxDays: 120, min: 40, max: 60 }, { maxDays: Infinity, min: 60, max: 90 },
+      ]);
+
       return {
         name: 'Zain Francisco Bhutani',
         days_old: days, weeks_old: weeks, months_old: months,
         birth_date: 'June 7, 2026', birth_city: 'San Francisco',
         next_milestone: up ? up.label : '—', next_milestone_days: nextDays,
+        feeding_oz_min: String(feeding.min), feeding_oz_max: String(feeding.max),
+        tummy_min: String(tummy.min), tummy_max: String(tummy.max),
       };
     }
 

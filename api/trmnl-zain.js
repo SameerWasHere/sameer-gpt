@@ -52,6 +52,39 @@ function nextMilestone(now) {
   return { label: upcoming.label, days };
 }
 
+// Pick the first band whose `maxDays` is >= the baby's age (Infinity = open-ended).
+function pickBand(days, bands) {
+  return bands.find((b) => days <= b.maxDays) || bands[bands.length - 1];
+}
+
+// Typical breast milk per feeding (oz), by age.
+function feedingRange(days) {
+  const band = pickBand(days, [
+    { maxDays: 3, min: 0.5, max: 1 },
+    { maxDays: 7, min: 1, max: 2 },
+    { maxDays: 14, min: 1.5, max: 2.5 },
+    { maxDays: 28, min: 2, max: 3 },
+    { maxDays: 60, min: 3, max: 4 },
+    { maxDays: 90, min: 4, max: 5 },
+    { maxDays: 180, min: 4, max: 6 },
+    { maxDays: Infinity, min: 6, max: 8 },
+  ]);
+  return { min: band.min, max: band.max };
+}
+
+// Typical tummy time per day (minutes), by age.
+function tummyRange(days) {
+  const band = pickBand(days, [
+    { maxDays: 14, min: 3, max: 10 },
+    { maxDays: 28, min: 10, max: 20 },
+    { maxDays: 60, min: 15, max: 30 },
+    { maxDays: 90, min: 30, max: 60 },
+    { maxDays: 120, min: 40, max: 60 },
+    { maxDays: Infinity, min: 60, max: 90 },
+  ]);
+  return { min: band.min, max: band.max };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -65,6 +98,8 @@ export default async function handler(req, res) {
   const weeks_old = Math.floor(days_old / 7);
   const months_old = completedMonths(BIRTH, now);
   const milestone = nextMilestone(now);
+  const feeding = feedingRange(days_old);
+  const tummy = tummyRange(days_old);
 
   const merge_variables = {
     name: 'Zain Francisco Bhutani',
@@ -75,6 +110,10 @@ export default async function handler(req, res) {
     birth_city: 'San Francisco',
     next_milestone: milestone.label,
     next_milestone_days: milestone.days,
+    feeding_oz_min: String(feeding.min),
+    feeding_oz_max: String(feeding.max),
+    tummy_min: String(tummy.min),
+    tummy_max: String(tummy.max),
   };
 
   try {
